@@ -30,6 +30,5 @@ elif [ -z $language ]; then
 fi
 
 antlr4='java -Xmx500M -cp ".:./antlr-4.7.1-complete.jar:$CLASSPATH" org.antlr.v4.Tool'
-
 $antlr4 $package $language $output -Xexact-output-dir  -visitor $grammarfile
 
