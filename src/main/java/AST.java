@@ -47,7 +47,7 @@ public class AST {
     }
 
     public static class Statement extends ASTNode{
-        public Annotation annotation;
+        public ArrayList<Annotation> annotations;
     }
 
     public static class AssignmentStatement extends Statement{

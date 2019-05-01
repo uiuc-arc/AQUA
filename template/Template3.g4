@@ -107,14 +107,14 @@ decl returns [AST.Decl value]
 
 
 statement returns [AST.Statement value]
-@init {AST.Annotation at = null;}
-: (annotation {at = $annotation.value;})?
+@init {ArrayList<AST.Annotation> at = new ArrayList<>();}
+: (annotation {at.add($annotation.value);})*
   assign  {$value = $assign.value;}
 | if_stmt {$value = $if_stmt.value;}
 | for_loop {$value = $for_loop.value;}
 | function_call {$value = new AST.FunctionCallStatement($function_call.value); }
 | decl {$value= $decl.value;}
-{$value.annotation = at;}
+{$value.annotations = at;}
 ;
 
 block returns [AST.Block value]
