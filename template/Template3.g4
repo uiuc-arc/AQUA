@@ -35,7 +35,7 @@ annotation_value returns [AST.ASTNode value]
 : ID {$value = new AST.Id($ID.getText());}
 | dims {$value = $dims.value;}
 | limits {$value = $limits.value;}
-| marker {$value = new AST.MarkerWrapper($marker.value);}
+| marker i=ID {$value = new AST.MarkerWrapper($marker.value, new AST.Id($i.getText()));}
 ;
 
 // annotation for block, types, prior and observes

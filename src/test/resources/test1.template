@@ -3,6 +3,5 @@ y = x
 if(y)
 m=1
 else
-@blk start
 m=fun(a1,a2)
 posterior(y)

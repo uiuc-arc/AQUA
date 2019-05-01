@@ -1,16 +1,16 @@
 package main.java;
 
 import java.util.ArrayList;
-import java.util.Vector;
 
 public class AST {
     public static class ASTNode{
 
     }
+
     public static class Program extends ASTNode{
-        protected ArrayList<Data> data;
-        protected ArrayList<Query> queries;
-        protected ArrayList<Statement> statements;
+        public ArrayList<Data> data;
+        public ArrayList<Query> queries;
+        public ArrayList<Statement> statements;
         public Program(){
             this.data = new ArrayList<>();
             this.queries = new ArrayList<>();
@@ -44,6 +44,11 @@ public class AST {
     public static class Query extends ASTNode{
         public QueryType queryType;
         public String id;
+
+        @Override
+        public String toString() {
+            return queryType.toString() + id;
+        }
     }
 
     public static class Statement extends ASTNode{
@@ -58,6 +63,10 @@ public class AST {
             this.rhs = rhs;
         }
 
+        @Override
+        public String toString() {
+            return this.lhs.toString() + " = "+this.rhs.toString();
+        }
     }
 
     public static class ForLoop extends Statement{
@@ -93,6 +102,11 @@ public class AST {
             this.condition = condition;
             this.trueBlock = trueBlock;
             this.elseBlock = elseBlock;
+        }
+
+        @Override
+        public String toString() {
+            return "if(" + condition.toString() +")";
         }
     }
 
@@ -227,7 +241,7 @@ public class AST {
 
 
     public static class Block extends ASTNode{
-        ArrayList<Statement> statements;
+        public ArrayList<Statement> statements;
         public Block(){
             this.statements = new ArrayList<>();
         }
@@ -244,6 +258,11 @@ public class AST {
         public FunctionCallStatement(FunctionCall functionCall){
             this.functionCall = functionCall;
         }
+
+        @Override
+        public String toString() {
+            return functionCall.toString();
+        }
     }
 
     public static class FunctionCall extends Expression{
@@ -257,6 +276,10 @@ public class AST {
             parameters = new ArrayList<>();
         }
 
+        @Override
+        public String toString() {
+            return id.toString() + "()";
+        }
     }
 
     public enum Primitive {INTEGER, FLOAT}
@@ -307,6 +330,11 @@ public class AST {
         public Integer(String integerValue){
             this.value = java.lang.Integer.parseInt(integerValue);
         }
+
+        @Override
+        public String toString() {
+            return java.lang.Integer.toString(value);
+        }
     }
 
     public static class Double extends Number{
@@ -314,12 +342,22 @@ public class AST {
         public Double(String doubleValue){
             this.value = java.lang.Double.parseDouble(doubleValue);
         }
+
+        @Override
+        public String toString() {
+            return java.lang.Double.toString(value);
+        }
     }
 
     public static class Id extends Expression{
         public String id;
         public Id(String id){
             this.id = id;
+        }
+
+        @Override
+        public String toString() {
+            return id;
         }
     }
 
@@ -339,8 +377,10 @@ public class AST {
 
     public static class MarkerWrapper extends ASTNode{
         public Marker marker;
-        public MarkerWrapper(Marker marker){
+        public Id id;
+        public MarkerWrapper(Marker marker, Id id){
             this.marker = marker;
+            this.id = id;
         }
     }
 
@@ -350,19 +390,24 @@ public class AST {
         public Expression expression;
         public Array array;
         public Vector vector;
+
+        @Override
+        public String toString() {
+            return id.toString() + (array != null ? ": array" : ": vector");
+        }
     }
 
     public static class ConstHole extends Expression{
 
     }
 
-    public static class Array extends ASTNode{
+    public static class Array extends Data{
         public ArrayList<Expression> expressions;
         public ArrayList<Array> arrays;
         public ArrayList<Vector> vectors;
     }
 
-    public static class Vector extends ASTNode{
+    public static class Vector extends Data{
         public ArrayList<Expression> expressions;
         public ArrayList<Array> arrays;
         public ArrayList<Vector> vectors;
