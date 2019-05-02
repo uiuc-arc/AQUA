@@ -1,6 +1,5 @@
-package main.java.cfg;
-
-import main.java.AST;
+package grammar.cfg;
+import grammar.AST;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ public class BasicBlock {
     ArrayList<AST.Data> data;
     ArrayList<AST.Query> queries;
     ArrayList<Edge> edges;
+    private int id;
 
     public BasicBlock(){
         statements = new ArrayList<>();
@@ -19,9 +19,15 @@ public class BasicBlock {
         edges = new ArrayList<>();
     }
 
+    public BasicBlock(int id){
+        this();
+        this.id = id;
+    }
+
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Block@"+this.id+"\n");
         for(AST.Data data:data){
             stringBuilder.append(data.toString() +"\n");
         }
@@ -35,5 +41,9 @@ public class BasicBlock {
         }
 
         return stringBuilder.toString();
+    }
+
+    public int getId() {
+        return this.id;
     }
 }

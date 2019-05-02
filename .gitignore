@@ -1,3 +1,7 @@
 *.interp
 *.tokens
 *~
+*.png
+*.iml
+.idea/
+target/

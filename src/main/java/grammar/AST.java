@@ -1,4 +1,4 @@
-package main.java;
+package grammar;
 
 import java.util.ArrayList;
 
@@ -47,7 +47,7 @@ public class AST {
 
         @Override
         public String toString() {
-            return queryType.toString() + id;
+            return queryType.toString() + "(" +  id + ")";
         }
     }
 
@@ -79,6 +79,10 @@ public class AST {
             this.block = block;
         }
 
+        @Override
+        public String toString() {
+            return loopVar.toString() + " in " + range.toString();
+        }
     }
 
     public static class Range extends ASTNode{
@@ -87,6 +91,11 @@ public class AST {
         public Range(Expression start, Expression end){
             this.start = start;
             this.end = end;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + start.toString() + " : " + end.toString() + ")";
         }
     }
 
@@ -129,6 +138,11 @@ public class AST {
             this.base = base;
             this.power = power;
         }
+
+        @Override
+        public String toString() {
+            return base.toString() + "^" + power.toString();
+        }
     }
 
     public static class AddOp extends Expression{
@@ -137,6 +151,11 @@ public class AST {
         public AddOp(Expression base, Expression power){
             this.op1 = base;
             this.op2 = power;
+        }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "+" + op2.toString();
         }
     }
 
@@ -147,6 +166,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "-" + op2.toString();
+        }
     }
 
     public static class MulOp extends Expression{
@@ -155,6 +179,11 @@ public class AST {
         public MulOp(Expression op1, Expression op2){
             this.op1 = op1;
             this.op2 = op2;
+        }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "*" + op2.toString();
         }
     }
 
@@ -165,6 +194,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "/" + op2.toString();
+        }
     }
 
     public static class LtOp extends Expression{
@@ -173,6 +207,11 @@ public class AST {
         public LtOp(Expression op1, Expression op2){
             this.op1 = op1;
             this.op2 = op2;
+        }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "<" + op2.toString();
         }
     }
 
@@ -183,6 +222,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "<=" + op2.toString();
+        }
     }
 
     public static class GtOp extends Expression{
@@ -191,6 +235,11 @@ public class AST {
         public GtOp(Expression op1, Expression op2){
             this.op1 = op1;
             this.op2 = op2;
+        }
+
+        @Override
+        public String toString() {
+            return op1.toString() + ">" + op2.toString();
         }
     }
 
@@ -201,6 +250,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + ">=" + op2.toString();
+        }
     }
 
     public static class NeOp extends Expression{
@@ -209,6 +263,11 @@ public class AST {
         public NeOp(Expression op1, Expression op2){
             this.op1 = op1;
             this.op2 = op2;
+        }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "!=" + op2.toString();
         }
     }
 
@@ -219,6 +278,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + " == " + op2.toString();
+        }
     }
 
     public static class AndOp extends Expression{
@@ -228,6 +292,11 @@ public class AST {
             this.op1 = op1;
             this.op2 = op2;
         }
+
+        @Override
+        public String toString() {
+            return op1.toString() + "&&" + op2.toString();
+        }
     }
 
     public static class OrOp extends Expression{
@@ -236,6 +305,10 @@ public class AST {
         public OrOp(Expression op1, Expression op2){
             this.op1 = op1;
             this.op2 = op2;
+        }
+        @Override
+        public String toString() {
+            return op1.toString() + "||" + op2.toString();
         }
     }
 
@@ -251,6 +324,16 @@ public class AST {
         public Dtype dtype;
         public Dims dims;
         public Id id;
+
+        @Override
+        public String toString() {
+            String res = dtype.toString() + " " + id.toString();
+            if(dims != null && dims.dims.size() > 0){
+                res += " " + dims.toString();
+            }
+
+            return res;
+        }
     }
 
     public static class FunctionCallStatement extends Statement{
@@ -278,7 +361,13 @@ public class AST {
 
         @Override
         public String toString() {
-            return id.toString() + "()";
+            String res = id.toString() + "(";
+            for(Expression e:parameters){
+                res += e.toString() + ",";
+            }
+            if( res.endsWith(","))
+                res = res.substring(0, res.length() -1);
+            return res + ")";
         }
     }
 
@@ -294,6 +383,11 @@ public class AST {
         public ArrayAccess(Id id, Dims dims){
             this.id = id;
             this.dims = dims;
+        }
+
+        @Override
+        public String toString() {
+            return id.toString() +"[" + dims.toString() + "]";
         }
     }
 
@@ -313,11 +407,29 @@ public class AST {
 
     public static class Dims extends ASTNode{
         public ArrayList<Expression> dims = new ArrayList<>();
+
+        @Override
+        public String toString() {
+            String r = "";
+            for(Expression e:dims){
+                r+=e.toString() + ",";
+            }
+
+            return  r.length() > 0 ? r.substring(0, r.length() -1) : r;
+        }
     }
 
     public static class Dtype extends ASTNode{
         public Primitive primitive;
         public Dims dims;
+
+        @Override
+        public String toString() {
+            if(dims != null && dims.dims.size() > 0)
+                return primitive.toString() + "[" + dims.toString() + "]";
+            else
+                return primitive.toString();
+        }
     }
 
 

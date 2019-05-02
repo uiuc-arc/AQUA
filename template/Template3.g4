@@ -53,7 +53,7 @@ dims returns [AST.Dims value]
 
 dtype returns [AST.Dtype value]
 @init {$value = new AST.Dtype();}
- : p=primitive {$value.primitive = $p.value;} '[' dims {$value.dims=$dims.value;} ']'? ;
+ : p=primitive {$value.primitive = $p.value;} ('[' dims {$value.dims=$dims.value;} ']')? ;
 //
 //// data
 array returns [AST.Array value]
@@ -89,7 +89,7 @@ function_call returns [AST.FunctionCall value]
 | DISTXHOLE {$value.isDistX = true;}
 ;
 for_loop returns [AST.ForLoop value]
-: 'for' '(' ID 'in' e1=expr ':' e2=expr ')' block {new AST.ForLoop(new AST.Id($ID.getText()), new AST.Range($e1.value, $e2.value), $block.value);};
+: 'for' '(' ID 'in' e1=expr ':' e2=expr ')' block {$value=new AST.ForLoop(new AST.Id($ID.getText()), new AST.Range($e1.value, $e2.value), $block.value);};
 
 if_stmt returns [AST.IfStmt value]
 @init {$value = new AST.IfStmt();}
@@ -109,11 +109,11 @@ decl returns [AST.Decl value]
 statement returns [AST.Statement value]
 @init {ArrayList<AST.Annotation> at = new ArrayList<>();}
 : (annotation {at.add($annotation.value);})*
-  assign  {$value = $assign.value;}
+ ( assign  {$value = $assign.value;}
 | if_stmt {$value = $if_stmt.value;}
 | for_loop {$value = $for_loop.value;}
 | function_call {$value = new AST.FunctionCallStatement($function_call.value); }
-| decl {$value= $decl.value;}
+| decl {$value= $decl.value;} )
 {$value.annotations = at;}
 ;
 
@@ -182,7 +182,7 @@ template returns [AST.Program value]
 WS : [ \n\t\r]+ -> channel(HIDDEN) ;
 
 // primitives
-ID: [a-zA-Z]+[a-zA-Z0-9_]*;
+
 STRING : '"' ~["]* '"' ;
 INT : '-'?[0-9]+;
 DOUBLE : '-'? (([0-9]? '.' [0-9]+) | ([1-9][0-9]* '.' [0-9]*)) (('E'|'e') '-'? [0-9]+)?;
@@ -192,3 +192,4 @@ FLOATTYPE: 'float';
 DISTHOLE: 'DIST';
 CONSTHOLE: 'CONST';
 DISTXHOLE: 'DISTX';
+ID: [a-zA-Z]+[a-zA-Z0-9_]*;
