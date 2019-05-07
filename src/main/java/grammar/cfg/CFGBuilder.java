@@ -25,6 +25,10 @@ import java.util.Stack;
 
 
 public class CFGBuilder{
+    public ArrayList<Section> getSections() {
+        return sections;
+    }
+
     ArrayList<Section> sections;
     Section curSection;
     BasicBlock curBasicBlock;
@@ -32,14 +36,16 @@ public class CFGBuilder{
     Stack<BasicBlock> basicBlocksStack;
     Graph<BasicBlock, Edge> graph;
     String outputfile;
+    boolean showCFG;
 
     private int blockId = 1;
 
-    public CFGBuilder(String filename, String outputfile){
+    public CFGBuilder(String filename, String outputfile, boolean showCFG){
         this.graph = new DefaultDirectedGraph<>(Edge.class);
         this.sections = new ArrayList<>();
         this.sectionStack = new Stack<>();
         this.basicBlocksStack = new Stack<>();
+        this.showCFG = showCFG;
 
 //        this.curSection = new Section(SectionType.FUNCTION, "main");
 //        this.curBasicBlock = createBasicBlock();
@@ -50,6 +56,10 @@ public class CFGBuilder{
             this.outputfile = "src/test/resources/graph.png";
 
         createCFG(filename);
+    }
+
+    public CFGBuilder(String filename, String outputfile){
+        this(filename, outputfile, true);
     }
 
     private Section createSection(){
@@ -103,13 +113,16 @@ public class CFGBuilder{
             queriesBasicBlock.queries.add(query);
         }
         for(Section s:this.sections){
-            System.out.print("Section  "+s.sectionName + ": ");
+            System.out.print("Section  " + s.sectionName + ": ");
             for(BasicBlock b:s.basicBlocks){
                 System.out.print(b.getId() + ",");
             }
             System.out.println();
         }
-        showGraph();
+
+        if(this.showCFG) {
+            showGraph();
+        }
     }
 
     public BasicBlock buildBasicBlock(ArrayList<AST.Statement> statements, Section section, BasicBlock prevBasicBlock, String label){
@@ -144,7 +157,7 @@ public class CFGBuilder{
 
             if(statement instanceof AST.IfStmt){
                 AST.IfStmt ifStmt = (AST.IfStmt) statement;
-                curBlock.statements.add(ifStmt);
+                curBlock.addStatement(ifStmt);
                 BasicBlock trueBlock = buildBasicBlock(ifStmt.trueBlock.statements, section, curBlock, "true");
 
                 BasicBlock falseBlock = buildBasicBlock(ifStmt.elseBlock.statements, section, curBlock, "false");
@@ -164,7 +177,8 @@ public class CFGBuilder{
             else if(statement instanceof AST.ForLoop){
                 AST.ForLoop forLoop = (AST.ForLoop) statement;
                 BasicBlock loop_condition_block = createBasicBlock(section);
-                loop_condition_block.statements.add(forLoop);
+                loop_condition_block.addStatement(forLoop);
+
                 addEdge(curBlock, loop_condition_block, null);
 
                 //curBlock.statements.add(forLoop);
@@ -176,7 +190,7 @@ public class CFGBuilder{
                 curBlock = newblock;
             }
             else{
-                curBlock.statements.add(statement);
+                curBlock.addStatement(statement);
             }
 
             if(annotation != null){
@@ -250,15 +264,11 @@ public class CFGBuilder{
         //private JGraphXAdapter<String, DefaultEdge> jgxAdapter;
     }
 
-    private BasicBlock createBasicBlock(){
-        BasicBlock basicBlock = new BasicBlock(blockId);
-        blockId++;
-        graph.addVertex(basicBlock);
-        return basicBlock;
-    }
 
     private BasicBlock createBasicBlock(Section section){
-        BasicBlock basicBlock = createBasicBlock();
+        BasicBlock basicBlock = new BasicBlock(blockId, section);
+        blockId++;
+        graph.addVertex(basicBlock);
         section.basicBlocks.add(basicBlock);
         return basicBlock;
     }

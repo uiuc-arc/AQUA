@@ -11,6 +11,7 @@ public class AST {
         public ArrayList<Data> data;
         public ArrayList<Query> queries;
         public ArrayList<Statement> statements;
+
         public Program(){
             this.data = new ArrayList<>();
             this.queries = new ArrayList<>();
@@ -371,7 +372,7 @@ public class AST {
         }
     }
 
-    public enum Primitive {INTEGER, FLOAT}
+    public enum Primitive {INTEGER, FLOAT, MATRIX, VECTOR}
 
     public static class Expression extends ASTNode{
 
@@ -498,10 +499,12 @@ public class AST {
 
     public static class Data extends ASTNode{
         public Id id;
-        public Dtype dtype;
+        public Decl decl;
+        public Dtype datatype;
         public Expression expression;
         public Array array;
         public Vector vector;
+        public ArrayList<Annotation> annotations;
 
         @Override
         public String toString() {

@@ -3,7 +3,10 @@ grammar Template3;
 primitive returns [AST.Primitive value]
 :
 INTEGERTYPE {$value=AST.Primitive.INTEGER;}
-| FLOATTYPE {$value=AST.Primitive.FLOAT;};
+| FLOATTYPE {$value=AST.Primitive.FLOAT;}
+| VECTOR {$value=AST.Primitive.VECTOR;}
+| MATRIX {$value=AST.Primitive.MATRIX;}
+;
 
 
 number returns [AST.Number value]
@@ -75,13 +78,16 @@ vector returns [AST.Vector value]
 //
 //// statements
 data returns [AST.Data value]
-@init {$value = new AST.Data();}
-: ID {$value.id = new AST.Id($ID.getText());} ':'
-( dtype {$value.dtype = $dtype.value;}
+@init {$value = new AST.Data(); ArrayList<AST.Annotation> at = new ArrayList<>();}
+: (annotation {at.add($annotation.value);})*
+ decl {$value.decl = $decl.value;} ':'
+( dt=dtype {$value.datatype = $dt.value;}
 | expr  {$value.expression = $expr.value;}
 | array {$value.array = $array.value;}
 | vector {$value.vector = $vector.value;}
-) ;
+)
+{$value.annotations = at;}
+ ;
 
 function_call returns [AST.FunctionCall value]
 @init {$value = new AST.FunctionCall();}
@@ -192,4 +198,6 @@ FLOATTYPE: 'float';
 DISTHOLE: 'DIST';
 CONSTHOLE: 'CONST';
 DISTXHOLE: 'DISTX';
+VECTOR: 'vector';
+MATRIX: 'matrix';
 ID: [a-zA-Z]+[a-zA-Z0-9_]*;
