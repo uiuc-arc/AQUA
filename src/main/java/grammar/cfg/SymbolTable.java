@@ -5,9 +5,11 @@ import java.util.Map;
 
 public class SymbolTable {
     private Map<String, SymbolInfo> table;
-    private BasicBlock parent;
+    private BasicBlock parentBlock;
+    private SymbolTable parent;
+
     public SymbolTable(BasicBlock basicBlock){
-        this.parent = basicBlock;
+        this.parentBlock = basicBlock;
         this.table = new HashMap<>();
     }
 
@@ -20,4 +22,16 @@ public class SymbolTable {
         }
     }
 
+    public SymbolInfo fetch(String name){
+        if(this.table.containsKey(name))
+            return this.table.get(name);
+        else
+            return null;
+    }
+
+    public SymbolTable fork(BasicBlock basicBlock){
+        SymbolTable symbolTable = new SymbolTable(basicBlock);
+        symbolTable.parent = this;
+        return symbolTable;
+    }
 }
