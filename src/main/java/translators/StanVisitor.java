@@ -44,4 +44,8 @@ public class StanVisitor {
             return expression.toString();
         }
     }
+
+    public static String evaluate(AST.Dims dims){
+        return "[" + dims.toString() + "]";
+    }
 }

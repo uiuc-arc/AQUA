@@ -8,7 +8,6 @@ INTEGERTYPE {$value=AST.Primitive.INTEGER;}
 | MATRIX {$value=AST.Primitive.MATRIX;}
 ;
 
-
 number returns [AST.Number value]
 : i=INT {$value = new AST.Integer($i.getText());}
 | d=DOUBLE {$value = new AST.Double($d.getText());}
@@ -80,7 +79,7 @@ vector returns [AST.Vector value]
 data returns [AST.Data value]
 @init {$value = new AST.Data(); ArrayList<AST.Annotation> at = new ArrayList<>();}
 : (annotation {at.add($annotation.value);})*
- decl {$value.decl = $decl.value;} ':'
+ decl {$value.decl = $decl.value; $value.decl.annotations = at;} ':'
 ( dt=dtype {$value.datatype = $dt.value;}
 | expr  {$value.expression = $expr.value;}
 | array {$value.array = $array.value;}

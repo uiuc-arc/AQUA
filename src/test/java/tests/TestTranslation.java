@@ -12,8 +12,7 @@ public class TestTranslation {
         StanTranslator stanTranslator = new StanTranslator();
         try {
             stanTranslator.translate(cfgBuilder.getSections());
-            System.out.println(stanTranslator.getDataSection());
-            System.out.println(stanTranslator.getModelSection());
+            System.out.println(stanTranslator.print());
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (Exception e) {

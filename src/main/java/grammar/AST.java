@@ -184,7 +184,15 @@ public class AST {
 
         @Override
         public String toString() {
-            return op1.toString() + "*" + op2.toString();
+            String op1String = op1.toString();
+            String op2String = op2.toString();
+            if(!(op1 instanceof Id || op1 instanceof Transpose)){
+                op1String = "(" + op1String + ")";
+            }
+            if(!(op2 instanceof Id || op2 instanceof Transpose)){
+                op2String = "(" + op2String + ")";
+            }
+            return op1String + "*" + op2String;
         }
     }
 
@@ -198,6 +206,14 @@ public class AST {
 
         @Override
         public String toString() {
+            String op1String = op1.toString();
+            String op2String = op2.toString();
+            if(!(op1 instanceof Id || op1 instanceof Transpose)){
+                op1String = "(" + op1String + ")";
+            }
+            if(!(op2 instanceof Id || op2 instanceof Transpose)){
+                op2String = "(" + op2String + ")";
+            }
             return op1.toString() + "/" + op2.toString();
         }
     }
@@ -484,6 +500,22 @@ public class AST {
     public static class Limits extends ASTNode{
         public Expression lower;
         public Expression upper;
+
+        @Override
+        public String toString() {
+            if(lower != null && upper != null){
+                return String.format("<lower=%s, upper=%s>", lower.toString(), upper.toString());
+            }
+            else if(lower != null){
+                return String.format("<lower=%s>", lower.toString());
+            }
+            else if(upper != null){
+                return String.format("<upper=%s>", upper.toString());
+            }
+            else{
+                return null;
+            }
+        }
     }
 
     public enum Marker{Start, End};

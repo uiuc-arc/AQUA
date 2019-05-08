@@ -2,6 +2,8 @@ package grammar.cfg;
 import grammar.AST;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BasicBlock {
     public ArrayList<Statement> getStatements() {
@@ -27,6 +29,17 @@ public class BasicBlock {
     ArrayList<Statement> statements;
     ArrayList<AST.Data> data;
     ArrayList<AST.Query> queries;
+
+    public Map<String, BasicBlock> getIncomingEdges() {
+        return incomingEdges;
+    }
+
+    Map<String, BasicBlock> incomingEdges;
+
+    public ArrayList<Edge> getEdges() {
+        return edges;
+    }
+
     ArrayList<Edge> edges;
     Section parent;
     SymbolTable symbolTable;
@@ -40,6 +53,7 @@ public class BasicBlock {
         queries = new ArrayList<>();
         edges = new ArrayList<>();
         symbolTable = new SymbolTable(this);
+        incomingEdges = new HashMap<>();
     }
 
     public BasicBlock(int id, Section section){

@@ -4,7 +4,17 @@ import org.jgrapht.graph.DefaultEdge;
 
 public class Edge extends DefaultEdge {
 
-    public BasicBlock target;
+    @Override
+    public BasicBlock getTarget() {
+        return target;
+    }
+
+    private BasicBlock target;
+
+    public String getLabel() {
+        return label;
+    }
+
     private String label;
 
     public Edge(BasicBlock target, String label){

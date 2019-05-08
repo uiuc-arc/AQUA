@@ -8,11 +8,9 @@ import grammar.Template3Lexer;
 import grammar.Template3Parser;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.jgrapht.Graph;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.SimpleGraph;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -47,9 +45,6 @@ public class CFGBuilder{
         this.basicBlocksStack = new Stack<>();
         this.showCFG = showCFG;
 
-//        this.curSection = new Section(SectionType.FUNCTION, "main");
-//        this.curBasicBlock = createBasicBlock();
-        //buildCFG(filename);
         if(outputfile != null)
             this.outputfile = outputfile;
         else
@@ -71,6 +66,7 @@ public class CFGBuilder{
     private void addEdge(BasicBlock from, BasicBlock to, String label){
         Edge edge = new Edge(to, label);
         from.edges.add(edge);
+        to.incomingEdges.put(label, from);
         this.graph.addEdge(from, to, edge);
 
     }
@@ -98,11 +94,17 @@ public class CFGBuilder{
 
             for (AST.Data data : program.data) {
                 basicBlock.data.add(data);
+                try {
+                    basicBlock.getSymbolTable().addEntry(data.decl, true);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
         if(program.statements.size() > 0) {
             section = createSection(SectionType.FUNCTION, "main");
+
             basicBlock = buildBasicBlock(program.statements, section, basicBlock, null);
         }
 
@@ -129,6 +131,8 @@ public class CFGBuilder{
         BasicBlock curBlock = createBasicBlock(section);
 
         if(prevBasicBlock != null){
+            // create new symbol table
+            prevBasicBlock.getSymbolTable().fork(curBlock);
             addEdge(prevBasicBlock, curBlock, label);
         }
 
@@ -140,7 +144,7 @@ public class CFGBuilder{
                     Section newsection = createSection(SectionType.NAMEDSECTION, wrapper.id.id);
                     BasicBlock newBlock = createBasicBlock(newsection);
                     addEdge(curBlock, newBlock, null);
-
+                    curBlock.getSymbolTable().fork(newBlock);
                     this.sectionStack.push(section);
                     section = newsection;
                     curBlock = newBlock;
@@ -171,6 +175,9 @@ public class CFGBuilder{
                 addEdge(trueBlock, newblock, null);
                 addEdge(falseBlock, newblock, null);
 
+//                // fork new symbol table
+//                curBlock.getSymbolTable().fork(newblock);
+
                 // change current block
                 curBlock = newblock;
             }
@@ -179,6 +186,7 @@ public class CFGBuilder{
                 BasicBlock loop_condition_block = createBasicBlock(section);
                 loop_condition_block.addStatement(forLoop);
 
+                curBlock.getSymbolTable().fork(loop_condition_block);
                 addEdge(curBlock, loop_condition_block, null);
 
                 //curBlock.statements.add(forLoop);
@@ -187,7 +195,19 @@ public class CFGBuilder{
                 //addEdge(loopbody, newblock, null);
                 addEdge(loop_condition_block, newblock, "false");
                 addEdge(loopbody, loop_condition_block, "back");
+
+                loop_condition_block.getSymbolTable().fork(newblock);
+
+
                 curBlock = newblock;
+            }
+            else if(statement instanceof AST.Decl){
+                try {
+                    curBlock.getSymbolTable().addEntry((AST.Decl) statement, false);
+                    curBlock.addStatement(statement);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             else{
                 curBlock.addStatement(statement);
@@ -199,6 +219,7 @@ public class CFGBuilder{
                     section = this.sectionStack.pop();
                     BasicBlock newblock = createBasicBlock(section);
                     addEdge(curBlock, newblock, null);
+                    curBlock.getSymbolTable().fork(newblock);
                     curBlock = newblock;
                     System.out.println("Moved out of section: " + wrapper.id.id);
                 }
@@ -207,7 +228,6 @@ public class CFGBuilder{
         }
 
         //returns last block
-
         return curBlock;
     }
 
@@ -240,13 +260,6 @@ public class CFGBuilder{
         return null;
     }
 
-//    public void buildCFG(String filename){
-//            Template3Parser parser = getParser(filename);
-//            ParseTreeWalker walker = new ParseTreeWalker();
-//            walker.walk(this, parser.template());
-//            showGraph();
-//    }
-
     private void showGraph(){
         JGraphXAdapter<BasicBlock, Edge> graphXAdapter = new JGraphXAdapter<BasicBlock, Edge>(this.graph);
         mxIGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);// new mxCircleLayout(graphXAdapter);
@@ -259,9 +272,6 @@ public class CFGBuilder{
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
-        //private JGraphXAdapter<String, DefaultEdge> jgxAdapter;
     }
 
 
