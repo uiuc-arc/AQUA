@@ -2,10 +2,18 @@ package translators;
 
 import grammar.AST;
 import grammar.cfg.*;
+import org.renjin.script.RenjinScriptEngineFactory;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+
 
 public class StanTranslator implements ITranslator{
 
@@ -30,6 +38,7 @@ public class StanTranslator implements ITranslator{
             if(section.sectionType == SectionType.DATA){
                 for(AST.Data data:section.basicBlocks.get(0).getData()){
                     dataSection += getDeclarationString(section.basicBlocks.get(0), data.decl);
+                    parseData(data);
                     //dataSection += processData(data) +"\n";
                 }
             }
@@ -224,6 +233,84 @@ public class StanTranslator implements ITranslator{
         }
 
         return "";
+    }
+
+    private ArrayList parseVector(AST.Vector vector){
+        ArrayList arr = new ArrayList();
+        if(vector.arrays != null && vector.arrays.size() > 0){
+            vector.arrays.forEach((e) -> arr.add(parseArray(e)));
+        }
+        else if(vector.vectors != null && vector.vectors.size() > 0){
+            vector.vectors.forEach((e) -> arr.add(parseVector(e)));
+        }
+        else {
+            vector.expressions.forEach((e) -> arr.add(e.toString()));
+        }
+
+        return arr;
+    }
+
+    private ArrayList parseArray(AST.Array array){
+        ArrayList arr = new ArrayList<>();
+        if(array.arrays != null && array.arrays.size() > 0){
+            array.arrays.forEach((e) -> arr.add(parseArray(e)));
+            return arr;
+        }
+        else if(array.vectors != null && array.vectors.size() > 0){
+            array.vectors.forEach((e) -> arr.add(parseVector(e)));
+        }
+        else{
+            array.expressions.forEach((e) -> arr.add(e.toString()));
+        }
+
+        return arr;
+    }
+
+    private String parseData(AST.Data data){
+        System.setProperty("org.apache.commons.logging.Log",
+            "org.apache.commons.logging.impl.NoOpLog");
+        RenjinScriptEngineFactory factory = new RenjinScriptEngineFactory();
+        ScriptEngine engine = factory.getScriptEngine();
+
+        System.out.println(data.decl.id.toString());
+        if(data.expression != null){
+            System.out.println(data.expression.toString());
+            engine.put(data.decl.id.toString(), Double.parseDouble(data.expression.toString()));
+            System.out.println(engine.get(data.decl.id.toString()));
+        }
+        else if(data.array != null){
+            System.out.println(parseArray(data.array));
+            engine.put(data.decl.id.toString(), parseArray(data.array));
+            System.out.println(engine.get(data.decl.id.toString()).toString());
+        }
+        else{
+            System.out.println(parseVector(data.vector));
+        }
+
+
+//        try {
+//            //engine.getContext().setWriter(new PrintWriter("/home/saikat/projects/grammars/src/test/resources/data.R"));
+//            //engine.put(data.decl.id, )
+//            engine.eval("r <- 5");
+//            System.out.println(engine.get("r").toString());
+//            //engine.eval("dump(r ,\"/home/saikat/projects/grammars/src/test/resources/data.R\")");
+//        }
+//        catch (ScriptException e) {
+//            e.printStackTrace();
+//        }
+
+        return null;
+    }
+
+    private void dumpR(AST.Data data, String filename){
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter(filename);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String dataString = parseData(data);
     }
 
 

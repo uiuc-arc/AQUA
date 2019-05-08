@@ -540,7 +540,7 @@ public class AST {
 
         @Override
         public String toString() {
-            return id.toString() + (array != null ? ": array" : ": vector");
+            return decl.id.toString() + (array != null ? ": array" : ": vector");
         }
     }
 

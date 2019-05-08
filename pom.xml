@@ -15,6 +15,14 @@
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>bedatadriven</id>
+            <name>bedatadriven public repo</name>
+            <url>https://nexus.bedatadriven.com/content/groups/public/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -41,6 +49,16 @@
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-ext</artifactId>
             <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.renjin</groupId>
+            <artifactId>renjin-script-engine</artifactId>
+            <version>RELEASE</version>
+        </dependency>
+        <dependency>
+            <groupId>org.renjin.cran</groupId>
+            <artifactId>exptest</artifactId>
+            <version>1.2-b214</version>
         </dependency>
     </dependencies>
     <build>
