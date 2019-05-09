@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 # first argument is the directory where everthing should be setup
+rp=`realpath $0`
+bp=`dirname $rp`
+echo $bp
+cd $bp
 
 file=$1
 data=$2
@@ -10,6 +14,7 @@ echo $pwd
 if [ ! -d "cmdstan-2.19.1" ]; then
     wget https://github.com/stan-dev/cmdstan/releases/download/v2.19.1/cmdstan-2.19.1.tar.gz
     tar -xf cmdstan-2.19.1.tar.gz
+    rm -f cmdstan-2.19.1.tar.gz
 fi
 
 cd cmdstan-2.19.1

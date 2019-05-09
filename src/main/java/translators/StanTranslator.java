@@ -2,17 +2,15 @@ package translators;
 
 import grammar.AST;
 import grammar.cfg.*;
-import org.nd4j.config.ND4JSystemProperties;
+import org.apache.commons.lang3.tuple.Pair;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
-import org.renjin.script.RenjinScriptEngineFactory;
+import utils.Utils;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptException;
-import java.awt.image.DataBuffer;
-import java.io.*;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,21 +18,13 @@ import java.util.Set;
 
 public class StanTranslator implements ITranslator{
 
-    public String getDataSection() {
-        return dataSection;
-    }
-
-    public String getModelSection() {
-        return modelSection;
-    }
-
-    String dataSection = "";
-    String paramSection = "";
-    String transformedData = "";
-    String transformedParam = "";
-    String modelSection = "";
-    String generatedQuantities = "";
-    String dataR = "";
+    private String dataSection = "";
+    private String paramSection = "";
+    private String transformedData = "";
+    private String transformedParam = "";
+    private String modelSection = "";
+    private String generatedQuantities = "";
+    private String dataR = "";
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
@@ -42,10 +32,9 @@ public class StanTranslator implements ITranslator{
             if(section.sectionType == SectionType.DATA){
                 for(AST.Data data:section.basicBlocks.get(0).getData()){
                     dataSection += getDeclarationString(section.basicBlocks.get(0), data.decl);
-                    // parseData(data);
-                    //dataSection += processData(data) +"\n";
                 }
-                dataR = dumpR(section.basicBlocks.get(0).getData(), "/home/saikat/projects/grammars/src/test/resources/test3.R");
+
+                dataR = dumpR(section.basicBlocks.get(0).getData());
             }
             else if(section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName.equals("main")){
@@ -107,7 +96,7 @@ public class StanTranslator implements ITranslator{
         }
 
         if(transformedParam != null && transformedParam.length() > 0){
-            stanCode += "transformed param{\n" + transformedParam + "}\n";
+            stanCode += "transformed parameters{\n" + transformedParam + "}\n";
         }
 
         if(modelSection != null && modelSection.length() > 0){
@@ -179,7 +168,7 @@ public class StanTranslator implements ITranslator{
 
         declarationString = declarationString.replace("FLOAT", "real").
                 replace("INTEGER", "int").
-                replace("VECTOR", "vector");
+                replace("VECTOR", "vector").replace("MATRIX", "matrix");
         return declarationString;
     }
 
@@ -330,7 +319,7 @@ public class StanTranslator implements ITranslator{
         return "[" + res.substring(0, res.length() -1) + "]";
     }
 
-    private String dumpR(ArrayList<AST.Data> dataSets, String filename){
+    private String dumpR(ArrayList<AST.Data> dataSets){
         StringWriter stringWriter = null;
         stringWriter = new StringWriter();
 
@@ -414,6 +403,30 @@ public class StanTranslator implements ITranslator{
 
     @Override
     public void run() {
+        run("/tmp/stancode.stan", "/tmp/stancode.R");
+    }
+
+    public void run(String codeFileName, String dataFileName){
+        System.out.println("Running Stan...");
+        try {
+            FileWriter fileWriter = new FileWriter(codeFileName);
+            fileWriter.write(this.getCode());
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try{
+            FileWriter fileWriter = new FileWriter(dataFileName);
+            fileWriter.write(this.getData());
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        Pair results = Utils.runStan(codeFileName, dataFileName);
+        System.out.println(results.getLeft());
+        System.out.println(results.getRight());
 
     }
 }
