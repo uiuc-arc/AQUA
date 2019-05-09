@@ -2,14 +2,17 @@ package translators;
 
 import grammar.AST;
 import grammar.cfg.*;
+import org.nd4j.config.ND4JSystemProperties;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.renjin.script.RenjinScriptEngineFactory;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.awt.image.DataBuffer;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,6 +34,7 @@ public class StanTranslator implements ITranslator{
     String transformedParam = "";
     String modelSection = "";
     String generatedQuantities = "";
+    String dataR = "";
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
@@ -38,9 +42,10 @@ public class StanTranslator implements ITranslator{
             if(section.sectionType == SectionType.DATA){
                 for(AST.Data data:section.basicBlocks.get(0).getData()){
                     dataSection += getDeclarationString(section.basicBlocks.get(0), data.decl);
-                    parseData(data);
+                    // parseData(data);
                     //dataSection += processData(data) +"\n";
                 }
+                dataR = dumpR(section.basicBlocks.get(0).getData(), "/home/saikat/projects/grammars/src/test/resources/test3.R");
             }
             else if(section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName.equals("main")){
@@ -82,7 +87,11 @@ public class StanTranslator implements ITranslator{
         }
     }
 
-    public String print(){
+    public String getData(){
+        return this.dataR;
+    }
+
+    public String getCode(){
         String stanCode = "";
 
         if(dataSection != null && dataSection.length() > 0){
@@ -235,85 +244,129 @@ public class StanTranslator implements ITranslator{
         return "";
     }
 
-    private ArrayList parseVector(AST.Vector vector){
-        ArrayList arr = new ArrayList();
-        if(vector.arrays != null && vector.arrays.size() > 0){
-            vector.arrays.forEach((e) -> arr.add(parseArray(e)));
-        }
-        else if(vector.vectors != null && vector.vectors.size() > 0){
-            vector.vectors.forEach((e) -> arr.add(parseVector(e)));
-        }
-        else {
-            vector.expressions.forEach((e) -> arr.add(e.toString()));
-        }
-
-        return arr;
+    private INDArray parseVector(AST.Vector vector, boolean isInteger){
+        return getIndArray(vector.arrays, vector.vectors, vector.expressions, isInteger);
     }
 
-    private ArrayList parseArray(AST.Array array){
-        ArrayList arr = new ArrayList<>();
-        if(array.arrays != null && array.arrays.size() > 0){
-            array.arrays.forEach((e) -> arr.add(parseArray(e)));
-            return arr;
+    private INDArray getIndArray(ArrayList<AST.Array> arrays, ArrayList<AST.Vector> vectors, ArrayList<AST.Expression> expressions, boolean isInteger) {
+        INDArray arrnd = null;
+        if(arrays != null && arrays.size() > 0){
+            //arrnd = null;
+            int i = 0;
+            for(AST.Array arr1: arrays){
+                INDArray newarr = parseArray(arr1, isInteger);
+                if(arrnd == null){
+                    arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, arrays.size(), newarr.columns());
+                }
+
+                arrnd.putRow(i++, newarr);
+            }
         }
-        else if(array.vectors != null && array.vectors.size() > 0){
-            array.vectors.forEach((e) -> arr.add(parseVector(e)));
+        else if(vectors != null && vectors.size() > 0){
+//            arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, vectors.size());
+            int i =0;
+            for(AST.Vector arr1: vectors){
+                INDArray newarr = parseVector(arr1, isInteger);
+                if(arrnd == null){
+                    arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, vectors.size(), newarr.columns());
+                }
+                arrnd.putRow(i++, newarr);
+            }
         }
         else{
-            array.expressions.forEach((e) -> arr.add(e.toString()));
+            arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, expressions.size());
+            int i=0;
+            for(AST.Expression val: expressions){
+                if(!isInteger) {
+                    arrnd.putScalar(i++, Double.parseDouble(val.toString()));
+                }
+                else {
+                    arrnd.putScalar(i++, Integer.parseInt(val.toString()));
+                }
+            }
         }
 
-        return arr;
+
+        return arrnd;
+    }
+
+    private INDArray parseArray(AST.Array array, boolean isInteger){
+        return getIndArray(array.arrays, array.vectors, array.expressions, isInteger);
     }
 
     private String parseData(AST.Data data){
-        System.setProperty("org.apache.commons.logging.Log",
-            "org.apache.commons.logging.impl.NoOpLog");
-        RenjinScriptEngineFactory factory = new RenjinScriptEngineFactory();
-        ScriptEngine engine = factory.getScriptEngine();
+        //System.setProperty("org.apache.commons.logging.Log",            "org.apache.commons.logging.impl.NoOpLog");
 
         System.out.println(data.decl.id.toString());
         if(data.expression != null){
-            System.out.println(data.expression.toString());
-            engine.put(data.decl.id.toString(), Double.parseDouble(data.expression.toString()));
-            System.out.println(engine.get(data.decl.id.toString()));
+            return data.expression.toString();
         }
         else if(data.array != null){
-            System.out.println(parseArray(data.array));
-            engine.put(data.decl.id.toString(), parseArray(data.array));
-            System.out.println(engine.get(data.decl.id.toString()).toString());
+            INDArray ndarray = parseArray(data.array, data.decl.dtype.primitive == AST.Primitive.INTEGER);
+
+            if(ndarray.shape().length > 1){
+                return  printArray(Nd4j.toFlattened('f', ndarray));
+            }
+            else{
+                return  printArray(Nd4j.toFlattened(ndarray));
+            }
         }
         else{
-            System.out.println(parseVector(data.vector));
+            INDArray ndarray = parseVector(data.vector, data.decl.dtype.primitive == AST.Primitive.INTEGER);
+            if(ndarray.shape().length > 1){
+                return  printArray(Nd4j.toFlattened('f', ndarray));
+            }
+            else{
+                return printArray(Nd4j.toFlattened(ndarray));
+            }
         }
-
-
-//        try {
-//            //engine.getContext().setWriter(new PrintWriter("/home/saikat/projects/grammars/src/test/resources/data.R"));
-//            //engine.put(data.decl.id, )
-//            engine.eval("r <- 5");
-//            System.out.println(engine.get("r").toString());
-//            //engine.eval("dump(r ,\"/home/saikat/projects/grammars/src/test/resources/data.R\")");
-//        }
-//        catch (ScriptException e) {
-//            e.printStackTrace();
-//        }
-
-        return null;
     }
 
-    private void dumpR(AST.Data data, String filename){
-        FileWriter fileWriter = null;
+    private String printArray(INDArray array){
+        String res = "";
+        for(int i =0; i < array.length(); i++){
+            res += array.getDouble(i)+",";
+        }
+        return "[" + res.substring(0, res.length() -1) + "]";
+    }
+
+    private String dumpR(ArrayList<AST.Data> dataSets, String filename){
+        StringWriter stringWriter = null;
+        stringWriter = new StringWriter();
+
+        for(AST.Data data:dataSets) {
+            String dataString = parseData(data);
+            String dimsString = "";
+            if (data.decl.dtype.dims != null && data.decl.dtype.dims.dims.size() > 0) {
+                dimsString += data.decl.dtype.dims.toString();
+            }
+            if (data.decl.dims != null && data.decl.dims.dims.size() > 0) {
+                if (dimsString.length() > 0) {
+                    dimsString += ",";
+                }
+                dimsString += data.decl.dims.toString();
+            }
+
+            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "");
+            if(dimsString.length() == 0) {
+                stringWriter.write(String.format("%s <- %s\n", data.decl.id, dataString));
+            }
+            else if(dimsString.split(",").length == 1){
+                stringWriter.write(String.format("%s <- c(%s)\n", data.decl.id, dataString));
+            }
+            else{
+                stringWriter.write(String.format("%s <- structure(c(%s), .Dim=c(%s))\n", data.decl.id, dataString, dimsString));
+            }
+        }
+
         try {
-            fileWriter = new FileWriter(filename);
+            stringWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        String dataString = parseData(data);
+        return stringWriter.toString();
     }
-
-
 
     private String processData(AST.Data data) throws IllegalAccessException {
         String typeString = "";
