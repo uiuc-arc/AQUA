@@ -10,17 +10,34 @@ import utils.Utils;
 public class TestTransformer {
 
     @Test
+    @Ignore
     public void TestNormal2T(){
         CFGBuilder cfgBuilder = new CFGBuilder("/home/zixin/Documents/are/PPVM/templates/basic/basic.template", null, false);
 
-        Normal2T normal2T = new Normal2T();
+        TransformController transformController = new TransformController(cfgBuilder.getSections());
         try {
-            normal2T.transform(cfgBuilder.getSections());
+            transformController.analyze();
+            transformController.transform();
             StanTranslator stanTranslator = new StanTranslator();
             stanTranslator.translate(cfgBuilder.getSections());
             stanTranslator.run();
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void TestUndo(){
+        CFGBuilder cfgBuilder = new CFGBuilder("/home/zixin/Documents/are/PPVM/templates/basic/basic.template", null, false);
+
+        TransformController transformController = new TransformController(cfgBuilder.getSections());
+        try {
+            transformController.analyze();
+            transformController.transform();
+            transformController.undoAll();
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate(cfgBuilder.getSections());
+            stanTranslator.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
