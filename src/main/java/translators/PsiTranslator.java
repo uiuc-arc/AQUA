@@ -21,7 +21,9 @@ public class PsiTranslator implements ITranslator{
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
-
+        for (Section sec : sections){
+            System.out.println(sec);
+        }
     }
 
     @Override
@@ -33,20 +35,7 @@ public class PsiTranslator implements ITranslator{
 
     }
 
-    public static void main(String args[]){
-        String filename = "src/test/resources/test3.template";
-        String outputFile= filename+".png";
-        CFGBuilder cfg = new CFGBuilder(filename, outputFile);
-        //Template3Parser parser = trans.getParser(filename);
-        //AST.Program program = parser.template().value;
 
-        PsiTranslator trans = new PsiTranslator();
-        try {
-            trans.translate(cfg.getSections());
-        } catch (Exception e){
-
-        }
-    }
 
 
     public void parse(AST.Program program){
