@@ -90,8 +90,9 @@ data returns [AST.Data value]
 
 function_call returns [AST.FunctionCall value]
 @init {$value = new AST.FunctionCall();}
-: (( ID {$value.id = new AST.Id($ID.getText());} | DISTHOLE {$value.isDist = true;} ) '(' (e1=expr {$value.parameters.add($e1.value);}  (',' e2=expr {$value.parameters.add($e2.value);} )*)? ')' )
-| DISTXHOLE {$value.isDistX = true;}
+: ((( ID {$value.id = new AST.Id($ID.getText());} | DISTHOLE {$value.isDistHole = true;} ) '(' (e1=expr {$value.parameters.add($e1.value);}  (',' e2=expr {$value.parameters.add($e2.value);} )*)? ')' )
+| DISTXHOLE {$value.isDistX = true;})
+{$value.checkDist();}
 ;
 for_loop returns [AST.ForLoop value]
 : 'for' '(' ID 'in' e1=expr ':' e2=expr ')' block {$value=new AST.ForLoop(new AST.Id($ID.getText()), new AST.Range($e1.value, $e2.value), $block.value);};
@@ -118,7 +119,7 @@ statement returns [AST.Statement value]
 | if_stmt {$value = $if_stmt.value;}
 | for_loop {$value = $for_loop.value;}
 | function_call {$value = new AST.FunctionCallStatement($function_call.value); }
-| decl {$value= $decl.value;} )
+| decl {$value= $decl.value;})
 {$value.annotations = at;}
 ;
 
@@ -163,7 +164,8 @@ expr returns [AST.Expression value]
     | ID '[' dims ']'       {$value = new AST.ArrayAccess(new AST.Id($ID.getText()), $dims.value);}
     | st=STRING             {$value = new AST.StringValue($st.getText());}
     | CONSTHOLE             {$value = new AST.ConstHole();}
-    ;
+
+;
 
 query returns  [AST.Query value]
 @init {$value = new AST.Query();}
