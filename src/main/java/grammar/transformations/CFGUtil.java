@@ -1,0 +1,69 @@
+package grammar.transformations;
+
+import grammar.AST;
+import grammar.cfg.BasicBlock;
+import grammar.cfg.Statement;
+import grammar.cfg.SymbolInfo;
+
+public class CFGUtil {
+
+    public static BasicBlock getNextBlock(BasicBlock curBlock){
+        if(curBlock.getEdges().size() > 0){
+            // check true edge first
+            if(curBlock.getEdges().size() == 1){
+                return curBlock.getEdges().get(0).getTarget();
+            }
+            else{
+                String label = curBlock.getEdges().get(0).getLabel();
+                if(label != null && label.equalsIgnoreCase("true")){
+                    return curBlock.getEdges().get(0).getTarget();
+                }
+                else{
+                    return curBlock.getEdges().get(1).getTarget();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static boolean isPrior(Statement statement, AST.Expression expression){
+        // get id
+        String id = null;
+        if(expression instanceof AST.Id){
+            id = expression.toString();
+        }
+        else if(expression instanceof AST.ArrayAccess){
+            id = ((AST.ArrayAccess) expression) .id.toString();
+        }
+
+        if(id != null){
+            SymbolInfo info = statement.parent.getSymbolTable().fetch(id);
+            if(info != null)
+                return info.isPriorVariable();
+        }
+
+        return false;
+    }
+
+    public static boolean isData(Statement statement, AST.Expression expression){
+        // get id
+        String id = null;
+        if(expression instanceof AST.Id){
+            id = expression.toString();
+        }
+        else if(expression instanceof AST.ArrayAccess){
+            id = ((AST.ArrayAccess) expression).id.toString();
+        }
+
+        if(id != null){
+            SymbolInfo info = statement.parent.getSymbolTable().fetch(id);
+            if(info != null)
+                return info.isData();
+            else{
+                System.out.println("Variable not found " +id);
+            }
+        }
+
+        return false;
+    }
+}
