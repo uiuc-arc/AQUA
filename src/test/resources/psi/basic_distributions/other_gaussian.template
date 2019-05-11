@@ -1,0 +1,7 @@
+float a
+float b
+float c
+a = gauss(0,1)
+b = gauss(1,2)
+c = a+b
+posterior(c)

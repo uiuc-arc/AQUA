@@ -1,0 +1,28 @@
+def main() {
+	data := [0, 1, 0, 1, 2, 3, 1, 1	];
+	p1 := [0.375, 0.375, 0.125, 0.125	];
+	p2 := [0.25, 0.25, 0.25, 0.25	];
+	hypothesis := 0;
+	hypothesis = 1;
+	if 	bernoulli(0.5)
+	{
+		hypothesis = 1;
+	}
+	else
+	{
+	}
+
+	for i in [0 .. 8)	{
+		if 		hypothesis == 0
+		{
+			c = categorical(p1);
+		}
+		else
+		{
+			c = categorical(p2);
+		}
+
+	}
+
+	return hypothesis;
+}

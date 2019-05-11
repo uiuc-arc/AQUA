@@ -5,11 +5,12 @@ import org.junit.Test;
 import translators.PsiTranslator;
 
 import java.io.File;
+import java.io.FileOutputStream;
 
 public class TestPSI {
     @Test
     public void testBasicDistribution(){
-        String dirPath= "src/test/resources/psi/probmods/";
+        String dirPath= "src/test/resources/psi/basic_distributions/";
         File folder = new File(dirPath);
         String[] files = folder.list();
         for (String file : files) {
@@ -17,14 +18,63 @@ public class TestPSI {
                 System.out.println("Parsing: " + file );
                 String filename = dirPath + file;
                 String outputFile = filename.substring(0, filename.length()-9) + ".psi";
+
                 PsiTranslator trans = new PsiTranslator();
+                try{
+                    FileOutputStream out = new FileOutputStream(outputFile);
+                    trans.setOut(out);
+                } catch(Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
                     trans.translate(cfgBuilder.getSections());
-                } catch (Exception e){
+                    trans.run(outputFile);
 
+                } catch (Exception e){
+                    e.printStackTrace();
                 }
             }
         }
+    }
+    @Test
+    public void testObserve(){
+        String filePath= "src/test/resources/psi/basic_distributions/observe.template";
+        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try{
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch(Exception e){
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+    @Test
+    public void testStan(){
+        String filePath= "src/test/resources/stan2237.template";
+        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        trans.setOut(System.out);
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e){
+            e.printStackTrace();
+
+        }
+
     }
 }

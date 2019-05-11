@@ -1,0 +1,4 @@
+float probs : [1/3, 2/3]
+float c
+c = categorical(probs)
+posterior(c)

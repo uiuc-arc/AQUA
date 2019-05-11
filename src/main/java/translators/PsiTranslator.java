@@ -1,5 +1,6 @@
 package translators;
 
+import com.github.os72.protobuf351.ByteString;
 import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.*;
@@ -10,20 +11,44 @@ import utils.Utils;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.io.OutputStream;
+import java.util.*;
 
 public class PsiTranslator implements ITranslator{
 
     private String defaultIndent = "\t";
+    private OutputStream out;
+
+    public void setOut(OutputStream o){
+        out = o;
+    }
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
-        for (Section sec : sections){
-            System.out.println(sec);
+        for (Section section : sections){
+            if(section.sectionType == SectionType.DATA){
+                parseData(section.basicBlocks.get(0).getData(), "");
+            } else if(section.sectionType == SectionType.FUNCTION){
+                if(section.sectionName == "main"){
+                    dump("def main() {\n", "");
+                    for (BasicBlock bb : section.basicBlocks) {
+
+                        parse(bb.getStatements());
+                    }
+                } else {
+                    throw new Exception("Unsupport Function: " + section.sectionName);
+                }
+            } else if (section.sectionType == SectionType.QUERIES){
+                parseQueries(section.basicBlocks.get(0).getQueries(), "");
+                dump("\n}\n");
+                return;
+            } else {
+                throw new Exception("Unsupport section: " + section.sectionName + " " + section.sectionType);
+
+            }
+
         }
+
     }
 
     @Override
@@ -31,27 +56,20 @@ public class PsiTranslator implements ITranslator{
 
     }
 
-    public void run(String codeFileName, String dataFileName){
-
+    public void run(String codeFileName){
+        Pair results = Utils.runPsi(codeFileName);
+        System.out.println(results.getLeft());
+        System.out.println(results.getRight());
     }
 
 
 
 
-    public void parse(AST.Program program){
-        dump("def main() {\n", "");
-        parseData(program.data, defaultIndent);
-        parse(program.statements);
-        parseQueries(program.queries, defaultIndent);
-
-        dump("\n}\n", "");
-
-    }
     public void parseQueries(List<AST.Query> queries, String indent){
         int size = queries.size();
         dump("return ", indent);
         if(size == 1){
-            dump(queries.get(0) + ";");
+            dump(queries.get(0).id + ";");
         } else {
             dump("(");
             for (int i = 0; i < size; ++i){
@@ -67,7 +85,7 @@ public class PsiTranslator implements ITranslator{
     public void parseData(List<AST.Data> data, String indent){
         for(AST.Data d : data){
             if (d.array != null){
-                dump(d.id.toString() + " := ", indent);
+                dump(d.decl.id.toString() + " := ", indent);
                 dump("[");
                 int length = d.array.expressions.size();
                 for (int i = 0; i < length; ++i){
@@ -78,73 +96,91 @@ public class PsiTranslator implements ITranslator{
                 }
                 dump("];\n", indent);
             } else {
-                dump(d.id.toString().substring(1) + " := ", indent);
+                dump(d.decl.id.toString() + " := ", indent);
                 dump("array(" + d.vector+ ");\n");
             }
         }
 
     }
 
+    public void parse(ArrayList<Statement> stmts){
+        for(Statement stmt : stmts){
+            parse(stmt);
+            dump("\n");
+        }
+    }
     public void parse(List<AST.Statement> stmts){
         for(AST.Statement stmt : stmts){
             parse(stmt);
-            dump("\n", "");
-        }
-    }
-    public void parse(List<AST.Statement> stmts, String indent){
-        for(AST.Statement stmt : stmts){
-            parse(stmt, indent);
-            dump("\n", "");
+            dump("\n");
         }
     }
     public void dump(String str){
-        System.out.print(str);
+        try {
+            this.out.write(str.getBytes());
+        } catch (Exception e){
+            e.printStackTrace();
+        }
 
     }
     public void dump(String str, String indent){
-        System.out.print(indent + str);
+        dump(str + indent);
     }
-    public void dumpLeftParenthesis(String indent){
-        dump("{\n", indent);
+    public void parse(AST.Block bb){
+        dump("{");
+        parse(bb.statements);
+        dump("}");
     }
-    public void dumpRightParenthesis(String indent){
-        dump("}\n", indent);
-    }
-    public void parse(AST.Block bb, String indent){
-        dumpLeftParenthesis(indent);
-        parse(bb.statements, indent + defaultIndent);
-        dumpRightParenthesis(indent);
-    }
-    public void parse(AST.Statement s){
-        parse(s, "\t");
+    public void parse(Statement s){
+        parse(s.statement);
     }
 
-    public void parse(AST.Expression exp, String indent){
-        dump("if ", indent);
-        dump(exp.toString() + "\n", indent);
+    public void parse(AST.Expression exp ){
+        dump("if ");
+        dump(exp.toString() + "\n");
     }
-    public void parse(AST.Statement s, String indent){
+    public boolean observe(AST.Statement s){
+        boolean res = true;
+
+        for (AST.Annotation ann : s.annotations){
+            if(ann.annotationType == AST.AnnotationType.Observe){
+                dump("observe(");
+                dump(s.toString());
+                dump(");");
+            } else {
+                res = false;
+            }
+
+        }
+        return res;
+    }
+    public void parse(AST.Statement s){
+        if(s.annotations.size()!=0){
+            if (observe(s)){
+                return;
+            }
+        }
         if (s instanceof AST.IfStmt){
             AST.IfStmt ifstmt = (AST.IfStmt) s;
-            parse(ifstmt.condition, indent);
-            parse(ifstmt.trueBlock, indent);
-            dump("else\n", indent);
-            parse(ifstmt.elseBlock, indent);
+            parse(ifstmt.condition);
+            parse(ifstmt.trueBlock);
+            dump("else\n");
+            parse(ifstmt.elseBlock);
         } else if (s instanceof AST.AssignmentStatement) {
             AST.AssignmentStatement assign = (AST.AssignmentStatement) s;
-            dump(assign.toString() + ";", indent);
+            dump(assign.toString() + ";");
         } else if (s instanceof AST.ForLoop) {
             AST.ForLoop fl = (AST.ForLoop) s;
-            dump("for ", indent);
+            dump("for ");
             dump(fl.loopVar.toString());
             dump(" in " + fl.range);
-            parse(fl.block, indent);
+            parse(fl.block);
         } else if (s instanceof AST.Decl){
             AST.Decl decl = (AST.Decl) s;
             if(decl.dtype.primitive == AST.Primitive.FLOAT){
-                dump(decl.id.toString() + " = 0.0;", indent);
+                dump(decl.id.toString() + " := 0.0;");
             } else {
-                dump(decl.id.toString() + " = 0;", indent);
+                dump(decl.id.toString() + " := 0;");
             }
 
         } else {

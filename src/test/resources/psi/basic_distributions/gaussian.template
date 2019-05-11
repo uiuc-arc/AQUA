@@ -1,0 +1,3 @@
+float a
+a=gauss(0,1)
+posterior(a)

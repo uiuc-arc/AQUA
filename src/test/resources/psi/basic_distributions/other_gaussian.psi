@@ -1,0 +1,9 @@
+def main() {
+a := 0.0;
+b := 0.0;
+c := 0.0;
+a = gauss(0,1);
+b = gauss(1,2);
+c = a+b;
+return c;
+}
