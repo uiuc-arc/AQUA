@@ -1,8 +1,9 @@
 float a
 a = gauss(0, 1)
 if( a > 0){
-    a=b
-}  else {
+    @observe
     a=a
+}  else {
+    
 }
 posterior(a)

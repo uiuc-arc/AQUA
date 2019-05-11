@@ -23,6 +23,40 @@ public class PsiTranslator implements ITranslator{
         out = o;
     }
 
+    public void visitBlock(BasicBlock currBlock, Set<BasicBlock> visitedBlock){
+        List<Statement> statements = currBlock.getStatements();
+        int size = statements.size();
+        for(int i = 0; i < size-1; ++i){
+            parse(statements.get(i).statement);
+        }
+        AST.Statement lastStatement = null;
+        if(size >= 1){
+             lastStatement = statements.get(size-1).statement;
+        } else {
+            return;
+        }
+        parse(lastStatement);
+        if(lastStatement instanceof AST.IfStmt){
+            List<Edge> edges = currBlock.getEdges();
+            assert(edges.size() == 2);
+            BasicBlock trueBranch = edges.get(0).getTarget();
+            BasicBlock falseBranch= edges.get(1).getTarget();
+            if(!visitedBlock.contains(trueBranch)){
+                dump("{");
+                visitBlock(trueBranch, visitedBlock);
+                dump("}");
+                visitedBlock.add(trueBranch);
+            } 
+            if(!visitedBlock.contains(falseBranch)){
+                dump("else\n");
+                dump("{");
+                visitBlock(falseBranch, visitedBlock);
+                dump("}");
+                visitedBlock.add(falseBranch);
+            }
+        }
+
+    }
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
         for (Section section : sections){
@@ -31,10 +65,12 @@ public class PsiTranslator implements ITranslator{
             } else if(section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName == "main"){
                     dump("def main() {\n", "");
-                    for (BasicBlock bb : section.basicBlocks) {
+                    Set<BasicBlock> visitedBlock = new HashSet<>();
+                    List<BasicBlock> blocks = section.basicBlocks;
+                    BasicBlock currBlock = section.basicBlocks.get(0);
+                    List<Statement> statements = currBlock.getStatements();
+                    visitBlock(currBlock, visitedBlock);
 
-                        parse(bb.getStatements());
-                    }
                 } else {
                     throw new Exception("Unsupport Function: " + section.sectionName);
                 }
@@ -138,8 +174,9 @@ public class PsiTranslator implements ITranslator{
     }
 
     public void parse(AST.Expression exp ){
-        dump("if ");
-        dump(exp.toString() + "\n");
+        dump("if( ");
+
+        dump(exp.toString() + ")\n");
     }
     public boolean observe(AST.Statement s){
         boolean res = true;
