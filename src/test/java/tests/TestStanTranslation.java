@@ -6,10 +6,9 @@ import org.junit.Test;
 import translators.StanTranslator;
 import utils.Utils;
 
-public class TestTranslation {
+public class TestStanTranslation {
 
     @Test
-    @Ignore
     public void TestStanTranslation(){
         CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/stan2237.template", null, false);
 

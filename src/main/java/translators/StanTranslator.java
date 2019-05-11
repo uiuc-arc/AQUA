@@ -3,9 +3,7 @@ package translators;
 import grammar.AST;
 import grammar.cfg.*;
 import org.apache.commons.lang3.tuple.Pair;
-import org.nd4j.linalg.api.buffer.DataType;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
+import translators.visitors.StanVisitor;
 import utils.Utils;
 
 import java.io.FileWriter;
@@ -14,7 +12,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-
 
 public class StanTranslator implements ITranslator{
 
@@ -111,7 +108,6 @@ public class StanTranslator implements ITranslator{
     }
 
     private String translate_block(BasicBlock bBlock){
-        SymbolTable symbolTable = bBlock.getSymbolTable();
         String output = "";
         if(bBlock.getStatements().size() == 0)
             return output;
@@ -119,11 +115,11 @@ public class StanTranslator implements ITranslator{
         for(Statement statement:bBlock.getStatements()){
             if(statement.statement instanceof AST.AssignmentStatement){
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
-                if(isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)){
-                    output += StanVisitor.evaluate(assignmentStatement.lhs) + "~" + StanVisitor.evaluate(assignmentStatement.rhs) +";\n";
+                if(Utils.isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)){
+                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "~" + new StanVisitor().evaluate(assignmentStatement.rhs) +";\n";
                 }
                 else {
-                    output += StanVisitor.evaluate(assignmentStatement.lhs) + "=" + StanVisitor.evaluate(assignmentStatement.rhs) + ";\n";
+                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "=" + new StanVisitor().evaluate(assignmentStatement.rhs) + ";\n";
                 }
             }
             else if(statement.statement instanceof AST.ForLoop){
@@ -134,7 +130,7 @@ public class StanTranslator implements ITranslator{
                 AST.Decl declaration = (AST.Decl) statement.statement;
                 String declarationString = getDeclarationString(statement, declaration);
 
-                if(statement.parent.getParent().sectionName.equalsIgnoreCase("main") && isPrior(statement, declaration.id)){
+                if(statement.parent.getParent().sectionName.equalsIgnoreCase("main") && Utils.isPrior(statement, declaration.id)){
                     this.paramSection+= declarationString;
                 }
                 else{
@@ -162,9 +158,9 @@ public class StanTranslator implements ITranslator{
                 declarationStringFormat,
                 declaration.dtype.primitive.toString(),
                 getLimitsString(basicBlock, declaration.id),
-                declaration.dtype.dims != null ? StanVisitor.evaluate(declaration.dtype.dims) : "",
+                declaration.dtype.dims != null ? new StanVisitor().evaluate(declaration.dtype.dims) : "",
                 declaration.id.toString(),
-                declaration.dims != null ? StanVisitor.evaluate(declaration.dims) : "");
+                declaration.dims != null ? new StanVisitor().evaluate(declaration.dims) : "");
 
         declarationString = declarationString.replace("FLOAT", "real").
                 replace("INTEGER", "int").
@@ -172,24 +168,7 @@ public class StanTranslator implements ITranslator{
         return declarationString;
     }
 
-    private boolean isPrior(Statement statement, AST.Expression expression){
-        // get id
-        String id = null;
-        if(expression instanceof AST.Id){
-            id = expression.toString();
-        }
-        else if(expression instanceof AST.ArrayAccess){
-            id = ((AST.ArrayAccess) expression) .id.toString();
-        }
 
-        if(id != null){
-            SymbolInfo info = statement.parent.getSymbolTable().fetch(id);
-            if(info != null)
-                return info.isPriorVariable();
-        }
-
-        return false;
-    }
 
     private boolean isData(Statement statement, AST.Expression expression){
         // get id
@@ -233,98 +212,15 @@ public class StanTranslator implements ITranslator{
         return "";
     }
 
-    private INDArray parseVector(AST.Vector vector, boolean isInteger){
-        return getIndArray(vector.arrays, vector.vectors, vector.expressions, isInteger);
-    }
-
-    private INDArray getIndArray(ArrayList<AST.Array> arrays, ArrayList<AST.Vector> vectors, ArrayList<AST.Expression> expressions, boolean isInteger) {
-        INDArray arrnd = null;
-        if(arrays != null && arrays.size() > 0){
-            //arrnd = null;
-            int i = 0;
-            for(AST.Array arr1: arrays){
-                INDArray newarr = parseArray(arr1, isInteger);
-                if(arrnd == null){
-                    arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, arrays.size(), newarr.columns());
-                }
-
-                arrnd.putRow(i++, newarr);
-            }
-        }
-        else if(vectors != null && vectors.size() > 0){
-//            arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, vectors.size());
-            int i =0;
-            for(AST.Vector arr1: vectors){
-                INDArray newarr = parseVector(arr1, isInteger);
-                if(arrnd == null){
-                    arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, vectors.size(), newarr.columns());
-                }
-                arrnd.putRow(i++, newarr);
-            }
-        }
-        else{
-            arrnd = Nd4j.zeros(isInteger ? DataType.INT : DataType.DOUBLE, expressions.size());
-            int i=0;
-            for(AST.Expression val: expressions){
-                if(!isInteger) {
-                    arrnd.putScalar(i++, Double.parseDouble(val.toString()));
-                }
-                else {
-                    arrnd.putScalar(i++, Integer.parseInt(val.toString()));
-                }
-            }
-        }
 
 
-        return arrnd;
-    }
-
-    private INDArray parseArray(AST.Array array, boolean isInteger){
-        return getIndArray(array.arrays, array.vectors, array.expressions, isInteger);
-    }
-
-    private String parseData(AST.Data data){
-        //System.setProperty("org.apache.commons.logging.Log",            "org.apache.commons.logging.impl.NoOpLog");
-
-        System.out.println(data.decl.id.toString());
-        if(data.expression != null){
-            return data.expression.toString();
-        }
-        else if(data.array != null){
-            INDArray ndarray = parseArray(data.array, data.decl.dtype.primitive == AST.Primitive.INTEGER);
-
-            if(ndarray.shape().length > 1){
-                return  printArray(Nd4j.toFlattened('f', ndarray));
-            }
-            else{
-                return  printArray(Nd4j.toFlattened(ndarray));
-            }
-        }
-        else{
-            INDArray ndarray = parseVector(data.vector, data.decl.dtype.primitive == AST.Primitive.INTEGER);
-            if(ndarray.shape().length > 1){
-                return  printArray(Nd4j.toFlattened('f', ndarray));
-            }
-            else{
-                return printArray(Nd4j.toFlattened(ndarray));
-            }
-        }
-    }
-
-    private String printArray(INDArray array){
-        String res = "";
-        for(int i =0; i < array.length(); i++){
-            res += array.getDouble(i)+",";
-        }
-        return "[" + res.substring(0, res.length() -1) + "]";
-    }
 
     private String dumpR(ArrayList<AST.Data> dataSets){
         StringWriter stringWriter = null;
         stringWriter = new StringWriter();
 
         for(AST.Data data:dataSets) {
-            String dataString = parseData(data);
+            String dataString = Utils.parseData(data, 'f');
             String dimsString = "";
             if (data.decl.dtype.dims != null && data.decl.dtype.dims.dims.size() > 0) {
                 dimsString += data.decl.dtype.dims.toString();
@@ -424,7 +320,7 @@ public class StanTranslator implements ITranslator{
             e.printStackTrace();
         }
 
-        Pair results = Utils.runStan(codeFileName, dataFileName);
+        Pair results = Utils.runCode(codeFileName, dataFileName, Utils.STANRUNNER);
         System.out.println(results.getLeft());
         System.out.println(results.getRight());
 
