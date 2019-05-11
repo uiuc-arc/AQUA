@@ -19,11 +19,6 @@ import java.util.Set;
 
 public class Edward2Translator implements ITranslator {
 
-    private String imports =
-            "import tensorflow_probability as tfp\n" +
-            "from tensorflow_probability import edward2 as ed\n" +
-            "import tensorflow as tf\n"+
-            "import numpy as np\n";
 
     public String getModelCode() {
         return modelCode;
@@ -35,20 +30,6 @@ public class Edward2Translator implements ITranslator {
     private String paramArgs = "";
     private String paramStr = "";
     private String initStr = "";
-
-    private String logJointCode =
-            "log_joint = ed.make_log_joint_fn(%1$s)\n" +
-            "def target_log_prob_fn(%2$s):\n" +
-            "    return log_joint(data,\n" +
-            "                     %3$s,\n" +
-            "                     obs=%4$s)\n";
-
-    private String hmcCode =
-            "hmc_kernel = tfp.mcmc.HamiltonianMonteCarlo(\n" +
-            "    target_log_prob_fn=target_log_prob_fn,\n" +
-            "    step_size=0.1,\n" +
-            "    num_leapfrog_steps=10)";
-
     private String dataSection = "";
 
     private static final String edward2TemplateFile = "src/main/resources/edward2Template";
@@ -103,8 +84,6 @@ public class Edward2Translator implements ITranslator {
                                         curBlock = curBlock.getEdges().get(0).getTarget();
                                 }
                             }
-
-
                         }
                     }
                 }

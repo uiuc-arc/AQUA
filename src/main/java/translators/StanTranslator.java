@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
-public class StanTranslator implements ITranslator{
+public class StanTranslator implements ITranslator {
 
     private String dataSection = "";
     private String paramSection = "";
@@ -25,126 +25,152 @@ public class StanTranslator implements ITranslator{
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
-        for(Section section:sections){
-            if(section.sectionType == SectionType.DATA){
-                for(AST.Data data:section.basicBlocks.get(0).getData()){
+
+        Set<BasicBlock> visited = new HashSet<>();
+        for (Section section : sections) {
+            if (section.sectionType == SectionType.DATA) {
+                for (AST.Data data : section.basicBlocks.get(0).getData()) {
                     dataSection += getDeclarationString(section.basicBlocks.get(0), data.decl);
                 }
 
                 dataR = dumpR(section.basicBlocks.get(0).getData());
-            }
-            else if(section.sectionType == SectionType.FUNCTION){
-                if(section.sectionName.equals("main")){
-                    Set<BasicBlock> visited = new HashSet<>();
-                    for(BasicBlock basicBlock: section.basicBlocks){
+            } else if (section.sectionType == SectionType.FUNCTION) {
+                if (section.sectionName.equals("main")) {
+
+                    for (BasicBlock basicBlock : section.basicBlocks) {
                         BasicBlock curBlock = basicBlock;
-                        while(!visited.contains(curBlock)){
+                        while (!visited.contains(curBlock)) {
                             visited.add(curBlock);
                             String block_text = translate_block(curBlock);
-                            if(curBlock.getParent().sectionName.equalsIgnoreCase("main")){
+                            if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
                                 modelSection += block_text;
-                            }
-                            else if(curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")){
+                            } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
                                 transformedParam += block_text;
+                            } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
+                                transformedData += block_text;
+                            } else if (curBlock.getParent().sectionName.equalsIgnoreCase("generatedquantities")) {
+                                generatedQuantities += block_text;
                             }
 
-                            if(curBlock.getEdges().size() > 0){
+                            if (curBlock.getEdges().size() > 0) {
                                 // check true edge first
-                                if(curBlock.getEdges().size() == 1){
+                                if (curBlock.getEdges().size() == 1) {
                                     curBlock = curBlock.getEdges().get(0).getTarget();
-                                }
-                                else{
+                                } else {
                                     String label = curBlock.getEdges().get(0).getLabel();
-                                    if(label != null && label.equalsIgnoreCase("true")){
+                                    if (label != null && label.equalsIgnoreCase("true")) {
                                         curBlock = curBlock.getEdges().get(0).getTarget();
-                                    }
-                                    else{
+                                    } else {
                                         curBlock = curBlock.getEdges().get(1).getTarget();
                                     }
                                 }
                             }
                         }
                     }
-                }
-                else{
+                } else {
                     throw new Exception("Unknown Function!");
+                }
+            } else if (section.sectionType == SectionType.NAMEDSECTION) {
+                for (BasicBlock basicBlock : section.basicBlocks) {
+                    BasicBlock curBlock = basicBlock;
+                    while (!visited.contains(curBlock)) {
+                        String block_text = translate_block(curBlock);
+
+                        if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
+                            transformedParam += block_text;
+                        } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
+                            transformedData += block_text;
+                        } else if (curBlock.getParent().sectionName.equalsIgnoreCase("generatedquantities")) {
+                            generatedQuantities += block_text;
+                        }
+
+                        if (curBlock.getEdges().size() > 0) {
+                            // check true edge first
+                            if (curBlock.getEdges().size() == 1) {
+                                curBlock = curBlock.getEdges().get(0).getTarget();
+                            } else {
+                                String label = curBlock.getEdges().get(0).getLabel();
+                                if (label != null && label.equalsIgnoreCase("true")) {
+                                    curBlock = curBlock.getEdges().get(0).getTarget();
+                                } else {
+                                    curBlock = curBlock.getEdges().get(1).getTarget();
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    public String getData(){
+    public String getData() {
         return this.dataR;
     }
 
-    public String getCode(){
+    public String getCode() {
         String stanCode = "";
 
-        if(dataSection != null && dataSection.length() > 0){
+        if (dataSection != null && dataSection.length() > 0) {
             stanCode += "data{\n" + dataSection + "}\n";
         }
 
-        if(paramSection != null && paramSection.length() > 0){
+        if (paramSection != null && paramSection.length() > 0) {
             stanCode += "parameters{\n" + paramSection + "}\n";
         }
 
-        if(transformedData != null && transformedData.length() > 0){
+        if (transformedData != null && transformedData.length() > 0) {
             stanCode += "transformed data{\n" + transformedData + "}\n";
         }
 
-        if(transformedParam != null && transformedParam.length() > 0){
+        if (transformedParam != null && transformedParam.length() > 0) {
             stanCode += "transformed parameters{\n" + transformedParam + "}\n";
         }
 
-        if(modelSection != null && modelSection.length() > 0){
+        if (modelSection != null && modelSection.length() > 0) {
             stanCode += "model{\n" + modelSection + "}\n";
         }
 
-        if(generatedQuantities != null && generatedQuantities.length() > 0){
+        if (generatedQuantities != null && generatedQuantities.length() > 0) {
             stanCode += "generated quantities{\n" + generatedQuantities + "}\n";
         }
 
         return stanCode;
     }
 
-    private String translate_block(BasicBlock bBlock){
+    private String translate_block(BasicBlock bBlock) {
         String output = "";
-        if(bBlock.getStatements().size() == 0)
+        if (bBlock.getStatements().size() == 0)
             return output;
 
-        for(Statement statement:bBlock.getStatements()){
-            if(statement.statement instanceof AST.AssignmentStatement){
+        for (Statement statement : bBlock.getStatements()) {
+            if (statement.statement instanceof AST.AssignmentStatement) {
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
-                if(Utils.isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)){
-                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "~" + new StanVisitor().evaluate(assignmentStatement.rhs) +";\n";
-                }
-                else {
+                if (Utils.isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)) {
+                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "~" + new StanVisitor().evaluate(assignmentStatement.rhs) + ";\n";
+                } else {
                     output += new StanVisitor().evaluate(assignmentStatement.lhs) + "=" + new StanVisitor().evaluate(assignmentStatement.rhs) + ";\n";
                 }
-            }
-            else if(statement.statement instanceof AST.ForLoop){
+            } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;
                 output += "for(" + loop.toString() + ")\n";
-            }
-            else if(statement.statement instanceof AST.Decl){
+            } else if (statement.statement instanceof AST.Decl) {
                 AST.Decl declaration = (AST.Decl) statement.statement;
                 String declarationString = getDeclarationString(statement, declaration);
 
-                if(statement.parent.getParent().sectionName.equalsIgnoreCase("main") && Utils.isPrior(statement, declaration.id)){
-                    this.paramSection+= declarationString;
-                }
-                else{
+                if (statement.parent.getParent().sectionName.equalsIgnoreCase("main") && Utils.isPrior(statement, declaration.id)) {
+                    this.paramSection += declarationString;
+                } else {
                     output += declarationString;
                 }
             }
         }
 
-        if(bBlock.getIncomingEdges().containsKey("true") || bBlock.getIncomingEdges().containsKey("false")){
+        if (bBlock.getIncomingEdges().containsKey("true") || bBlock.getIncomingEdges().containsKey("false")) {
             return "{\n" + output + "}\n";
         }
 
 
-        return output ;
+        return output;
     }
 
     private String getDeclarationString(Statement statement, AST.Decl declaration) {
@@ -169,42 +195,39 @@ public class StanTranslator implements ITranslator{
     }
 
 
-
-    private boolean isData(Statement statement, AST.Expression expression){
+    private boolean isData(Statement statement, AST.Expression expression) {
         // get id
         String id = null;
-        if(expression instanceof AST.Id){
+        if (expression instanceof AST.Id) {
             id = expression.toString();
-        }
-        else if(expression instanceof AST.ArrayAccess){
+        } else if (expression instanceof AST.ArrayAccess) {
             id = ((AST.ArrayAccess) expression).id.toString();
         }
 
-        if(id != null){
+        if (id != null) {
             SymbolInfo info = statement.parent.getSymbolTable().fetch(id);
-            if(info != null)
+            if (info != null)
                 return info.isData();
-            else{
-                System.out.println("Variable not found " +id);
+            else {
+                System.out.println("Variable not found " + id);
             }
         }
 
         return false;
     }
 
-    private String getLimitsString(BasicBlock basicBlock, AST.Expression expression){
+    private String getLimitsString(BasicBlock basicBlock, AST.Expression expression) {
         String id = null;
-        if(expression instanceof AST.Id){
+        if (expression instanceof AST.Id) {
             id = expression.toString();
+        } else if (expression instanceof AST.ArrayAccess) {
+            id = ((AST.ArrayAccess) expression).id.toString();
         }
-        else if(expression instanceof AST.ArrayAccess){
-            id = ((AST.ArrayAccess) expression) .id.toString();
-        }
-        if(id != null){
+        if (id != null) {
             SymbolInfo info = basicBlock.getSymbolTable().fetch(id);
-            if(info != null)
-                return info.getLimitsString() != null? info.getLimitsString() : "";
-            else{
+            if (info != null)
+                return info.getLimitsString() != null ? info.getLimitsString() : "";
+            else {
                 System.out.println("Symbol not found " + id);
             }
         }
@@ -213,13 +236,11 @@ public class StanTranslator implements ITranslator{
     }
 
 
-
-
-    private String dumpR(ArrayList<AST.Data> dataSets){
+    private String dumpR(ArrayList<AST.Data> dataSets) {
         StringWriter stringWriter = null;
         stringWriter = new StringWriter();
 
-        for(AST.Data data:dataSets) {
+        for (AST.Data data : dataSets) {
             String dataString = Utils.parseData(data, 'f');
             String dimsString = "";
             if (data.decl.dtype.dims != null && data.decl.dtype.dims.dims.size() > 0) {
@@ -233,13 +254,11 @@ public class StanTranslator implements ITranslator{
             }
 
             dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "");
-            if(dimsString.length() == 0) {
+            if (dimsString.length() == 0) {
                 stringWriter.write(String.format("%s <- %s\n", data.decl.id, dataString));
-            }
-            else if(dimsString.split(",").length == 1){
+            } else if (dimsString.split(",").length == 1) {
                 stringWriter.write(String.format("%s <- c(%s)\n", data.decl.id, dataString));
-            }
-            else{
+            } else {
                 stringWriter.write(String.format("%s <- structure(c(%s), .Dim=c(%s))\n", data.decl.id, dataString, dimsString));
             }
         }
@@ -258,39 +277,33 @@ public class StanTranslator implements ITranslator{
         String dimsString = "";
         String outerDimsString = "";
 
-        if(data.decl.dtype.primitive == AST.Primitive.INTEGER){
+        if (data.decl.dtype.primitive == AST.Primitive.INTEGER) {
             typeString += "int";
-        }
-        else if(data.decl.dtype.primitive == AST.Primitive.FLOAT){
+        } else if (data.decl.dtype.primitive == AST.Primitive.FLOAT) {
             typeString += "real";
-        }
-        else if(data.decl.dtype.primitive == AST.Primitive.VECTOR){
-            if(data.annotations.get(0).annotationType == AST.AnnotationType.Type){
+        } else if (data.decl.dtype.primitive == AST.Primitive.VECTOR) {
+            if (data.annotations.get(0).annotationType == AST.AnnotationType.Type) {
                 typeString += data.annotations.get(0).annotationValue.toString();
-            }
-            else{
+            } else {
                 typeString += "vector";
             }
-        }
-        else if(data.decl.dtype.primitive == AST.Primitive.MATRIX){
-            if(data.annotations.get(0).annotationType == AST.AnnotationType.Type){
+        } else if (data.decl.dtype.primitive == AST.Primitive.MATRIX) {
+            if (data.annotations.get(0).annotationType == AST.AnnotationType.Type) {
                 typeString += data.annotations.get(0).annotationValue.toString();
-            }
-            else{
+            } else {
                 typeString += "matrix";
             }
-        }
-        else{
+        } else {
             throw new IllegalAccessException("Unknown data type : " + data.decl.dtype.primitive.toString());
         }
 
-        if(data.decl.dtype.dims != null
+        if (data.decl.dtype.dims != null
                 && data.decl.dtype.dims.dims != null
-                && data.decl.dtype.dims.dims.size() > 0){
-            dimsString = "[" +data.decl.dtype.dims.toString() +"]";
+                && data.decl.dtype.dims.dims.size() > 0) {
+            dimsString = "[" + data.decl.dtype.dims.toString() + "]";
         }
 
-        if(data.decl.dims != null){
+        if (data.decl.dims != null) {
             outerDimsString = "[" + data.decl.dims.toString() + "]";
         }
 
@@ -302,7 +315,7 @@ public class StanTranslator implements ITranslator{
         run("/tmp/stancode.stan", "/tmp/stancode.R");
     }
 
-    public void run(String codeFileName, String dataFileName){
+    public void run(String codeFileName, String dataFileName) {
         System.out.println("Running Stan...");
         try {
             FileWriter fileWriter = new FileWriter(codeFileName);
@@ -312,7 +325,7 @@ public class StanTranslator implements ITranslator{
             e.printStackTrace();
         }
 
-        try{
+        try {
             FileWriter fileWriter = new FileWriter(dataFileName);
             fileWriter.write(this.getData());
             fileWriter.close();
