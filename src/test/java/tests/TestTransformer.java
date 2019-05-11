@@ -45,13 +45,32 @@ public class TestTransformer {
     @Test
     @Ignore
     public void TestUndo(){
-        CFGBuilder cfgBuilder = new CFGBuilder("/home/zixin/Documents/are/PPVM/templates/basic/basic.template", null, false);
+        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic.template", null, false);
 
         TransformController transformController = new TransformController(cfgBuilder.getSections());
         try {
             transformController.analyze();
             transformController.transform();
             transformController.undoAll();
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate(cfgBuilder.getSections());
+            stanTranslator.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    @Ignore
+    public void TestUndoOne(){
+        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust4.template", null, false);
+
+        TransformController transformController = new TransformController(cfgBuilder.getSections());
+        try {
+            transformController.analyze();
+            transformController.transform_one();
+            transformController.undo();
+            transformController.transform_one();
             StanTranslator stanTranslator = new StanTranslator();
             stanTranslator.translate(cfgBuilder.getSections());
             stanTranslator.run();

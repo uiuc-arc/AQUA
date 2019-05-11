@@ -31,9 +31,9 @@ public class TransformController {
     }
 
     public void analyze() throws Exception {
-        //normal2TAnalysis.availTransformers(sections, queuedTransformers);
-        poisson2Normal.availTransformers(sections, queuedTransformers);
+        // normal2TAnalysis.availTransformers(sections, queuedTransformers);
         // binomial2Normal.availTransformers(sections, queuedTransformers);
+        poisson2Normal.availTransformers(sections, queuedTransformers);
 
     }
 
@@ -54,6 +54,12 @@ public class TransformController {
         redoStack.clear(); // disable undo after new transformation
         System.out.println("Add to Undo Stack");
         undoStack.push(transformer);
+    }
+
+    public void transform_one() throws Exception {
+        BaseTransformer newTransformer = queuedTransformers.poll();
+        if (newTransformer != null)
+            transform_one(newTransformer);
     }
 
     public void undo() throws Exception {
