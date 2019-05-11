@@ -1,0 +1,7 @@
+float trueX
+trueX = gauss(0, 1)
+float obsX
+obsX = gauss(truexX, 0.1)
+@observe
+obsX == 0.2
+posterior(trueX)

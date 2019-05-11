@@ -1,0 +1,12 @@
+float x
+x = 3
+float b 
+b = bernoulli(0.5)
+if(b) {
+    x = x
+} else {
+    x = x + x
+}
+posterior(x)
+
+

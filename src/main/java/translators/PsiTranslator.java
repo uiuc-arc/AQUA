@@ -105,6 +105,8 @@ public class PsiTranslator implements ITranslator{
 
     public void parse(ArrayList<Statement> stmts){
         for(Statement stmt : stmts){
+            System.out.println("curre statement");
+            System.out.println(stmt);
             parse(stmt);
             dump("\n");
         }
@@ -155,6 +157,8 @@ public class PsiTranslator implements ITranslator{
         return res;
     }
     public void parse(AST.Statement s){
+        System.out.println("parsing state");
+        System.out.println(s);
         if(s.annotations.size()!=0){
             if (observe(s)){
                 return;
@@ -163,9 +167,13 @@ public class PsiTranslator implements ITranslator{
         if (s instanceof AST.IfStmt){
             AST.IfStmt ifstmt = (AST.IfStmt) s;
             parse(ifstmt.condition);
-            parse(ifstmt.trueBlock);
-            dump("else\n");
-            parse(ifstmt.elseBlock);
+            //parse(ifstmt.trueBlock);
+            //dump("else\n");
+            System.out.println(ifstmt.elseBlock.statements.size());
+            for(AST.Statement stmt : ifstmt.elseBlock.statements){
+                System.out.println(stmt);
+            }
+            //parse(ifstmt.elseBlock);
         } else if (s instanceof AST.AssignmentStatement) {
             AST.AssignmentStatement assign = (AST.AssignmentStatement) s;
             dump(assign.toString() + ";");
