@@ -12,6 +12,8 @@ public class TransformController {
     private Stack<BaseTransformer> undoStack = new Stack<>();
     private Stack<BaseTransformer> redoStack = new Stack<>();
     private Normal2T normal2TAnalysis = new Normal2T();
+    private Poisson2Normal poisson2Normal = new Poisson2Normal();
+    private Binomial2Normal binomial2Normal = new Binomial2Normal();
     private Queue<BaseTransformer> queuedTransformers;
 
     public TransformController(ArrayList<Section> newSections) {
@@ -29,7 +31,10 @@ public class TransformController {
     }
 
     public void analyze() throws Exception {
-        normal2TAnalysis.availTransformers(sections, queuedTransformers);
+        //normal2TAnalysis.availTransformers(sections, queuedTransformers);
+        poisson2Normal.availTransformers(sections, queuedTransformers);
+        // binomial2Normal.availTransformers(sections, queuedTransformers);
+
     }
 
     public void transform() throws Exception {

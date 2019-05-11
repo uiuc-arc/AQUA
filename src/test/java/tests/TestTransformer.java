@@ -27,6 +27,23 @@ public class TestTransformer {
     }
 
     @Test
+    public void TestTransformers(){
+        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null, false);
+
+        TransformController transformController = new TransformController(cfgBuilder.getSections());
+        try {
+            transformController.analyze();
+            transformController.transform();
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate(cfgBuilder.getSections());
+            stanTranslator.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    @Ignore
     public void TestUndo(){
         CFGBuilder cfgBuilder = new CFGBuilder("/home/zixin/Documents/are/PPVM/templates/basic/basic.template", null, false);
 

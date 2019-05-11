@@ -96,8 +96,8 @@ public class Poisson2Normal extends BaseTransformer {
                     if(isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)){
                         if (assignmentStatement.rhs.toString().contains("poisson")){
                             if (assignmentStatement.rhs instanceof AST.FunctionCall) {
-                                BaseTransformer newTransformer = new Binomial2Normal();
-                                ((Binomial2Normal) newTransformer).addInfo(((AST.FunctionCall) assignmentStatement.rhs));
+                                BaseTransformer newTransformer = new Poisson2Normal();
+                                ((Poisson2Normal) newTransformer).addInfo(((AST.FunctionCall) assignmentStatement.rhs));
                                 availTrans.add(newTransformer);
                             }
                         }
