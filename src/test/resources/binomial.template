@@ -7,7 +7,7 @@ omega = gamma(2.0,3.0)
 @limits <lower=0,upper=1>
 kappa = beta(7.0,3.0)
 @limits <lower=0,upper=1>
-theta = beta(A,B)
+theta = beta(1,1)
 for(obs in 1:Nobs)
 {
     y[obs]= binomial(10,theta[SubjIdx[obs]])
