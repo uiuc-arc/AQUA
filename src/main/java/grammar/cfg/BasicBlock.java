@@ -89,4 +89,38 @@ public class BasicBlock {
     public int getId() {
         return this.id;
     }
+
+    public int getNumStmts() {return this.statements.size();}
+
+    public Statement getLastStatement(){
+        if (!this.statements.isEmpty()){
+            return this.statements.get(this.getNumStmts()-1);
+        }
+        return null;
+    }
+
+
+    public ArrayList<BasicBlock> getStatementContainingPredBlocks(){
+        ArrayList<BasicBlock> preds = new ArrayList<>();
+        //if the Basic block has no predecesors (it is the first in the CFG)
+        if (this.getIncomingEdges().isEmpty()){
+            ArrayList<BasicBlock> nullList = new ArrayList<>();
+            return nullList;
+        }
+        else {
+            for (String key : this.getIncomingEdges().keySet()){
+                BasicBlock pred = this.getIncomingEdges().get(key);
+
+                //if the pred DOES have statements
+                if (!pred.statements.isEmpty()){
+                    preds.add(pred);
+                }
+                //recurse!
+                else {
+                    preds.addAll(pred.getStatementContainingPredBlocks());
+                }
+            }
+        }
+        return preds;
+    }
 }
