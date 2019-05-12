@@ -34,7 +34,13 @@ public class BasicBlock {
         return incomingEdges;
     }
 
+    public Map<String, BasicBlock> getOutgoingEdges() {
+        return outgoingEdges;
+
+    }
+
     Map<String, BasicBlock> incomingEdges;
+    Map<String, BasicBlock> outgoingEdges;
 
     public ArrayList<Edge> getEdges() {
         return edges;
@@ -54,6 +60,7 @@ public class BasicBlock {
         edges = new ArrayList<>();
         symbolTable = new SymbolTable(this);
         incomingEdges = new HashMap<>();
+        outgoingEdges = new HashMap<>();
     }
 
     public BasicBlock(int id, Section section){
