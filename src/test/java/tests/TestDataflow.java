@@ -4,6 +4,7 @@ import grammar.analyses.*;
 import grammar.AST;
 import grammar.cfg.*;
 import org.jgrapht.Graph;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.renjin.compiler.builtins.StaticMethodCall;
 
@@ -13,6 +14,7 @@ public class TestDataflow {
 
     //Tests the simple Join for the Reaching Definitions dataflow
     @Test
+    //@Ignore
     public void Test1(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -47,6 +49,7 @@ public class TestDataflow {
 
     //tests the nFold Join
     @Test
+    //@Ignore
     public void Test2(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -87,6 +90,7 @@ public class TestDataflow {
 
     //Test Dataflow/Reaching definitions on a small benchmark
     @Test
+    //@Ignore
     public void Test3(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -121,12 +125,12 @@ public class TestDataflow {
 
     //Test Dataflow/Reaching definitions on a bigger benchmark (that contains a loop)
     @Test
+    //@Ignore
     public void Test4(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test3.template", "src/test/resources/graph3.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
-        //CFGAnalyzer.initCFGLabels(CFG,RD);
         Worklist.ForwardChaoticIteration(CFG,RD);
         //Utilities.printDataflowInfo(CFG,"OUT");
         //check the for loop
@@ -154,6 +158,47 @@ public class TestDataflow {
                 }
             }
         }
+    }
+
+    //The following programs don't have any asserts, the tests are simply to make sure that the dataflow doesn't die in
+    //the middle or encounter something weird like a null value or the worklist not terminating.
+    @Test
+    //@Ignore
+    public void Test5() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/poisson.template", "src/test/resources/poisson.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    public void Test6(){
+        CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", "src/test/resources/linearregression.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    //@Ignore
+    public void Test7() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/probmods/ch02_generative_models/noisy_double.template", "src/test/resources/noisy_double.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    //@Ignore
+    public void Test8() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/for.template", "src/test/resources/for.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
     }
 
 

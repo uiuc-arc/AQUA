@@ -2,6 +2,7 @@ package grammar.cfg;
 
 import grammar.AST;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 import grammar.analyses.AbstractState;
@@ -18,7 +19,7 @@ public class Statement {
     public Statement(AST.Statement statement, BasicBlock basicBlock){
         this.statement = statement;
         this.parent = basicBlock;
-        //dataflowFacts = new HashMap<>();
+        dataflowFacts = new HashMap<>();
         classCount++;
         this.id = classCount; //a simple way to associate a unique number/id to each statement object instance
     }
