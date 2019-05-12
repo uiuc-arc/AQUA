@@ -4,6 +4,7 @@ import grammar.analyses.*;
 import grammar.AST;
 import grammar.cfg.*;
 import org.jgrapht.Graph;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.renjin.compiler.builtins.StaticMethodCall;
 
@@ -13,6 +14,7 @@ public class TestDataflow {
 
     //Tests the simple Join for the Reaching Definitions dataflow
     @Test
+    //@Ignore
     public void Test1(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -47,6 +49,7 @@ public class TestDataflow {
 
     //tests the nFold Join
     @Test
+    //@Ignore
     public void Test2(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -87,6 +90,7 @@ public class TestDataflow {
 
     //Test Dataflow/Reaching definitions on a small benchmark
     @Test
+    //@Ignore
     public void Test3(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -121,6 +125,7 @@ public class TestDataflow {
 
     //Test Dataflow/Reaching definitions on a bigger benchmark (that contains a loop)
     @Test
+    //@Ignore
     public void Test4(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test3.template", "src/test/resources/graph3.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();

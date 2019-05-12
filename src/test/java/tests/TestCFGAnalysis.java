@@ -6,6 +6,7 @@ import org.jgrapht.Graph;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import grammar.cfg.Edge;
+import org.junit.Ignore;
 import org.junit.Test;
 import grammar.analyses.Utilities;
 import grammar.analyses.*;
@@ -18,6 +19,7 @@ public class TestCFGAnalysis {
 
     //Tests that the CFG works
     @Test
+    //@Ignore
     public void Test1(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -30,6 +32,7 @@ public class TestCFGAnalysis {
 
     //Tests Gen and Kill sets
     @Test
+    //@Ignore
     public void Test2(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test3.template", "src/test/resources/graph3.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -49,6 +52,7 @@ public class TestCFGAnalysis {
 
     //This tests the function that gets all assigned variables in the program
     @Test
+    //@Ignore
     public void Test3(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -61,6 +65,7 @@ public class TestCFGAnalysis {
 
     //This tests the Transfer function method
     @Test
+    //@Ignore
     public void Test4() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
@@ -99,6 +104,7 @@ public class TestCFGAnalysis {
 
     //Tests Gen and Kill sets for a bigger program
     @Test
+    //@Ignore
     public void Test5(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test3.template", "src/test/resources/graph3.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
