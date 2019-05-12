@@ -12,75 +12,118 @@ import utils.Utils;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.util.*;
 
 public class PsiTranslator implements ITranslator{
 
     private String defaultIndent = "\t";
     private OutputStream out;
+    private Set<BasicBlock> visited;
 
     public void setOut(OutputStream o){
         out = o;
     }
 
-    public void visitBlock(BasicBlock currBlock, Set<BasicBlock> visitedBlock){
-        List<Statement> statements = currBlock.getStatements();
-        int size = statements.size();
-        for(int i = 0; i < size-1; ++i){
-            parse(statements.get(i).statement);
+    public void parseBlock(BasicBlock block){
+        boolean dumpRight = false;
+        ArrayList<Statement>  stmts = block.getStatements();
+        if (!visited.contains(block) && stmts.size()>=1 && (block.getIncomingEdges().containsKey("true") || block.getIncomingEdges().containsKey("false"))) {
+            dump("{\n");
+            dumpRight = true;
         }
-        AST.Statement lastStatement = null;
-        if(size >= 1){
-             lastStatement = statements.get(size-1).statement;
-        } else {
-            return;
-        }
-        parse(lastStatement);
-        if(lastStatement instanceof AST.IfStmt){
-            List<Edge> edges = currBlock.getEdges();
-            assert(edges.size() == 2);
-            BasicBlock trueBranch = edges.get(0).getTarget();
-            BasicBlock falseBranch= edges.get(1).getTarget();
-            if(!visitedBlock.contains(trueBranch)){
-                dump("{");
-                visitBlock(trueBranch, visitedBlock);
-                dump("}");
-                visitedBlock.add(trueBranch);
-            } 
-            if(!visitedBlock.contains(falseBranch)){
-                dump("else\n");
-                dump("{");
-                visitBlock(falseBranch, visitedBlock);
-                dump("}");
-                visitedBlock.add(falseBranch);
+        if(!visited.contains(block)) {
+            visited.add(block);
+            parse(stmts);
+            for (Edge e : block.getEdges()) {
+                parseBlock(e.getTarget());
             }
+        }
+        if(dumpRight){
+            dump("}\n");
         }
 
     }
+    private String dumpR(ArrayList<AST.Data> dataSets) {
+        StringWriter stringWriter = null;
+        stringWriter = new StringWriter();
+
+        for (AST.Data data : dataSets) {
+            String dataString = Utils.parseData(data, 'f');
+            String dimsString = "";
+            if (data.decl.dtype.dims != null && data.decl.dtype.dims.dims.size() > 0) {
+                dimsString += data.decl.dtype.dims.toString();
+            }
+            if (data.decl.dims != null && data.decl.dims.dims.size() > 0) {
+                if (dimsString.length() > 0) {
+                    dimsString += ",";
+                }
+                dimsString += data.decl.dims.toString();
+            }
+
+            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "");
+            if (dimsString.length() == 0) {
+                stringWriter.write(String.format("%s := array(%s);\n", data.decl.id, dataString));
+            } else if (dimsString.split(",").length == 1) {
+                stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
+
+            } else if (dimsString.split(",").length == 2) {
+                String[] splited = dimsString.split(",");
+                String[] dataSplited = dataString.split(",");
+                List<String> dataS = new ArrayList<>();
+                int outterDim= Integer.valueOf(splited[0]);
+                for(int i = 0; i < outterDim; ++i){
+                    StringBuilder res = new StringBuilder();
+                    int innerDim = Integer.valueOf(splited[1]);
+                    res.append("[");
+                    for(int j = 0; j < innerDim; ++j){
+                        res.append(dataSplited[i+j*outterDim]);
+                        if(j != innerDim-1){
+                            res.append(",");
+                        }
+                    }
+                    res.append("]");
+                    dataS.add(res.toString());
+                }
+                stringWriter.write(String.format("%s := [%s];\n", data.decl.id,  String.join(",", dataS)));
+            } else {
+
+            }
+        }
+        try {
+            stringWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stringWriter.toString();
+    }
+
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
+        visited = new HashSet<>();
         for (Section section : sections){
             if(section.sectionType == SectionType.DATA){
-                parseData(section.basicBlocks.get(0).getData(), "");
+                dump(dumpR(section.basicBlocks.get(0).getData()));
             } else if(section.sectionType == SectionType.FUNCTION){
-                if(section.sectionName == "main"){
+                if(section.sectionName == "main") {
                     dump("def main() {\n", "");
+                }
                     Set<BasicBlock> visitedBlock = new HashSet<>();
                     List<BasicBlock> blocks = section.basicBlocks;
                     BasicBlock currBlock = section.basicBlocks.get(0);
-                    List<Statement> statements = currBlock.getStatements();
-                    visitBlock(currBlock, visitedBlock);
+                    parseBlock(currBlock);
 
-                } else {
-                    throw new Exception("Unsupport Function: " + section.sectionName);
-                }
             } else if (section.sectionType == SectionType.QUERIES){
                 parseQueries(section.basicBlocks.get(0).getQueries(), "");
                 dump("\n}\n");
                 return;
             } else {
-                throw new Exception("Unsupport section: " + section.sectionName + " " + section.sectionType);
 
+                System.out.println("Unsupport section (ignored): " + section.sectionName + " " + section.sectionType);
+                Set<BasicBlock> visitedBlock = new HashSet<>();
+                List<BasicBlock> blocks = section.basicBlocks;
+                BasicBlock currBlock = section.basicBlocks.get(0);
+                parseBlock(currBlock);
             }
 
         }
@@ -120,31 +163,35 @@ public class PsiTranslator implements ITranslator{
 
     public void parseData(List<AST.Data> data, String indent){
         for(AST.Data d : data){
-            if (d.array != null){
-                dump(d.decl.id.toString() + " := ", indent);
-                dump("[");
-                int length = d.array.expressions.size();
-                for (int i = 0; i < length; ++i){
-                    dump(d.array.expressions.get(i).toString());
-                    if( i != length - 1){
-                        dump(", ");
-                    }
+            switch(d.decl.dtype.primitive){
+                case INTEGER:
+                case FLOAT: {
+
+
+                    break;
                 }
-                dump("];\n", indent);
-            } else {
-                dump(d.decl.id.toString() + " := ", indent);
-                dump("array(" + d.vector+ ");\n");
+                case VECTOR: {
+                    System.out.println(d.decl.id);
+                    dump(d.decl.id.toString() + " := ", indent);
+                    dump(d.annotations.get(0).annotationValue.toString());
+                    dump("\n");
+
+                    break;
+                }
+                case MATRIX:
+                    break;
+                default:
+                    System.out.println("Not support data");
             }
+
         }
 
     }
 
     public void parse(ArrayList<Statement> stmts){
         for(Statement stmt : stmts){
-            System.out.println("curre statement");
-            System.out.println(stmt);
-            parse(stmt);
-            dump("\n");
+                parse(stmt);
+                dump("\n");
         }
     }
     public void parse(List<AST.Statement> stmts){
@@ -167,16 +214,14 @@ public class PsiTranslator implements ITranslator{
     public void parse(AST.Block bb){
         dump("{");
         parse(bb.statements);
-        dump("}");
+        dump("}\n");
     }
     public void parse(Statement s){
         parse(s.statement);
     }
 
     public void parse(AST.Expression exp ){
-        dump("if( ");
-
-        dump(exp.toString() + ")\n");
+        dump(exp.toString());
     }
     public boolean observe(AST.Statement s){
         boolean res = true;
@@ -185,7 +230,7 @@ public class PsiTranslator implements ITranslator{
             if(ann.annotationType == AST.AnnotationType.Observe){
                 dump("observe(");
                 dump(s.toString());
-                dump(");");
+                dump(");\n");
             } else {
                 res = false;
             }
@@ -194,8 +239,6 @@ public class PsiTranslator implements ITranslator{
         return res;
     }
     public void parse(AST.Statement s){
-        System.out.println("parsing state");
-        System.out.println(s);
         if(s.annotations.size()!=0){
             if (observe(s)){
                 return;
@@ -203,29 +246,21 @@ public class PsiTranslator implements ITranslator{
         }
         if (s instanceof AST.IfStmt){
             AST.IfStmt ifstmt = (AST.IfStmt) s;
+            dump("if (");
             parse(ifstmt.condition);
-            //parse(ifstmt.trueBlock);
-            //dump("else\n");
-            System.out.println(ifstmt.elseBlock.statements.size());
-            for(AST.Statement stmt : ifstmt.elseBlock.statements){
-                System.out.println(stmt);
-            }
-            //parse(ifstmt.elseBlock);
+            dump(")\n");
         } else if (s instanceof AST.AssignmentStatement) {
             AST.AssignmentStatement assign = (AST.AssignmentStatement) s;
-            dump(assign.toString() + ";");
+            dump(assign.toString() + ";\n");
         } else if (s instanceof AST.ForLoop) {
             AST.ForLoop fl = (AST.ForLoop) s;
-            dump("for ");
-            dump(fl.loopVar.toString());
-            dump(" in " + fl.range);
-            parse(fl.block);
+            dump(String.format("for %s in [%s .. %s) ", fl.loopVar.toString(), fl.range.start, fl.range.end));
         } else if (s instanceof AST.Decl){
             AST.Decl decl = (AST.Decl) s;
             if(decl.dtype.primitive == AST.Primitive.FLOAT){
-                dump(decl.id.toString() + " := 0.0;");
+                dump(decl.id.toString() + " := 0.0;\n");
             } else {
-                dump(decl.id.toString() + " := 0;");
+                dump(decl.id.toString() + " := 0;\n");
             }
 
         } else {

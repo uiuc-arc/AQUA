@@ -1,0 +1,826 @@
+{
+    "models": [
+        {
+            "name": "normal",
+            "stan": "normal",
+            "psiname": "gauss",
+            "edward": "ed.models.Normal",
+            "edward2" : "ed.Normal",
+            "pyro": "dist.Normal",
+            "pyro012" : "dist.Normal",
+            "venture": "normal",
+            "scipy": "st.norm.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "f"
+        },
+        {
+            "name": "pareto",
+            "stan": "pareto",
+            "pyro" : "dist.Pareto",
+            "args": [
+                {
+                    "name": "ymin",
+                    "type": "f+"
+                },
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "f+"
+        },
+        {
+            "name": "student_t",
+            "stan": "student_t",
+            "venture": "student_t",
+            "pyro" : "dist.StudentT",
+            "pyro_args": [
+                {
+                    "name": "df"
+                },
+                {
+                    "name": "loc"
+                },
+                {
+                    "name": "scale"
+
+                }
+
+            ],
+            "args": [
+                {
+                    "name": "nu",
+                    "type": "f+"
+                },
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "f"
+        },
+        {
+            "name": "cauchy",
+            "stan": "cauchy",
+            "psiname": "cauchy",
+            "edward": "ed.models.Cauchy",
+            "pyro": "dist.Cauchy",
+            "pyro012" : "dist.Cauchy",
+            "scipy": "st.cauchy.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "f"
+        },
+        {
+            "name": "double_exponential",
+            "stan": "double_exponential",
+            "venture": "laplace",
+            "edward": "ed.models.Laplace",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "support": "f",
+            "type": "C"
+        },
+        {
+            "name": "logistic",
+            "stan": "logistic",
+            "edward": "ed.models.Logistic",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "f"
+        },
+        {
+            "name": "gumbel",
+            "stan": "gumbel",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "f"
+        },
+        {
+            "name": "lognormal",
+            "stan": "lognormal",
+            "pyro": "dist.LogNormal",
+            "pyro012": "dist.LogNormal",
+            "scipy": "st.lognorm.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "f+"
+        },
+        {
+            "name": "chi_square",
+            "stan": "chi_square",
+            "psiname": "chiSquared",
+            "edward": "ed.models.Chi2",
+            "args": [
+                {
+                    "name": "nu",
+                    "type": "f+"
+                }
+            ],
+            "ig": false,
+            "type": "C",
+            "support": "f+"
+        },
+        {
+            "name": "inv_chi_square",
+            "stan": "inv_chi_square",
+            "args": [
+                {
+                    "name": "nu",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "f+"
+        },
+        {
+            "name": "exponential",
+            "stan": "exponential",
+            "venture": "expon",
+            "psiname": "exponential",
+            "edward": "ed.models.Exponential",
+            "pyro": "dist.Exponential",
+            "pyro012": "dist.Exponential",
+            "scipy": "st.expon.mean({0})",
+            "args": [
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "ig": false,
+            "support": "0f+"
+        },
+        {
+            "name": "gamma",
+            "stan": "gamma",
+            "psiname": "gamma",
+            "edward": "ed.models.Gamma",
+            "edward2" : "ed.Gamma",
+            "pyro": "dist.Gamma",
+            "pyro012": "dist.Gamma",
+            "venture": "gamma",
+            "scipy": "st.gamma.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "f+"
+        },
+        {
+            "name" : "lkj_corr_cholesky",
+            "stan" : "lkj_corr_cholesky",
+            "args" : [
+                {
+                    "name" : "eta",
+                    "type" : "f+"
+                }
+            ],
+            "type": "C",
+            "support":"[[f]]"
+        },
+        {
+            "name": "invgamma",
+            "stan": "inv_gamma",
+            "edward": "ed.models.InverseGamma",
+            "edward1": "ed.stats.invgamma",
+            "pyro" : "dist.Gamma",
+            "venture": "inv_gamma",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "f+"
+        },
+        {
+            "name": "weibull",
+            "stan": "weibull",
+            "psiname": "weibull",
+            "pyro": "dist.Weibull",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "0i+"
+        },
+        {
+            "name": "beta",
+            "stan": "beta",
+            "psiname": "beta",
+            "edward": "ed.models.Beta",
+            "edward2" : "ed.Beta",
+            "pyro": "dist.Beta",
+            "pyro012" : "dist.Beta",
+            "venture": "beta",
+            "scipy": "st.beta.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "C",
+            "support": "(0,1)"
+        },
+        {
+            "name": "uniform",
+            "stan": "uniform",
+            "psiname": "uniform",
+            "edward": "ed.models.Uniform",
+            "pyro": "dist.Uniform",
+            "pyro012": "dist.Uniform",
+            "venture": "uniform_continuous",
+            "scipy": "st.uniform.mean({0}, {1})",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f"
+                },
+                {
+                    "name": "beta",
+                    "type": "f"
+                }
+            ],
+            "ig": false,
+            "type": "C",
+            "support": "[alpha, beta]"
+        },
+        {
+            "name" : "gaussian_dlm_obs",
+            "stan" : "gaussian_dlm_obs",
+            "args" : [
+                {
+                    "name" : "F",
+                    "type" : "[[f]]"
+                },
+                {
+                    "name" : "G",
+                    "type" : "[[f]]"
+                },
+                {
+                    "name" : "V",
+                    "type" : "[[f]]"
+                },
+                {
+                    "name" : "W",
+                    "type" : "[[f]]"
+                },
+                {
+                    "name" : "m0",
+                    "type" : "[f]"
+                },
+                {
+                    "name" : "C0",
+                    "type" : "[[f]]"
+                }
+            ],
+            "support" : "[[f]]",
+            "type" : "C"
+        },
+        {
+            "name": "bernoulli_logit",
+            "stan": "bernoulli_logit",
+            "edward": "ed.models.BernoulliWithSigmoidProbs",
+            "pyro": "dist.Bernoulli",
+            "pyro_args" : [
+                {
+                    "name" : "logits"
+                }
+            ],
+            "type": "D",
+            "support": "b",
+            "args": [
+                {
+                    "name" : "theta",
+                    "logits": true,
+                    "type" : "f"
+                }
+            ]
+        },
+        {
+            "name": "binomial_logit",
+            "stan": "binomial_logit",
+            "pyro" : "dist.Binomial",
+            "type": "D",
+            "support": "[0,N]",
+            "pyro_args" : [
+                {
+                    "name": "total_count"
+                },
+                {
+                    "name" : "logits"
+                }
+            ],
+            "args": [
+                {
+                    "name" : "a",
+                    "type" : "i+"
+                },
+                {
+                    "name" : "b",
+                    "logits" : true,
+                    "type" : "f"
+                }
+            ]
+        },
+        {
+            "name": "inv_wishart",
+            "stan": "inv_wishart",
+            "type": "C",
+            "support": "[f]",
+            "args": [
+                {
+                    "name" : "nu",
+                    "type" : "i"
+                },
+                {
+                    "name" : "sigma",
+                    "type" : "f"
+                }
+            ]
+        },
+        {
+            "name": "bernoulli",
+            "stan": "bernoulli",
+            "edward": "ed.models.BernoulliWithSigmoidProbs",
+            "edward2" : "ed.Bernoulli",
+            "psiname": "flip",
+            "pyro": "dist.Bernoulli",
+            "pyro012" : "dist.Bernoulli",
+            "edward1": "ed.stats.bernoulli",
+            "venture": "bernoulli",
+            "scipy": "st.bernoulli.mean({0})",
+            "args": [
+                {
+                    "name": "theta",
+                    "type": "p"
+                }
+            ],
+            "type": "D",
+            "support": "b"
+        },
+        {
+            "name": "multinomial",
+            "stan": "multinomial",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f",
+                    "dim" : "simplex"
+                }
+            ],
+            "type": "D",
+            "support": "[i]"
+        },
+        {
+            "name": "lkj_corr",
+            "stan": "lkj_corr",
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                }
+            ],
+            "type": "C",
+            "support": "simplex"
+        },
+        {
+            "name": "multi_normal",
+            "stan": "multi_normal",
+            "pyro" : "dist.MultivariateNormal",
+            "pyro_args" : [
+                {
+                    "name" : "loc"
+                },
+                {
+                    "name" : "covariance_matrix",
+                    "type" : "pdm"
+                }
+            ],
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f",
+                    "dim" : "pdm"
+                }
+            ],
+            "type": "C",
+            "support": "[f]"
+        },
+        {
+            "name": "multi_normal_cholesky",
+            "stan": "multi_normal_cholesky",
+            "pyro" : "dist.MultivariateNormal",
+            "pyro_args" : [
+                {
+                    "name" : "loc"
+                },
+                {
+                    "name" : "scale_tril",
+                    "type" : "pdm"
+
+                }
+            ],
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "sigma",
+                    "type": "f",
+                    "dim" : "pdm"
+                }
+            ],
+            "type": "C",
+            "support": "[f]"
+        },
+        {
+            "name": "multi_normal_prec",
+            "stan": "multi_normal_prec",
+            "pyro" : "dist.MultivariateNormal",
+            "pyro_args" : [
+                {
+                    "name" : "loc"
+                },
+                {
+                    "name" : "precision_matrix",
+                    "type" : "pdm"
+
+                }
+            ],
+            "args": [
+                {
+                    "name": "mu",
+                    "type": "f"
+                },
+                {
+                    "name": "precision",
+                    "type": "f",
+                    "dim" : "pdm"
+                }
+            ],
+            "type": "C",
+            "support": "[f]"
+        },
+        {
+            "name": "binomial",
+            "stan": "binomial",
+            "psiname": "binomial",
+            "edward": "ed.models.Binomial",
+            "venture": "binomial",
+            "pyro": "dist.Binomial",
+            "args": [
+                {
+                    "name": "N",
+                    "type": "i+"
+                },
+                {
+                    "name": "theta",
+                    "type": "p"
+                }
+            ],
+            "ig": false,
+            "type": "D",
+            "support": "[0,N]"
+        },
+        {
+            "name": "beta_binomial",
+            "stan": "beta_binomial",
+            "args": [
+                {
+                    "name": "N",
+                    "type": "i+"
+                },
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "D",
+            "support": "[0,N]",
+            "ig": true
+        },
+        {
+            "name": "neg_binomial",
+            "stan": "neg_binomial",
+            "edward": "ed.models.NegativeBinomial",
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f+"
+                },
+                {
+                    "name": "beta",
+                    "type": "f+"
+                }
+            ],
+            "type": "D",
+            "support": "i+",
+            "ig": true
+        },
+        {
+            "name": "poisson",
+            "stan": "poisson",
+            "psiname": "poisson",
+            "edward": "ed.models.Poisson",
+            "pyro": "dist.Poisson",
+            "pyro012": "dist.Poisson",
+            "venture": "poisson",
+            "scipy": "st.poisson.mean({0})",
+            "args": [
+                {
+                    "name": "lambda",
+                    "type": "f+"
+                }
+            ],
+            "type": "D",
+            "support": "i+"
+        },
+        {
+            "name": "poisson_log",
+            "stan": "poisson_log",
+
+            "args": [
+                {
+                    "name": "alpha",
+                    "type": "f"
+                }
+            ],
+            "type": "D",
+            "support": "i+"
+        },
+        {
+            "name": "dirichlet",
+            "stan": "dirichlet",
+            "edward" : "ed.models.Dirichlet",
+            "pyro" : "dist.Dirichlet",
+            "args": [
+                {
+                    "name": "theta",
+                    "type": "f+",
+                    "dim": "vector"
+                }
+            ],
+            "type": "C",
+            "support": "simplex"
+        },
+        {
+            "name" : "categorical",
+            "stan" : "categorical",
+            "edward" : "ed.models.Categorical",
+            "pyro" : "dist.Categorical",
+            "pyro012" : "dist.Categorical",
+            "args" : [
+                {
+                    "name" : "cat",
+                    "type" : "simplex",
+                    "dim" : "simplex"
+
+                }
+            ],
+            "type" : "D",
+            "support" : "i+"
+        },
+        {
+            "name" : "categorical_logit",
+            "stan" : "categorical_logit",
+            "edward" : "ed.models.Categorical",
+            "pyro" : "dist.Categorical",
+            "pyro_args": [
+                {
+                    "name": "logits"
+                }
+            ],
+            "args" : [
+                {
+                    "name" : "cat",
+                    "type" : "simplex",
+                    "dim" : "simplex"
+
+                }
+            ],
+            "type" : "D",
+            "support" : "i+"
+        }
+
+    ],
+    "inferences": [
+        {
+            "name": "ed.HMC",
+            "supported_posterior": "ed.models.Empirical",
+            "datasets": 2,
+            "ig": false,
+            "lr": 0.05
+        },
+        {
+            "name": "ed.MAP",
+            "supported_posterior": "ed.models.PointMass",
+            "datasets": 1,
+            "ig": true
+        },
+        {
+            "name": "ed.KLqp",
+            "supported_posterior": "ed.models.Normal",
+            "ig": true,
+            "supported_models": [
+                "ed.models.Normal",
+                "ed.models.Exponential",
+                "ed.models.InverseGamma"
+            ]
+        },
+        {
+            "name": "ed.KLpq",
+            "supported_posterior": "ed.models.Normal",
+            "ig": true,
+            "supported_models": [
+                "ed.models.Normal",
+                "ed.models.Exponential",
+                "ed.models.InverseGamma"
+            ]
+        },
+        {
+            "name": "ed.Gibbs",
+            "supported_posterior": "ed.models.Empirical",
+            "ig": true,
+            "supported_models": [
+                "ed.models.Normal"
+            ]
+        },
+        {
+            "name": "ed.MetropolisHastings",
+            "supported_posterior": "ed.models.Empirical",
+            "ig": true,
+            "has_proposal": true
+        },
+        {
+            "name": "ed.SGHMC",
+            "supported_posterior": "ed.models.Empirical",
+            "ig": false,
+            "has_proposal": false,
+            "lr": "0.01"
+        },
+        {
+            "name": "ed.SGLD",
+            "supported_posterior": "ed.models.Empirical",
+            "ig": false,
+            "has_proposal": false,
+            "lr": 0.05
+        }
+    ],
+    "functions":
+    [
+        {
+            "name" : "sqrt",
+            "args" : [
+                {
+                    "name" : "val",
+                    "type" : "f+"
+                }
+            ]
+        },
+        {
+            "name" : "exp",
+            "args" : [
+                {
+                    "name" : "val",
+                    "type" : "f"
+                }
+            ]
+        },
+        {
+            "name" : "log",
+            "args" : [
+                {
+                    "name" : "val",
+                    "type" : "0f+"
+                }
+            ]
+        }
+    ],
+    "util_functions": [
+        {
+            "name": "tf.reciprocal"
+        },
+        {
+            "name": "tf.sin"
+        },
+        {
+            "name": "tf.cos"
+        },
+        {
+            "name": "tf.sigmoid"
+        },
+        {
+            "name": "tf.tan"
+        },
+        {
+            "name": "tf.erf"
+        },
+        {
+            "name": "tf.exp"
+        },
+        {
+            "name": "tf.lgamma"
+        }
+    ]
+}

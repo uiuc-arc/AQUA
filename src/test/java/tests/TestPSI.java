@@ -9,6 +9,28 @@ import java.io.FileOutputStream;
 
 public class TestPSI {
     @Test
+    public void testBasic(){
+        String filePath= "src/test/resources/psi/basic.template";
+        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try{
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch(Exception e){
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+    @Test
     public void testBasicDistribution(){
         String dirPath= "src/test/resources/psi/basic_distributions/";
         File folder = new File(dirPath);
@@ -59,6 +81,27 @@ public class TestPSI {
             e.printStackTrace();
         }
 
+    }
+    @Test
+    public void testFor() {
+        String filePath = "src/test/resources/psi/for.template";
+        String outputFile = filePath.substring(0, filePath.length() - 9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try {
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     @Test
     public void testStan(){

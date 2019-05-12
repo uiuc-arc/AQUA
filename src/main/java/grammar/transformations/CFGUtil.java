@@ -5,7 +5,10 @@ import grammar.cfg.BasicBlock;
 import grammar.cfg.Statement;
 import grammar.cfg.SymbolInfo;
 
+import java.util.ArrayList;
+
 public class CFGUtil {
+    //ArrayList<String>
 
     public static BasicBlock getNextBlock(BasicBlock curBlock){
         if(curBlock.getEdges().size() > 0){
@@ -66,4 +69,8 @@ public class CFGUtil {
 
         return false;
     }
+
+    /*public static boolean isFreePrior(Statement statement, AST.Expression expression){
+
+    }*/
 }

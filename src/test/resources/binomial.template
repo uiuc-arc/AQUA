@@ -1,0 +1,31 @@
+@limits <lower=1>
+int Nobs : 10
+@limits <lower=0,upper=10>
+int y[Nobs] : [9, 8, 6, 2, 2, 3, 5, 1, 4, 7]
+@limits <lower=1>
+int SubjIdx[Nobs] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+@limits <lower=1>
+int Nsubj : 10
+
+@prior
+@limits <lower=0>
+float omega
+
+@prior
+@limits <lower=0,upper=1>
+float kappa
+
+@prior
+@limits <lower=0,upper=1>
+vector[Nsubj] theta
+
+omega = gamma(2.0,3.0)
+kappa = beta(7.0,3.0)
+theta = beta(1,1)
+for(obs in 1:Nobs)
+{
+    y[obs]= binomial(10,theta[SubjIdx[obs]])
+}
+posterior(omega)
+posterior(kappa)
+posterior(theta)
