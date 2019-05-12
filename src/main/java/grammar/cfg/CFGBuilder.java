@@ -282,4 +282,9 @@ public class CFGBuilder{
         section.basicBlocks.add(basicBlock);
         return basicBlock;
     }
+
+    //gets the graph attribute of this class
+    public Graph<BasicBlock,Edge> getGraph(){
+        return this.graph;
+    }
 }
