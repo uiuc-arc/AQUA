@@ -131,7 +131,6 @@ public class TestDataflow {
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
-        //CFGAnalyzer.initCFGLabels(CFG,RD);
         Worklist.ForwardChaoticIteration(CFG,RD);
         //Utilities.printDataflowInfo(CFG,"OUT");
         //check the for loop
@@ -159,6 +158,47 @@ public class TestDataflow {
                 }
             }
         }
+    }
+
+    //The following programs don't have any asserts, the tests are simply to make sure that the dataflow doesn't die in
+    //the middle or encounter something weird like a null value or the worklist not terminating.
+    @Test
+    //@Ignore
+    public void Test5() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/poisson.template", "src/test/resources/poisson.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    public void Test6(){
+        CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", "src/test/resources/linearregression.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    //@Ignore
+    public void Test7() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/probmods/ch02_generative_models/noisy_double.template", "src/test/resources/noisy_double.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
+    @Test
+    //@Ignore
+    public void Test8() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/for.template", "src/test/resources/for.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
     }
 
 
