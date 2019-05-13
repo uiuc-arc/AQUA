@@ -1,4 +1,6 @@
-probs := [1/3, 2/3];
+probs := [0.33,0.67];
 def main() {
-c := 0.0;c = categorical(probs);return c;
+c := 0;
+c = categorical(probs);
+return c;
 }

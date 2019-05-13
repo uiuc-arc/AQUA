@@ -1,32 +1,31 @@
-data := [0,1,0,1,2,3,1,1];
-c1 := [0.375, 0.375, 0.125, 0.125];
-c2 := [0.25, 0.25, 0.25, 0.25];
-def main(){
+data := [0.0,1.0,0.0,1.0,2.0,3.0,1.0,1.0];
+c1 := [0.375,0.375,0.125,0.125];
+c2 := [0.25,0.25,0.25,0.25];
+def main() {
 hypothesis := 0;
-b := 1;
-b = bernoulli(0.5);
-if(b) {
-    hypothesis = 0;
-if(!b){
-    hypothesis = 1;
-}
-
-for (i in [0...8) {
+b := 0;
 r := 0;
-if (hypothesis){
-    r = categorical(c1);
+b = bernoulli(0.5);
+if(b == 1)
+{
+hypothesis = 0;
 }
-if (!hypothesis){
-    r = categorical(c2);
+if(b == 0)
+{
+hypothesis = 1;
 }
-condition := 0:
-if(data[i] == r){
-    condition = 1;
+for i in [0..8) 
+{
+r = 0;
+if(hypothesis)
+{
+r = categorical(c1);
 }
-if(data[i]!=r){
-    condition = 0;
+if(hypothesis == 0)
+{
+r = categorical(c2);
 }
-observe(condition=condition)
-
+observe(data[i] = r);
 }
 return hypothesis;
+}

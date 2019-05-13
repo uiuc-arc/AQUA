@@ -3,7 +3,5 @@ a = gauss(0, 1)
 if( a > 0){
     @observe
     a=a
-}  else {
-    
 }
 posterior(a)

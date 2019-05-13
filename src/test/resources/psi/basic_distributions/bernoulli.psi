@@ -1,3 +1,5 @@
 def main() {
-x := 0.0;x = bernoulli(0.1);return x;
+x := 0;
+x = bernoulli(0.1);
+return x;
 }

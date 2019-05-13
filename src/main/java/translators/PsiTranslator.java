@@ -24,12 +24,15 @@ public class PsiTranslator implements ITranslator{
     private String defaultIndent = "\t";
     private OutputStream out;
     private Set<BasicBlock> visited;
+    private StringBuilder stringBuilder;
+    private StringBuilder output;
 
     public void setOut(OutputStream o){
         out = o;
     }
 
     public void parseBlock(BasicBlock block){
+
         ArrayList<Statement>  stmts = block.getStatements();
 
         if(!visited.contains(block)) {
@@ -106,38 +109,97 @@ public class PsiTranslator implements ITranslator{
 
 
 
-    private String translate_block(BasicBlock bBlock, Set<BasicBlock> visited) {
+    private String translate_block(BasicBlock bBlock) {
         String output = "";
+        if (bBlock.getStatements().size() == 0)
+            return output;
 
+        for (Statement statement : bBlock.getStatements()) {
+            if (statement.statement instanceof AST.AssignmentStatement) {
+                AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
+                String assignStr = assignmentStatement.lhs + " = " + assignmentStatement.rhs;
+                for (AST.Annotation ann : statement.statement.annotations){
+                    if(ann.annotationType == AST.AnnotationType.Observe){
+                        assignStr = "observe(" + assignStr + ")";
+                    }
+                }
+                output += assignStr + ";\n";
+            } else if (statement.statement instanceof AST.ForLoop) {
+                AST.ForLoop loop = (AST.ForLoop) statement.statement;
+                output += "for " + loop.loopVar + " in [" + loop.range.start + ".." + loop.range.end + ") \n";
+            } else if (statement.statement instanceof AST.Decl) {
+                AST.Decl declaration = (AST.Decl) statement.statement;
+                output += declaration.id + " := 0;\n";
+            }
+            else if(statement.statement instanceof AST.IfStmt){
+                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+                output += "if(" + ifStmt.condition.toString() + ")\n";
+            }
+        }
         return output;
     }
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
+        stringBuilder = new StringBuilder();
         visited = new HashSet<>();
         for (Section section : sections){
             if(section.sectionType == SectionType.DATA){
                 dump(dumpR(section.basicBlocks.get(0).getData()));
             } else if(section.sectionType == SectionType.FUNCTION){
+
                 if(section.sectionName == "main") {
                     dump("def main() {\n", "");
                 }
-                String res = translate_block(section.basicBlocks.get(0), visited);
-                System.out.println(res);
-                dump(res);
+                if (section.sectionName.equals("main")) {
+                    for (BasicBlock basicBlock : section.basicBlocks) {
+                        BasicBlock curBlock = basicBlock;
+                        while (!visited.contains(curBlock)) {
+                            visited.add(curBlock);
+                            String block_text = translate_block(curBlock);
+                            if (curBlock.getIncomingEdges().containsKey("true")) {
+                                block_text = "{\n" + block_text;
+                            }
+                            if (curBlock.getOutgoingEdges().containsKey("back")) {
+                                block_text = block_text + "}\n";
+                            }
+                            stringBuilder.append(block_text);
+                            if (curBlock.getEdges().size() > 0) {
+                                BasicBlock prevBlock = curBlock;
+                                if (curBlock.getEdges().size() == 1) {
+                                    curBlock = curBlock.getEdges().get(0).getTarget();
+                                } else {
+                                    String label = curBlock.getEdges().get(0).getLabel();
+                                    if (label != null && label.equalsIgnoreCase("true") && !visited.contains(curBlock.getEdges().get(0).getTarget())) {
+                                        curBlock = curBlock.getEdges().get(0).getTarget();
+                                    } else {
+                                        curBlock = curBlock.getEdges().get(1).getTarget();
+                                    }
+                                }
+                                if (!visited.contains(curBlock) && curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)) {
+                                    stringBuilder.append("}\n");
+                                }
+                            }
+                        }
+                    }
+                }
+                dump(stringBuilder.toString());
 
             } else if (section.sectionType == SectionType.QUERIES){
                 parseQueries(section.basicBlocks.get(0).getQueries(), "");
+
                 dump("\n}\n");
                 return;
             } else {
                 System.out.println("Unsupport section (ignored): " + section.sectionName + " " + section.sectionType);
                 BasicBlock currBlock = section.basicBlocks.get(0);
-                parseBlock(currBlock);
+                dump(translate_block(currBlock));
             }
         }
 
     }
-
+    private boolean isIfNode(BasicBlock basicBlock){
+        return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.IfStmt;
+    }
     @Override
     public void run() {
 
@@ -172,7 +234,7 @@ public class PsiTranslator implements ITranslator{
 
     public void dump(String str){
         try {
-            this.out.write(str.getBytes());
+           out.write(str.getBytes());
         } catch (Exception e){
             e.printStackTrace();
         }

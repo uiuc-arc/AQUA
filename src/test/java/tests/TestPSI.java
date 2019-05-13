@@ -47,7 +47,6 @@ public class TestPSI {
                     trans.setOut(out);
                 } catch(Exception e) {
                     e.printStackTrace();
-                    return;
                 }
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
