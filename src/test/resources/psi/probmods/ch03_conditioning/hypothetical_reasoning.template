@@ -10,7 +10,5 @@ D = A + B + C
 if (D >= 2){
     @observe
     D = D
-} else {
-
 }
 posterior(A)

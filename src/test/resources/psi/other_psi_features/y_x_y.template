@@ -1,0 +1,11 @@
+float y
+y = uniform(0,1)
+float x
+x = uniform(0,1)
+float dom
+dom = x+y
+float top
+top = y
+float r
+r = top/dom
+posterior(r)

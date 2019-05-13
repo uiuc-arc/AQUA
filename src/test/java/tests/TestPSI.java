@@ -89,6 +89,50 @@ public class TestPSI {
         }
     }
     @Test
+    public void testSFS(){
+        String filePath= "src/test/resources/psi/ppaml_p4/simple_friends_smoking.psi";
+        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try{
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch(Exception e){
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+    @Test
+    public void testYXY(){
+        String filePath= "src/test/resources/psi/other_psi_features/y_x_y.template";
+        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try{
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch(Exception e){
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+    @Test
     public void testObserve(){
         String filePath= "src/test/resources/psi/basic_distributions/observe.template";
         String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
