@@ -1,0 +1,7 @@
+x = 5
+y = x
+if(y)
+m=1
+else
+m=fun(a1,a2)
+posterior(y)

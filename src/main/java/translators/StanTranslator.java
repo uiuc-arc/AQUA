@@ -36,12 +36,22 @@ public class StanTranslator implements ITranslator {
                 dataR = dumpR(section.basicBlocks.get(0).getData());
             } else if (section.sectionType == SectionType.FUNCTION) {
                 if (section.sectionName.equals("main")) {
-
                     for (BasicBlock basicBlock : section.basicBlocks) {
                         BasicBlock curBlock = basicBlock;
                         while (!visited.contains(curBlock)) {
                             visited.add(curBlock);
+                            System.out.println(visited.size());
                             String block_text = translate_block(curBlock);
+
+                            if(curBlock.getIncomingEdges().containsKey("true")){
+                                block_text = "{\n" +block_text;
+                            }
+
+                            if(curBlock.getOutgoingEdges().containsKey("back")){
+                                block_text = block_text +"}\n";
+                            }
+
+
                             if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
                                 modelSection += block_text;
                             } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
@@ -53,16 +63,31 @@ public class StanTranslator implements ITranslator {
                             }
 
                             if (curBlock.getEdges().size() > 0) {
+                                BasicBlock prevBlock = curBlock;
                                 // check true edge first
+
                                 if (curBlock.getEdges().size() == 1) {
                                     curBlock = curBlock.getEdges().get(0).getTarget();
                                 } else {
                                     String label = curBlock.getEdges().get(0).getLabel();
-                                    if (label != null && label.equalsIgnoreCase("true")) {
+                                    if (label != null && label.equalsIgnoreCase("true") && !visited.contains(curBlock.getEdges().get(0).getTarget())) {
                                         curBlock = curBlock.getEdges().get(0).getTarget();
                                     } else {
                                         curBlock = curBlock.getEdges().get(1).getTarget();
                                     }
+                                }
+                                //if next is meet block
+                                if(curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
+                                    if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
+                                        modelSection += "}\n";
+                                    } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
+                                        transformedParam += "}\n";
+                                    } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
+                                        transformedData += "}\n";
+                                    } else if (curBlock.getParent().sectionName.equalsIgnoreCase("generatedquantities")) {
+                                        generatedQuantities += "}\n";
+                                    }
+
                                 }
                             }
                         }
@@ -74,9 +99,19 @@ public class StanTranslator implements ITranslator {
                 for (BasicBlock basicBlock : section.basicBlocks) {
                     BasicBlock curBlock = basicBlock;
                     while (!visited.contains(curBlock)) {
+                        visited.add(curBlock);
                         String block_text = translate_block(curBlock);
+                        if(curBlock.getIncomingEdges().containsKey("true")){
+                            block_text = "{\n" +block_text;
+                        }
+                        if(curBlock.getOutgoingEdges().containsKey("back")){
+                            block_text = block_text +"}\n";
+                        }
 
-                        if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
+                        if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
+                            modelSection += block_text;
+                        }
+                        else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
                             transformedParam += block_text;
                         } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
                             transformedData += block_text;
@@ -86,21 +121,43 @@ public class StanTranslator implements ITranslator {
 
                         if (curBlock.getEdges().size() > 0) {
                             // check true edge first
+                            BasicBlock prevBlock = curBlock;
                             if (curBlock.getEdges().size() == 1) {
                                 curBlock = curBlock.getEdges().get(0).getTarget();
                             } else {
                                 String label = curBlock.getEdges().get(0).getLabel();
-                                if (label != null && label.equalsIgnoreCase("true")) {
+                                if (label != null && label.equalsIgnoreCase("true")  && !visited.contains(curBlock.getEdges().get(0).getTarget())) {
                                     curBlock = curBlock.getEdges().get(0).getTarget();
                                 } else {
                                     curBlock = curBlock.getEdges().get(1).getTarget();
                                 }
+                            }
+
+                            if(curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
+                                if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
+                                    modelSection += "}\n";
+                                } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
+                                    transformedParam += "}\n";
+                                } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
+                                    transformedData += "}\n";
+                                } else if (curBlock.getParent().sectionName.equalsIgnoreCase("generatedquantities")) {
+                                    generatedQuantities += "}\n";
+                                }
+
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    private boolean isIfNode(BasicBlock basicBlock){
+        return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.IfStmt;
+    }
+
+    private boolean isLoopNode(BasicBlock basicBlock){
+        return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.ForLoop;
     }
 
     public String getData() {
@@ -114,12 +171,12 @@ public class StanTranslator implements ITranslator {
             stanCode += "data{\n" + dataSection + "}\n";
         }
 
-        if (paramSection != null && paramSection.length() > 0) {
-            stanCode += "parameters{\n" + paramSection + "}\n";
-        }
-
         if (transformedData != null && transformedData.length() > 0) {
             stanCode += "transformed data{\n" + transformedData + "}\n";
+        }
+
+        if (paramSection != null && paramSection.length() > 0) {
+            stanCode += "parameters{\n" + paramSection + "}\n";
         }
 
         if (transformedParam != null && transformedParam.length() > 0) {
@@ -163,12 +220,15 @@ public class StanTranslator implements ITranslator {
                     output += declarationString;
                 }
             }
+            else if(statement.statement instanceof AST.IfStmt){
+                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+                output += "if(" + ifStmt.condition.toString() + ")\n";
+            }
         }
 
-        if (bBlock.getIncomingEdges().containsKey("true") || bBlock.getIncomingEdges().containsKey("false")) {
-            return "{\n" + output + "}\n";
-        }
-
+//        if (bBlock.getIncomingEdges().containsKey("true") || bBlock.getIncomingEdges().containsKey("false")) {
+//            return "{\n" + output + "}\n";
+//        }
 
         return output;
     }

@@ -48,7 +48,7 @@ public class CFGBuilder{
         if(outputfile != null)
             this.outputfile = outputfile;
         else
-            this.outputfile = "src/test/resources/graph.png";
+            this.outputfile = "src/test/resources/" + filename.split("/")[filename.split("/").length - 1].split("\\.")[0] + ".png";
 
         createCFG(filename);
     }
@@ -67,6 +67,7 @@ public class CFGBuilder{
         Edge edge = new Edge(to, label);
         from.edges.add(edge);
         to.incomingEdges.put(label, from);
+        from.outgoingEdges.put(label, to);
         this.graph.addEdge(from, to, edge);
 
     }
@@ -128,12 +129,15 @@ public class CFGBuilder{
     }
 
     public BasicBlock buildBasicBlock(ArrayList<AST.Statement> statements, Section section, BasicBlock prevBasicBlock, String label){
-        BasicBlock curBlock = createBasicBlock(section);
+        BasicBlock curBlock = prevBasicBlock;
 
-        if(prevBasicBlock != null){
+        if(prevBasicBlock == null || prevBasicBlock.statements.size() > 0 ){
+            curBlock = createBasicBlock(section);
             // create new symbol table
-            prevBasicBlock.getSymbolTable().fork(curBlock);
-            addEdge(prevBasicBlock, curBlock, label);
+            if(prevBasicBlock != null)
+            {   prevBasicBlock.getSymbolTable().fork(curBlock);
+                addEdge(prevBasicBlock, curBlock, label);
+            }
         }
 
         for(AST.Statement statement:statements){
@@ -163,17 +167,26 @@ public class CFGBuilder{
                 AST.IfStmt ifStmt = (AST.IfStmt) statement;
                 curBlock.addStatement(ifStmt);
                 BasicBlock trueBlock = buildBasicBlock(ifStmt.trueBlock.statements, section, curBlock, "true");
+                BasicBlock newblock = createBasicBlock(section);
+                if(ifStmt.elseBlock != null){
+                    BasicBlock falseBlock = buildBasicBlock(ifStmt.elseBlock.statements, section, curBlock, "false");
+                    addEdge(falseBlock, newblock, "meet");
+                }
+                else{
+                    addEdge(curBlock, newblock, "false");
+                }
 
-                BasicBlock falseBlock = buildBasicBlock(ifStmt.elseBlock.statements, section, curBlock, "false");
+                addEdge(trueBlock, newblock, "meet");
+
 //                curBlock.edges.add(new Edge(trueBlock, "true"));
 //                curBlock.edges.add(new Edge(falseBlock, "false"));
 
                 // start new basic block
-                BasicBlock newblock = createBasicBlock(section);
+
 
                 // add new edges
-                addEdge(trueBlock, newblock, null);
-                addEdge(falseBlock, newblock, null);
+
+
 
 //                // fork new symbol table
 //                curBlock.getSymbolTable().fork(newblock);
@@ -183,15 +196,28 @@ public class CFGBuilder{
             }
             else if(statement instanceof AST.ForLoop){
                 AST.ForLoop forLoop = (AST.ForLoop) statement;
-                BasicBlock loop_condition_block = createBasicBlock(section);
-                loop_condition_block.addStatement(forLoop);
+                BasicBlock loop_condition_block = curBlock;
+                if(curBlock.statements.size() > 0){
+                    loop_condition_block = createBasicBlock(section);
+                    curBlock.getSymbolTable().fork(loop_condition_block);
+                    addEdge(curBlock, loop_condition_block, null);
 
-                curBlock.getSymbolTable().fork(loop_condition_block);
-                addEdge(curBlock, loop_condition_block, null);
+                }
+                //BasicBlock loop_condition_block = createBasicBlock(section);
+                //BasicBlock loop_condition_block = curBlock;
+                loop_condition_block.addStatement(forLoop);
 
                 //curBlock.statements.add(forLoop);
                 BasicBlock loopbody = buildBasicBlock(forLoop.block.statements, section, loop_condition_block, "true");
-                BasicBlock newblock = createBasicBlock(section);
+                BasicBlock newblock;
+//                if(loopbody.statements.size() != 0){
+//                    newblock = createBasicBlock(section);
+//                }
+//                else{
+//                    newblock = loopbody;
+//                }
+
+                newblock = createBasicBlock(section);
                 //addEdge(loopbody, newblock, null);
                 addEdge(loop_condition_block, newblock, "false");
                 addEdge(loopbody, loop_condition_block, "back");
@@ -281,5 +307,11 @@ public class CFGBuilder{
         graph.addVertex(basicBlock);
         section.basicBlocks.add(basicBlock);
         return basicBlock;
+    }
+
+
+    //gets the graph attribute of this class
+    public Graph<BasicBlock,Edge> getGraph(){
+        return this.graph;
     }
 }

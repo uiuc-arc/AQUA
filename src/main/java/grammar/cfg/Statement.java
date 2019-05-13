@@ -2,21 +2,26 @@ package grammar.cfg;
 
 import grammar.AST;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
+import grammar.analyses.AbstractState;
 
 public class Statement {
     public AST.Statement statement;
     public BasicBlock parent;
-    //public Map<String,AbstractState> dataflowFacts;    //maps a string such as "IN" or "OUT" or "GEN" or "KILL"
+
+    //maps a string such as "IN"/"OUT" or "GEN"/"KILL" to the dataflow fact
+    public Map<String,AbstractState> dataflowFacts;
     public int id;
     static int classCount;
 
     public Statement(AST.Statement statement, BasicBlock basicBlock){
         this.statement = statement;
         this.parent = basicBlock;
-        //dataflowFacts = new HashMap<>();
+        dataflowFacts = new HashMap<>();
         classCount++;
-        this.id = classCount;
+        this.id = classCount; //a simple way to associate a unique number/id to each statement object instance
     }
 
     public ArrayList<Statement> getPredStatements(){
@@ -68,8 +73,8 @@ public class Statement {
         return succs;
     }
 
-//    public void printDataFlowFacts(String key){
-//        AbstractState fact = this.dataflowFacts.get(key);
-//        fact.printAbsState();
-//    }
+    public void printDataFlowFacts(String key){
+        AbstractState fact = this.dataflowFacts.get(key);
+        fact.printAbsState();
+    }
 }

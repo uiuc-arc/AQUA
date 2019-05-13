@@ -23,4 +23,9 @@ public class TestCFG {
     public void Test3() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/stan2237.template", "src/test/resources/graph3.png");
     }
+
+    @Test
+    public void TestNestedIfinLoop() {
+        CFGBuilder builder = new CFGBuilder("src/test/resources/leukfr02.template", null, true);
+    }
 }

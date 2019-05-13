@@ -34,7 +34,13 @@ public class BasicBlock {
         return incomingEdges;
     }
 
+    public Map<String, BasicBlock> getOutgoingEdges() {
+        return outgoingEdges;
+
+    }
+
     Map<String, BasicBlock> incomingEdges;
+    Map<String, BasicBlock> outgoingEdges;
 
     public ArrayList<Edge> getEdges() {
         return edges;
@@ -54,6 +60,7 @@ public class BasicBlock {
         edges = new ArrayList<>();
         symbolTable = new SymbolTable(this);
         incomingEdges = new HashMap<>();
+        outgoingEdges = new HashMap<>();
     }
 
     public BasicBlock(int id, Section section){
@@ -92,6 +99,7 @@ public class BasicBlock {
 
     public int getNumStmts() {return this.statements.size();}
 
+    //for this basic block, get the last statement in the array list of statements
     public Statement getLastStatement(){
         if (!this.statements.isEmpty()){
             return this.statements.get(this.getNumStmts()-1);
@@ -99,7 +107,8 @@ public class BasicBlock {
         return null;
     }
 
-
+    //for a this basic block, get ALL the immediate predecessor blocks that actually contain statements
+    //the purpose is to skip over the blank basic blocks added during the compilation process
     public ArrayList<BasicBlock> getStatementContainingPredBlocks(){
         ArrayList<BasicBlock> preds = new ArrayList<>();
         //if the Basic block has no predecesors (it is the first in the CFG)
