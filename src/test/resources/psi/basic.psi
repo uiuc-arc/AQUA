@@ -1,15 +1,17 @@
 def main() {
-x := 0.0;
+x := 0;
 x = gauss(0,1);
-if (x>0)
-{observe(x = x);
-if (x<0.5)
-{observe(x = x);
+if(x>0)
+{
+observe(x = x);
+if(x<0.5)
+{
+observe(x = x);
 }
-else
-{}
 }
-else
-{}
+for n in [1..10) 
+{
+x = x+x;
+}
 return x;
 }
