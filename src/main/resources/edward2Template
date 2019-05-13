@@ -37,5 +37,5 @@ with tf.Session() as sess:
     states_, results_ = sess.run([states, kernel_results])
 
 for i in range(len(states_)):
-    print(np.mean(states_[i]))
-    print(np.std(states_[i]))
+    print(np.mean(states_[i], axis=0))
+    print(np.std(states_[i], axis=0))

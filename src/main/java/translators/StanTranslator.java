@@ -366,11 +366,11 @@ public class StanTranslator implements ITranslator {
     }
 
     @Override
-    public void run() {
-        run("/tmp/stancode.stan", "/tmp/stancode.R");
+    public Pair run() {
+        return run("/tmp/stancode.stan", "/tmp/stancode.R");
     }
 
-    public void run(String codeFileName, String dataFileName) {
+    public Pair run(String codeFileName, String dataFileName) {
         System.out.println("Running Stan...");
         try {
             FileWriter fileWriter = new FileWriter(codeFileName);
@@ -391,6 +391,6 @@ public class StanTranslator implements ITranslator {
         Pair results = Utils.runCode(codeFileName, dataFileName, Utils.STANRUNNER);
         System.out.println(results.getLeft());
         System.out.println(results.getRight());
-
+        return results;
     }
 }

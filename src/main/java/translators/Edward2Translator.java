@@ -126,14 +126,14 @@ public class Edward2Translator implements ITranslator {
         for(Statement statement:basicBlock.getStatements()){
             if(statement.statement instanceof AST.AssignmentStatement){
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
-                output += new Edward2Visitor(false).evaluate(assignmentStatement.lhs) + "=" +
-                        new Edward2Visitor(true).evaluate(assignmentStatement.rhs) + "\n";
+                output += new Edward2Visitor(basicBlock, false).evaluate(assignmentStatement.lhs) + "=" +
+                        new Edward2Visitor(basicBlock, true, assignmentStatement.lhs).evaluate(assignmentStatement.rhs) + "\n";
 
                 if(assignmentStatement.rhs instanceof AST.FunctionCall && ((AST.FunctionCall) assignmentStatement.rhs).isDistribution){
                     output = output.substring(0, output.length()-2) + ",name = \"" + assignmentStatement.lhs.toString() + "\")\n";
                     if(Utils.isPrior(statement, assignmentStatement.lhs)) {
                         this.paramStr += assignmentStatement.lhs.toString() + "=" + assignmentStatement.lhs.toString() + ",";
-                        this.initStr += "tf.random_normal([]),";
+                        this.initStr += String.format("tf.random_normal([%s]),", SymbolInfo.getDimsString(basicBlock.getSymbolTable(), assignmentStatement.lhs) );
                     }
                     else {
                         this.paramStr += assignmentStatement.lhs.toString() + "=" + "data['" + assignmentStatement.lhs.toString() + "'],";
@@ -175,11 +175,11 @@ public class Edward2Translator implements ITranslator {
             }
             else if(data.array != null){
                 INDArray arr = Utils.parseArray(data.array, data.decl.dtype.primitive == AST.Primitive.INTEGER);
-                d+="np.array(" + arr.toString().replaceAll("\\s", "") + ")";
+                d+="np.array(" + arr.toString().replaceAll("\\s", "") + ").astype(np.float32)";
             }
             else if(data.vector != null){
                 INDArray arr = Utils.parseVector(data.vector, data.decl.dtype.primitive == AST.Primitive.INTEGER);
-                d+="np.array(" + arr.toString().replaceAll("\\s", "") + ")";
+                d+="np.array(" + arr.toString().replaceAll("\\s", "") + ").astype(np.float32)";
             }
 
             d+="\n";
@@ -205,11 +205,11 @@ public class Edward2Translator implements ITranslator {
     }
 
     @Override
-    public void run() {
-        run("/tmp/edward2code.py");
+    public Pair run() {
+        return run("/tmp/edward2code.py");
     }
 
-    public void run(String codeFileName){
+    public Pair run(String codeFileName){
         System.out.println("Running Edward...");
         try {
             FileWriter fileWriter = new FileWriter(codeFileName);
@@ -222,5 +222,6 @@ public class Edward2Translator implements ITranslator {
         Pair results = Utils.runCode(codeFileName, Utils.EDWARD2RUNNER);
         System.out.println(results.getLeft());
         System.out.println(results.getRight());
+        return results;
     }
 }

@@ -1,23 +1,14 @@
 package translators;
 
-import com.github.os72.protobuf351.ByteString;
 import grammar.AST;
-import grammar.Template3Parser;
 import grammar.cfg.*;
 import org.apache.commons.lang3.tuple.Pair;
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import translators.visitors.StanVisitor;
 import utils.Utils;
 
-import javax.swing.plaf.nimbus.State;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
-
-import static grammar.transformations.CFGUtil.isData;
 
 public class PsiTranslator implements ITranslator{
 
@@ -201,8 +192,9 @@ public class PsiTranslator implements ITranslator{
         return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.IfStmt;
     }
     @Override
-    public void run() {
+    public Pair run() {
 
+        return null;
     }
 
     public void run(String codeFileName){

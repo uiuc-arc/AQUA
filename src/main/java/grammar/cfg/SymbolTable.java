@@ -37,12 +37,16 @@ public class SymbolTable {
             symbolInfo.setType(decl.dtype);
             symbolInfo.setLimitsString(getLimits(decl));
             symbolInfo.setData(isData);
+            symbolInfo.setDims(decl.dims);
             // TODO: other annotations
             this.table.put(name, symbolInfo);
         }
     }
 
     public SymbolInfo fetch(String name){
+        if(name == null)
+            return null;
+
         if(this.table.containsKey(name))
             return this.table.get(name);
         else {
@@ -50,7 +54,6 @@ public class SymbolTable {
             if(curTable != null)
                 return curTable.fetch(name);
         }
-
         return null;
     }
 
