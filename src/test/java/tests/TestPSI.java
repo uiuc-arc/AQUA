@@ -60,6 +60,35 @@ public class TestPSI {
         }
     }
     @Test
+    public void testProbMode02(){
+        String dirPath= "src/test/resources/psi/probmods/ch02_generative_models/";
+        File folder = new File(dirPath);
+        String[] files = folder.list();
+        for (String file : files) {
+            if(file.contains(".template")) {
+                System.out.println("Parsing: " + file );
+                String filename = dirPath + file;
+                String outputFile = filename.substring(0, filename.length()-9) + ".psi";
+
+                PsiTranslator trans = new PsiTranslator();
+                try{
+                    FileOutputStream out = new FileOutputStream(outputFile);
+                    trans.setOut(out);
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
+                CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
+                try {
+                    trans.translate(cfgBuilder.getSections());
+                    trans.run(outputFile);
+
+                } catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    @Test
     public void testObserve(){
         String filePath= "src/test/resources/psi/basic_distributions/observe.template";
         String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
