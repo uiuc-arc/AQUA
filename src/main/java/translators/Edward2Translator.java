@@ -20,10 +20,7 @@ import java.util.Set;
 public class Edward2Translator implements ITranslator {
 
 
-    public String getModelCode() {
-        return modelCode;
-    }
-
+    private static final String edward2TemplateFile = "src/main/resources/edward2Template";
     private String modelCode = "";
     private String dataArgs = "";
     private String dataStr = "";
@@ -32,8 +29,9 @@ public class Edward2Translator implements ITranslator {
     private String initStr = "";
     private String dataSection = "";
 
-    private static final String edward2TemplateFile = "src/main/resources/edward2Template";
-
+    public String getModelCode() {
+        return modelCode;
+    }
 
     private String readTemplate(){
         try {
@@ -51,6 +49,7 @@ public class Edward2Translator implements ITranslator {
 
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
+        Set<BasicBlock> visited = new HashSet<>();
         for(Section section:sections){
             if(section.sectionType == SectionType.DATA){
                 dataSection += getDataString(section.basicBlocks.get(0).getData());
@@ -58,31 +57,51 @@ public class Edward2Translator implements ITranslator {
             }
             else if (section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName.equals("main")){
-                    Set<BasicBlock> visited = new HashSet<>();
                     for(BasicBlock basicBlock:section.basicBlocks){
                         BasicBlock curBlock = basicBlock;
                         while(!visited.contains(curBlock)){
                             visited.add(curBlock);
                             String block_text = translate_block(curBlock);
+
+                            if(curBlock.getIncomingEdges().containsKey("true")){
+                                block_text = "{\n" +block_text;
+                            }
+
+                            if(curBlock.getOutgoingEdges().containsKey("back")){
+                                block_text = block_text +"}\n";
+                            }
+
                             if(curBlock.getParent().sectionName.equalsIgnoreCase("main")){
                                 modelCode+=block_text;
                             }
                             else if(curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")){
                                 modelCode += block_text;
                             }
+                            else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformeddata")) {
+                                modelCode += block_text;
+                            } else if (curBlock.getParent().sectionName.equalsIgnoreCase("generatedquantities")) {
+                                modelCode += block_text;
+                            }
 
                             if(curBlock.getEdges().size() > 0){
+                                BasicBlock prevBlock = curBlock;
                                 if(curBlock.getEdges().size() == 1){
                                     curBlock = curBlock.getEdges().get(0).getTarget();
                                 }
                                 else{
                                     String label = curBlock.getEdges().get(0).getLabel();
-                                    if(label != null && label.equalsIgnoreCase("false")){
+                                    if(label != null && label.equalsIgnoreCase("false") && !visited.contains(curBlock.getEdges().get(1).getTarget())){
                                         curBlock = curBlock.getEdges().get(1).getTarget();
                                     }
                                     else
                                         curBlock = curBlock.getEdges().get(0).getTarget();
                                 }
+                                //if next is meet block
+                                if(curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
+                                    modelCode += "}\n";
+
+                                }
+
                             }
                         }
                     }
@@ -92,6 +111,10 @@ public class Edward2Translator implements ITranslator {
                 }
             }
         }
+    }
+
+    private boolean isIfNode(BasicBlock basicBlock){
+        return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.IfStmt;
     }
 
     private String translate_block(BasicBlock basicBlock){

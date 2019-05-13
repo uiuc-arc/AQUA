@@ -40,7 +40,6 @@ public class StanTranslator implements ITranslator {
                         BasicBlock curBlock = basicBlock;
                         while (!visited.contains(curBlock)) {
                             visited.add(curBlock);
-                            System.out.println(visited.size());
                             String block_text = translate_block(curBlock);
 
                             if(curBlock.getIncomingEdges().containsKey("true")){
@@ -77,7 +76,7 @@ public class StanTranslator implements ITranslator {
                                     }
                                 }
                                 //if next is meet block
-                                if(curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
+                                if(!visited.contains(curBlock) && curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
                                     if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
                                         modelSection += "}\n";
                                     } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
@@ -133,7 +132,7 @@ public class StanTranslator implements ITranslator {
                                 }
                             }
 
-                            if(curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
+                            if(!visited.contains(curBlock) && curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)){
                                 if (curBlock.getParent().sectionName.equalsIgnoreCase("main")) {
                                     modelSection += "}\n";
                                 } else if (curBlock.getParent().sectionName.equalsIgnoreCase("transformedparam")) {
@@ -154,10 +153,6 @@ public class StanTranslator implements ITranslator {
 
     private boolean isIfNode(BasicBlock basicBlock){
         return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.IfStmt;
-    }
-
-    private boolean isLoopNode(BasicBlock basicBlock){
-        return basicBlock.getStatements().size() == 1 && basicBlock.getStatements().get(0).statement instanceof AST.ForLoop;
     }
 
     public String getData() {
