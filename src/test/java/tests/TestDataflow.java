@@ -201,5 +201,15 @@ public class TestDataflow {
         Worklist.ForwardChaoticIteration(CFG, RD);
     }
 
+    @Test
+    //@Ignore
+    public void Test9(){
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/probmods/bayes_occams_razor.template", "src/test/resources/occams_razor.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+    }
+
 
 }

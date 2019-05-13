@@ -131,7 +131,7 @@ public class CFGBuilder{
     public BasicBlock buildBasicBlock(ArrayList<AST.Statement> statements, Section section, BasicBlock prevBasicBlock, String label){
         BasicBlock curBlock = prevBasicBlock;
 
-        if(prevBasicBlock == null || prevBasicBlock.statements.size() > 0 ){
+        if(prevBasicBlock == null || prevBasicBlock.statements.size() > 0 || prevBasicBlock.data.size() > 0 ){
             curBlock = createBasicBlock(section);
             // create new symbol table
             if(prevBasicBlock != null)
