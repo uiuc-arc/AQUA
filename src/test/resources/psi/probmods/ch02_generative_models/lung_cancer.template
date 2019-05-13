@@ -3,5 +3,5 @@ lungCancer = bernoulli(0.01)
 float cold
 cold = bernoulli(0.2)
 float res
-res = lungCancer | cold
+res = lungCancer || cold
 posterior(res)

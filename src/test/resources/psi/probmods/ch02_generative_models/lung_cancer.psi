@@ -1,0 +1,9 @@
+def main() {
+lungCancer := 0;
+lungCancer = bernoulli(0.01);
+cold := 0;
+cold = bernoulli(0.2);
+res := 0;
+res = lungCancer||cold;
+return res;
+}

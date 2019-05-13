@@ -3,7 +3,8 @@ a = bernoulli(0.5)
 float b
 if (a == 1){
     b = bernoulli(0.7)
-} else {
+}
+if (a==0){
     b = bernoulli(0.1)
 }
 posterior(b)

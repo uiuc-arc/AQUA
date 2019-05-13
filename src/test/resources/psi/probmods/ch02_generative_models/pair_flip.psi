@@ -1,0 +1,7 @@
+def main() {
+a := 0;
+a = bernoulli(0.5);
+b := 0;
+b = bernoulli(0.5);
+return (a, b);
+}

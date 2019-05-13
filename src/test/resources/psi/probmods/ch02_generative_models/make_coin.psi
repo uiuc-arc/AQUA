@@ -1,0 +1,14 @@
+def main() {
+a := 0;
+a = bernoulli(0.5);
+b := 0;
+if(a == 1)
+{
+b = bernoulli(0.7);
+}
+if(a == 0)
+{
+b = bernoulli(0.1);
+}
+return b;
+}

@@ -4,7 +4,8 @@ float b
 b = bernoulli(0.5)
 if(b) {
     x = x
-} else {
+}
+    if (b == false){
     x = x + x
 }
 posterior(x)
