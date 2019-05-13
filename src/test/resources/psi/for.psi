@@ -1,0 +1,19 @@
+def main() {
+x := 0.0;
+b := 0.0;
+for n in [1 .. 10) {
+x = x+1;
+if (b){
+x = x+x;
+if (b == false){
+x = x+1;
+}
+ else {
+}
+}
+ else {
+}
+
+}
+return x;
+}

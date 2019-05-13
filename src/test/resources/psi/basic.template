@@ -1,0 +1,17 @@
+float x
+x=gauss(0, 1)
+if(x>0){
+    @observe
+    x = x
+    if(x < 0.5){
+    @observe
+    x = x
+    } else {
+    }
+} else {
+
+for(n in 1:10){
+    x = x + x
+}
+}
+posterior(x)

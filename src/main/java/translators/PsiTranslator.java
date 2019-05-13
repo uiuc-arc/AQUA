@@ -7,13 +7,17 @@ import grammar.cfg.*;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import translators.visitors.StanVisitor;
 import utils.Utils;
 
+import javax.swing.plaf.nimbus.State;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
+
+import static grammar.transformations.CFGUtil.isData;
 
 public class PsiTranslator implements ITranslator{
 
@@ -26,21 +30,22 @@ public class PsiTranslator implements ITranslator{
     }
 
     public void parseBlock(BasicBlock block){
-        boolean dumpRight = false;
         ArrayList<Statement>  stmts = block.getStatements();
-        if (!visited.contains(block) && stmts.size()>=1 && (block.getIncomingEdges().containsKey("true") || block.getIncomingEdges().containsKey("false"))) {
-            dump("{\n");
-            dumpRight = true;
-        }
+
         if(!visited.contains(block)) {
             visited.add(block);
-            parse(stmts);
+            StringBuilder sb = new StringBuilder();
+            Statement st = null;
+
+            for(Statement stmt : stmts){
+                String res = parse(stmt);
+                sb.append(res);
+            }
+            dump(sb.toString());
+
             for (Edge e : block.getEdges()) {
                 parseBlock(e.getTarget());
             }
-        }
-        if(dumpRight){
-            dump("}\n");
         }
 
     }
@@ -63,7 +68,7 @@ public class PsiTranslator implements ITranslator{
 
             dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "");
             if (dimsString.length() == 0) {
-                stringWriter.write(String.format("%s := array(%s);\n", data.decl.id, dataString));
+                stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
             } else if (dimsString.split(",").length == 1) {
                 stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
 
@@ -98,6 +103,14 @@ public class PsiTranslator implements ITranslator{
         return stringWriter.toString();
     }
 
+
+
+
+    private String translate_block(BasicBlock bBlock, Set<BasicBlock> visited) {
+        String output = "";
+
+        return output;
+    }
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
         visited = new HashSet<>();
@@ -108,24 +121,19 @@ public class PsiTranslator implements ITranslator{
                 if(section.sectionName == "main") {
                     dump("def main() {\n", "");
                 }
-                    Set<BasicBlock> visitedBlock = new HashSet<>();
-                    List<BasicBlock> blocks = section.basicBlocks;
-                    BasicBlock currBlock = section.basicBlocks.get(0);
-                    parseBlock(currBlock);
+                String res = translate_block(section.basicBlocks.get(0), visited);
+                System.out.println(res);
+                dump(res);
 
             } else if (section.sectionType == SectionType.QUERIES){
                 parseQueries(section.basicBlocks.get(0).getQueries(), "");
                 dump("\n}\n");
                 return;
             } else {
-
                 System.out.println("Unsupport section (ignored): " + section.sectionName + " " + section.sectionType);
-                Set<BasicBlock> visitedBlock = new HashSet<>();
-                List<BasicBlock> blocks = section.basicBlocks;
                 BasicBlock currBlock = section.basicBlocks.get(0);
                 parseBlock(currBlock);
             }
-
         }
 
     }
@@ -161,45 +169,7 @@ public class PsiTranslator implements ITranslator{
         }
     }
 
-    public void parseData(List<AST.Data> data, String indent){
-        for(AST.Data d : data){
-            switch(d.decl.dtype.primitive){
-                case INTEGER:
-                case FLOAT: {
 
-
-                    break;
-                }
-                case VECTOR: {
-                    System.out.println(d.decl.id);
-                    dump(d.decl.id.toString() + " := ", indent);
-                    dump(d.annotations.get(0).annotationValue.toString());
-                    dump("\n");
-
-                    break;
-                }
-                case MATRIX:
-                    break;
-                default:
-                    System.out.println("Not support data");
-            }
-
-        }
-
-    }
-
-    public void parse(ArrayList<Statement> stmts){
-        for(Statement stmt : stmts){
-                parse(stmt);
-                dump("\n");
-        }
-    }
-    public void parse(List<AST.Statement> stmts){
-        for(AST.Statement stmt : stmts){
-            parse(stmt);
-            dump("\n");
-        }
-    }
     public void dump(String str){
         try {
             this.out.write(str.getBytes());
@@ -211,61 +181,51 @@ public class PsiTranslator implements ITranslator{
     public void dump(String str, String indent){
         dump(str + indent);
     }
-    public void parse(AST.Block bb){
-        dump("{");
-        parse(bb.statements);
-        dump("}\n");
-    }
-    public void parse(Statement s){
-        parse(s.statement);
+
+    public String parse(Statement s){
+        return parse(s.statement);
     }
 
-    public void parse(AST.Expression exp ){
-        dump(exp.toString());
-    }
-    public boolean observe(AST.Statement s){
+    public boolean observe(AST.Statement s, StringBuilder sb){
         boolean res = true;
 
         for (AST.Annotation ann : s.annotations){
             if(ann.annotationType == AST.AnnotationType.Observe){
-                dump("observe(");
-                dump(s.toString());
-                dump(");\n");
+                sb.append(String.format("observe(%s)\n", s.toString()));
             } else {
                 res = false;
             }
-
         }
         return res;
     }
-    public void parse(AST.Statement s){
+    public String parse(AST.Statement s){
+        StringBuilder sb = new StringBuilder();
         if(s.annotations.size()!=0){
-            if (observe(s)){
-                return;
+            if (observe(s, sb)){
+                return sb.toString();
             }
         }
         if (s instanceof AST.IfStmt){
             AST.IfStmt ifstmt = (AST.IfStmt) s;
-            dump("if (");
-            parse(ifstmt.condition);
-            dump(")\n");
+            sb.append(String.format("if (%s)", ifstmt.condition));
         } else if (s instanceof AST.AssignmentStatement) {
             AST.AssignmentStatement assign = (AST.AssignmentStatement) s;
-            dump(assign.toString() + ";\n");
+            sb.append(assign.toString() + ";\n");
         } else if (s instanceof AST.ForLoop) {
             AST.ForLoop fl = (AST.ForLoop) s;
-            dump(String.format("for %s in [%s .. %s) ", fl.loopVar.toString(), fl.range.start, fl.range.end));
+            sb.append(String.format("for %s in [%s .. %s) ", fl.loopVar.toString(), fl.range.start, fl.range.end));
         } else if (s instanceof AST.Decl){
             AST.Decl decl = (AST.Decl) s;
             if(decl.dtype.primitive == AST.Primitive.FLOAT){
-                dump(decl.id.toString() + " := 0.0;\n");
+                sb.append(decl.id.toString() + " := 0.0;\n");
             } else {
-                dump(decl.id.toString() + " := 0;\n");
+                sb.append(decl.id.toString() + " := 0;\n");
             }
 
         } else {
             System.out.println("not covering: " + s);
         }
+        return sb.toString();
 
 
     }

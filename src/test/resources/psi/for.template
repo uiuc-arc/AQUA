@@ -1,5 +1,12 @@
 float x
+float b
 for(n in 1:10){
-    x = x + x
+        x = x + 1
+        if(b){
+            x = x + x
+        } else {}
+        if(b == false){
+            x = x + 1
+        } else {}
 }
 posterior(x)

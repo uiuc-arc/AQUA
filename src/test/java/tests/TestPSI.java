@@ -83,8 +83,50 @@ public class TestPSI {
 
     }
     @Test
+    public void testOccamsRazors() {
+        String filePath = "src/test/resources/psi/probmods/bayes_occams_razor.template";
+        String outputFile = filePath.substring(0, filePath.length() - 9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try {
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    @Test
     public void testFor() {
         String filePath = "src/test/resources/psi/for.template";
+        String outputFile = filePath.substring(0, filePath.length() - 9) + ".psi";
+
+        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+        PsiTranslator trans = new PsiTranslator();
+        try {
+            FileOutputStream out = new FileOutputStream(outputFile);
+            trans.setOut(out);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return;
+        }
+        try {
+            trans.translate(cfgBuilder.getSections());
+            trans.run(outputFile);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    @Test
+    public void testIf() {
+        String filePath = "src/test/resources/psi/if.template";
         String outputFile = filePath.substring(0, filePath.length() - 9) + ".psi";
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
