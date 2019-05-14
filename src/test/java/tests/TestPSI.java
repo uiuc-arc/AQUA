@@ -1,6 +1,9 @@
 package tests;
 
+import com.sun.source.tree.AssertTree;
 import grammar.cfg.CFGBuilder;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
 import org.junit.Test;
 import translators.PsiTranslator;
 
@@ -24,7 +27,8 @@ public class TestPSI {
         }
         try {
             trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -51,7 +55,8 @@ public class TestPSI {
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
                     trans.translate(cfgBuilder.getSections());
-                    trans.run(outputFile);
+                    Pair results = trans.run(outputFile);
+                    Assert.assertTrue(results.getRight().toString().length() == 0);
 
                 } catch (Exception e){
                     e.printStackTrace();
@@ -80,7 +85,8 @@ public class TestPSI {
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
                     trans.translate(cfgBuilder.getSections());
-                    trans.run(outputFile);
+                    Pair results = trans.run(outputFile);
+                    Assert.assertTrue(results.getRight().toString().length() == 0);
 
                 } catch (Exception e){
                     e.printStackTrace();
@@ -104,7 +110,8 @@ public class TestPSI {
         }
         try {
             trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -126,7 +133,8 @@ public class TestPSI {
         }
         try {
             trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -148,7 +156,8 @@ public class TestPSI {
         }
         try {
             trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -163,6 +172,8 @@ public class TestPSI {
         try {
             FileOutputStream out = new FileOutputStream(outputFile);
             trans.setOut(out);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e) {
             e.printStackTrace();
             return;
@@ -190,26 +201,11 @@ public class TestPSI {
         }
         try {
             trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    @Test
-    public void testStan(){
-        String filePath= "src/test/resources/stan2237.template";
-        String outputFile = filePath.substring(0, filePath.length()-9) + ".psi";
 
-        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
-        PsiTranslator trans = new PsiTranslator();
-        trans.setOut(System.out);
-        try {
-            trans.translate(cfgBuilder.getSections());
-            trans.run(outputFile);
-        } catch (Exception e){
-            e.printStackTrace();
-
-        }
-
-    }
 }

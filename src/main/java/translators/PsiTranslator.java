@@ -193,14 +193,12 @@ public class PsiTranslator implements ITranslator{
     }
     @Override
     public Pair run() {
-
         return null;
     }
 
-    public void run(String codeFileName){
+    public Pair run(String codeFileName){
         Pair results = Utils.runPsi(codeFileName);
-        System.out.println(results.getLeft());
-        System.out.println(results.getRight());
+        return results;
     }
 
 
