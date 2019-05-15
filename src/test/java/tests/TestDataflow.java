@@ -14,7 +14,7 @@ public class TestDataflow {
 
     //Tests the simple Join for the Reaching Definitions dataflow
     @Test
-    //@Ignore
+    @Ignore
     public void Test1(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -49,7 +49,7 @@ public class TestDataflow {
 
     //tests the nFold Join
     @Test
-    //@Ignore
+    @Ignore
     public void Test2(){
         Set<Integer> locs1 = new HashSet<>();
         Set<Integer> locs2 = new HashSet<>();
@@ -90,7 +90,7 @@ public class TestDataflow {
 
     //Test Dataflow/Reaching definitions on a small benchmark
     @Test
-    //@Ignore
+    @Ignore
     public void Test3(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/test1.template", "src/test/resources/graph1.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
