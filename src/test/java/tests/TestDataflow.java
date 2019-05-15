@@ -167,18 +167,26 @@ public class TestDataflow {
     public void Test5() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/poisson.template", "src/test/resources/poisson.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
         Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
     }
 
     @Test
     public void Test6(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", "src/test/resources/linearregression.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
         Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);//1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
     }
 
     @Test
@@ -186,19 +194,27 @@ public class TestDataflow {
     public void Test7() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/psi/probmods/ch02_generative_models/noisy_double.template", "src/test/resources/noisy_double.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
         Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
     }
 
     @Test
     //@Ignore
     public void Test8() {
-        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/for.template", "src/test/resources/for.png");
+        CFGBuilder builder = new CFGBuilder("src/test/resources/psi/for.template", "src/test/resources/forPSI.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
         Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
     }
 
     @Test
@@ -206,9 +222,27 @@ public class TestDataflow {
     public void Test9(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/psi/probmods/bayes_occams_razor.template", "src/test/resources/occams_razor.png");
         Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
         CFGAnalyzer.labelGenAndKill(CFG);
         ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
         Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
+    }
+
+    @Test
+    //@Ignore
+    public void Test10(){
+        CFGBuilder builder = new CFGBuilder("src/test/resources/leukfr0.template", "src/test/resources/leukfr0.png");
+        Graph<BasicBlock, Edge> CFG = builder.getGraph();
+        long startTime = System.nanoTime();
+        CFGAnalyzer.labelGenAndKill(CFG);
+        ReachingDefinitionsDomain RD = new ReachingDefinitionsDomain();
+        Worklist.ForwardChaoticIteration(CFG, RD);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime)/1000000;  //divide by 1000000 to get milliseconds.
+        System.out.println(duration);
     }
 
 

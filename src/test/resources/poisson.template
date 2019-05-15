@@ -2,7 +2,8 @@
 int Nobs : 10
 
 @limits <lower=0>
-float y[Nobs] : [9.0, 8.0, 6.0, 2.0, 2.0, 3.0, 5.0, 1.0, 4.0, 7.0]
+int y[Nobs] : [9,8,6,2,2,3,5,1,4,7]
+
 
 
 @prior
