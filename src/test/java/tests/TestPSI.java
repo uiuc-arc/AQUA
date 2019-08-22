@@ -1,6 +1,5 @@
 package tests;
 
-import com.sun.source.tree.AssertTree;
 import grammar.cfg.CFGBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
