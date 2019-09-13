@@ -1,7 +1,13 @@
 package utils;
 import grammar.AST;
+import grammar.StanLexer;
+import grammar.StanParser;
 import grammar.cfg.Statement;
 import grammar.cfg.SymbolInfo;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.nd4j.linalg.api.buffer.DataType;
@@ -224,4 +230,45 @@ public class Utils {
         return false;
     }
 
+    public static StanParser readStanFile(String path){
+        CharStream stream = null;
+        try {
+            stream = CharStreams.fromFileName(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        StanLexer stanLexer = new StanLexer(stream);
+        CommonTokenStream tokens = new CommonTokenStream(stanLexer);
+        StanParser stanParser = new StanParser(tokens);
+        return stanParser;
+    }
+
+    public static String complexTypeMap(String type){
+        if(type.equals("simplex"))
+            return "vector";
+        else if(type.equals("vector")){
+            return type;
+        }
+        else {
+            System.out.println(type);
+            assert false;
+        }
+        return "";
+    }
+
+    public static boolean checkIfLastStatement(ParserRuleContext statementContext){
+        if(statementContext instanceof StanParser.StatementContext){
+            if(statementContext.getParent() instanceof StanParser.BlockContext){
+                StanParser.BlockContext blockContext = (StanParser.BlockContext) statementContext.getParent();
+                if(blockContext.getParent() instanceof StanParser.Transformed_param_blkContext || blockContext.getParent() instanceof StanParser.Transformed_data_blkContext || blockContext.getParent() instanceof StanParser.Generated_quantities_blkContext) {
+                    if (blockContext.statement(blockContext.statement().size() - 1) == statementContext) {
+                        // last statement
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+
+    }
 }

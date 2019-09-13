@@ -7,14 +7,12 @@ import org.junit.Test;
 public class TestCFG {
 
     @Test
-    @Ignore
     public void Test1(){
         CFGBuilder builder = new CFGBuilder("src/test/resources/electic_inter.template", "src/test/resources/graph1.png");
 
     }
 
     @Test
-    @Ignore
     public void Test2() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/eight_schools.template", "src/test/resources/graph2.png");
     }

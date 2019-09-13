@@ -32,7 +32,10 @@ echo "making..."
 make $basefilename/$basefilename
 cd ./$basefilename/
 
-
+if [ ! -z "$3" ]; then
+./$basefilename sample algorithm=$3 num_samples=1000 num_warmup=200 data file=$basedata > stanout 2>&1
+else
 ./$basefilename sample num_samples=1000 num_warmup=200 data file=$basedata > stanout 2>&1
+fi
 
 
