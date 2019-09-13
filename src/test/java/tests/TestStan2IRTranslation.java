@@ -1,5 +1,6 @@
 package tests;
 
+import grammar.DataParser;
 import grammar.StanParser;
 import grammar.cfg.CFGBuilder;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -8,6 +9,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import translators.Stan2IRTranslator;
+import utils.DataReader;
 import utils.Utils;
 
 import java.io.File;
@@ -26,7 +28,7 @@ public class TestStan2IRTranslation {
         try {
             StanParser parser = Utils.readStanFile("src/test/resources/stan/stan1610.stan");
             ParseTreeWalker walker = new ParseTreeWalker();
-            Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator();
+            Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator("src/test/resources/stan/stan1610.stan", "src/test/resources/stan/stan1610.data");
             walker.walk(stan2IRTranslator, parser.program());
             String code = stan2IRTranslator.getCode();
             File file = temporaryFolder.newFile();
@@ -42,10 +44,10 @@ public class TestStan2IRTranslation {
     @Test
     public void test2(){
         try {
-            StanParser parser = Utils.readStanFile("src/test/resources/stan/electric_1c_chr.stan");
-            ParseTreeWalker walker = new ParseTreeWalker();
-            Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator();
-            walker.walk(stan2IRTranslator, parser.program());
+            Stan2IRTranslator stan2IRTranslator =
+                    new Stan2IRTranslator("src/test/resources/stan/electric_1c_chr.stan",
+                    "src/test/resources/stan/electric_1c_chr.data.R");
+
             String code = stan2IRTranslator.getCode();
             File file = temporaryFolder.newFile();
             FileUtils.writeStringToFile(file, code);
@@ -55,5 +57,24 @@ public class TestStan2IRTranslation {
             e.printStackTrace();
             System.out.println("Cant get path");
         }
+    }
+
+    @Test
+    public void test3(){
+        DataParser parser = Utils.readDataFile("src/test/resources/stan/electric_1c_chr.data.R");
+        ParseTreeWalker walker = new ParseTreeWalker();
+        DataReader dataReader = new DataReader();
+        walker.walk(dataReader, parser.datafile());
+        dataReader.printData();
+    }
+
+    @Test
+    public void test4(){
+
+        DataParser parser = Utils.readDataFile("src/test/resources/stan/gp-fit-ARD.data.R");
+        ParseTreeWalker walker = new ParseTreeWalker();
+        DataReader dataReader = new DataReader();
+        walker.walk(dataReader, parser.datafile());
+        dataReader.printData();
     }
 }

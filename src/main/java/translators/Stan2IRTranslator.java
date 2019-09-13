@@ -1,20 +1,121 @@
 package translators;
 
-import grammar.AST;
+import grammar.DataParser;
 import grammar.StanBaseListener;
-import grammar.StanListener;
 import grammar.StanParser;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.TerminalNode;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.renjin.eval.Session;
+import org.renjin.script.RenjinScriptEngine;
+import org.renjin.script.RenjinScriptEngineFactory;
+import org.renjin.sexp.*;
+import utils.DataReader;
 import utils.Utils;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Stan2IRTranslator extends StanBaseListener {
     private Object curBlock;
     private String dataCode = "";
     private String modelCode = "";
+    private String testfile;
+    private String datafile;
+    private Map<String, SEXP> datamap;
+    private DataReader dataReader;
+
+    public Stan2IRTranslator(String testfile, String data){
+        this.testfile = testfile;
+        this.datafile = data;
+        this.datamap = new HashMap<>();
+        readData2();
+        StanParser parser = Utils.readStanFile(testfile);
+        ParseTreeWalker walker = new ParseTreeWalker();
+        walker.walk(this, parser.program());
+    }
+
+    private void readData2(){
+        DataParser parser = Utils.readDataFile(this.datafile);
+        ParseTreeWalker walker = new ParseTreeWalker();
+        dataReader = new DataReader();
+        walker.walk(dataReader, parser.datafile());
+    }
+
+    private void readData(){
+        try {
+            String data = new String(Files.readAllBytes(Paths.get(this.datafile)));
+            RenjinScriptEngineFactory factory = new RenjinScriptEngineFactory();
+
+            ScriptEngine engine = factory.getScriptEngine();
+            engine.eval(data);
+            Session session = ((RenjinScriptEngine) engine).getSession();
+            Environment global = session.getGlobalEnvironment();
+            //System.out.println(global.getNames());
+            for(String name:global.getNames()){
+                //System.out.println(name);
+                SEXP variable = global.getVariable(name);
+                this.datamap.put(name, variable);
+                if(variable.getClass() == DoubleArrayVector.class){
+                    DoubleArrayVector dav = (DoubleArrayVector) variable;
+                    if(variable.toString().contains("c(")){
+                        // array
+                        String d = "";
+                        for(double x:dav){
+                            d+= x+",";
+                        }
+                        //this.datamap.put(name, d.substring(0, d.length()-1));
+                    }
+                    else{
+                        //this.datamap.put(name, variable.toString());
+                    }
+                }
+
+            }
+            //System.out.println(this.datamap);
+
+        } catch (IOException | ScriptException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getFormattedData(StanParser.DeclContext ctx){
+        if(ctx.type().PRIMITIVE() != null){
+            if(ctx.dims() != null && ctx.dims().size() > 0) {
+                if(ctx.type().getText().equals("int")){
+                    System.out.println(ctx.ID().getText());
+                    String d = "";
+                    return "[" + d.substring(0, d.length()-1) + "]";
+                }
+                else{
+                    DoubleArrayVector v = (DoubleArrayVector) this.datamap.get(ctx.ID().getText());
+                    String d = "";
+                    for(double x:v){
+                        d+= x+",";
+                    }
+                    return "[" + d.substring(0, d.length()-1) + "]";
+                }
+            }
+            else {
+                if(ctx.type().getText().equals("int")){
+                    return this.datamap.get(ctx.ID().getText()).asInt() + "";
+                }
+                else{
+                    return this.datamap.get(ctx.ID().getText()).toString();
+                }
+            }
+        }
+
+        return null;
+    }
 
     @Override
     public void enterDecl(StanParser.DeclContext ctx) {
@@ -32,6 +133,8 @@ public class Stan2IRTranslator extends StanBaseListener {
                     dataCode += ctx.dims(1).getText() ;
                 else if(ctx.dims().size() > 0)
                     dataCode += ctx.dims(0).getText();
+
+                dataCode += " : " + this.dataReader.getData(ctx.ID().getText());
                 dataCode+="\n";
             }
             else {
@@ -43,6 +146,7 @@ public class Stan2IRTranslator extends StanBaseListener {
                     dataCode += ctx.dims(1).getText() ;
                 else if(ctx.dims().size() > 0)
                     dataCode += ctx.dims(0).getText();
+                dataCode += " : " + this.dataReader.getData(ctx.ID().getText());
                 dataCode+="\n";
             }
         }

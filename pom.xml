@@ -121,6 +121,25 @@
                     </execution>
                     <execution>
                         <phase>generate-sources</phase>
+                        <id>antlr-stan-data</id>
+                        <configuration>
+                            <arguments>
+                                <argument>-package</argument>
+                                <argument>grammar</argument>
+                            </arguments>
+                            <includes>Data.g4</includes>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
+                            <sourceDirectory>stan/</sourceDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                        </configuration>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+
+                    </execution>
+                    <execution>
+                        <phase>generate-sources</phase>
                         <id>antlr-stan</id>
                         <configuration>
                             <arguments>

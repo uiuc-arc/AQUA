@@ -1,7 +1,5 @@
 package utils;
-import grammar.AST;
-import grammar.StanLexer;
-import grammar.StanParser;
+import grammar.*;
 import grammar.cfg.Statement;
 import grammar.cfg.SymbolInfo;
 import org.antlr.v4.runtime.CharStream;
@@ -241,6 +239,19 @@ public class Utils {
         CommonTokenStream tokens = new CommonTokenStream(stanLexer);
         StanParser stanParser = new StanParser(tokens);
         return stanParser;
+    }
+
+    public static DataParser readDataFile(String path){
+        CharStream stream = null;
+        try {
+            stream = CharStreams.fromFileName(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        DataLexer dataLexer = new DataLexer(stream);
+        CommonTokenStream tokens = new CommonTokenStream(dataLexer);
+        DataParser dataParser = new DataParser(tokens);
+        return dataParser;
     }
 
     public static String complexTypeMap(String type){
