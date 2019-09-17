@@ -41,10 +41,10 @@ public class DataReader extends DataBaseListener {
     public void exitStructure(DataParser.StructureContext ctx) {
         if(curDim != null && curDim.size() == 2){
             String arr[][]  = new String[curDim.get(0)][curDim.get(1)];
-            for(int i=0; i<curDim.get(0);i++){
-                for(int j=0; j<curDim.get(1); j++){
+            for(int j=0; j<curDim.get(1);j++){
+                for(int i=0; i<curDim.get(0); i++){
                     // getting in column major and storing in row major
-                    arr[i][j] = curArr.get(j*curDim.get(1)+i);
+                    arr[i][j] = curArr.get(j*curDim.get(0)+i);
                 }
             }
             this.dataMap.put(this.curId, arr);
