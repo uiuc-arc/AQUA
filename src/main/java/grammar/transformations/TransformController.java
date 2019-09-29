@@ -31,8 +31,8 @@ public class TransformController {
     }
 
     public void analyze() throws Exception {
-        // normal2TAnalysis.availTransformers(sections, queuedTransformers);
-        // binomial2Normal.availTransformers(sections, queuedTransformers);
+        normal2TAnalysis.availTransformers(sections, queuedTransformers);
+        binomial2Normal.availTransformers(sections, queuedTransformers);
         poisson2Normal.availTransformers(sections, queuedTransformers);
 
     }

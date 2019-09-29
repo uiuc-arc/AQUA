@@ -74,6 +74,21 @@ public class DataReader extends DataBaseListener {
         }
     }
 
+    public String printDataString(){
+        String ret = "";
+        for(String id:this.dataMap.keySet()){
+            if(this.dataMap.get(id) instanceof ArrayList)
+                ret += id + " : " + ((ArrayList<String>) this.dataMap.get(id)).toString() + "\n";
+            else if(this.dataMap.get(id) instanceof String[][])
+                ret += id + " : " + strArrtoString((String[][]) this.dataMap.get(id))+ "\n";
+            else if(this.dataMap.get(id) instanceof String){
+                ret += id + " : " + this.dataMap.get(id)+ "\n";
+            }
+        }
+        return ret;
+    }
+
+
     public String getData(String id){
         if(this.dataMap.get(id) instanceof ArrayList)
             return ((ArrayList<String>) this.dataMap.get(id)).toString();

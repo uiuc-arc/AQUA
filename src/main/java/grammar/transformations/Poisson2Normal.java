@@ -30,6 +30,11 @@ public class Poisson2Normal extends BaseTransformer {
         return transformed;
     }
 
+    @Override
+    public boolean statementFilter(Statement statement) {
+        return false;
+    }
+
     public void addInfo(AST.FunctionCall poissonDist){
         assert !analysis : " Transformer used for analysis!";
         this.poissonDist = poissonDist;
@@ -60,7 +65,7 @@ public class Poisson2Normal extends BaseTransformer {
     }
 
     @Override
-    public Queue<BaseTransformer> availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
+    public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
         for(Section section:sections){
             if(section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName.equals("main")){
@@ -84,7 +89,6 @@ public class Poisson2Normal extends BaseTransformer {
                 }
             }
         }
-        return availTrans;
     }
 
     private void analyze_block(BasicBlock bBlock, Queue<BaseTransformer> availTrans){

@@ -1,11 +1,11 @@
 package grammar.transformations;
 
 import grammar.AST;
-import grammar.cfg.BasicBlock;
-import grammar.cfg.Statement;
-import grammar.cfg.SymbolInfo;
+import grammar.cfg.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CFGUtil {
     //ArrayList<String>
@@ -68,6 +68,40 @@ public class CFGUtil {
         }
 
         return false;
+    }
+
+    public static ArrayList<Statement> statementFilterSection(ArrayList<Section> sections, BaseTransformer transformer) throws Exception {
+
+        ArrayList<Statement> statementList = new ArrayList<>();
+
+        for(Section section:sections){
+            if(section.sectionType == SectionType.FUNCTION){
+                if(section.sectionName.equals("main")){
+                    Set<BasicBlock> visited = new HashSet<>();
+                    for(BasicBlock basicBlock: section.basicBlocks){
+                        BasicBlock curBlock = basicBlock;
+                        while(!visited.contains(curBlock)){
+                            visited.add(curBlock);
+                            if(curBlock.getParent().sectionName.equalsIgnoreCase("main")){
+                                if(curBlock.getStatements().size() != 0)
+                                    for(Statement statement:curBlock.getStatements()) {
+                                        if (transformer.statementFilter(statement))
+                                            statementList.add(statement);
+                                    }
+                            }
+
+                            BasicBlock nextBlock = getNextBlock(curBlock);
+                            if(nextBlock != null)
+                                curBlock = nextBlock;
+                        }
+                    }
+                }
+                else{
+                    throw new Exception("Unknown Function!");
+                }
+            }
+        }
+        return statementList;
     }
 
     /*public static boolean isFreePrior(Statement statement, AST.Expression expression){

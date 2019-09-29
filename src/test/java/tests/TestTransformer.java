@@ -1,11 +1,15 @@
 package tests;
 
+import grammar.AST;
 import grammar.cfg.CFGBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 import grammar.transformations.*;
 import translators.StanTranslator;
 import utils.Utils;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class TestTransformer {
 
@@ -61,7 +65,6 @@ public class TestTransformer {
     }
 
     @Test
-    @Ignore
     public void TestUndoOne(){
         CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust4.template", null, false);
 
@@ -77,5 +80,19 @@ public class TestTransformer {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void TestReweighter(){
+        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust4.template", null, false);
+
+        try {
+            Reweighter reweighter = new Reweighter();
+            Queue<BaseTransformer> queuedTransformers = new LinkedList<>();
+            reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }

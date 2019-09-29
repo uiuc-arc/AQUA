@@ -23,6 +23,11 @@ public class Normal2T extends BaseTransformer {
         return transformed;
     }
 
+    @Override
+    public boolean statementFilter(Statement statement) {
+        return false;
+    }
+
     public void addInfo(AST.FunctionCall normalDist){
         assert !analysis : " Transformer used for analysis!";
         this.normalDist = normalDist;
@@ -30,16 +35,16 @@ public class Normal2T extends BaseTransformer {
 
 
     @Override
-    public void transform() throws Exception {
+    public void transform(){
         assert !analysis : " Transformer used for analysis!";
         System.out.println("Transform Normal2T");
         normalDist.id = new AST.Id("student_t");
-        normalDist.parameters.add(0,new AST.Integer("1"));
+        normalDist.parameters.add(0, new AST.Integer("1"));
         transformed = true;
     }
 
     @Override
-    public void undo() throws Exception {
+    public void undo(){
         assert !analysis : " Transformer used for analysis!";
         System.out.println("Undo Normal2T");
         normalDist.id = new AST.Id("normal");
@@ -48,7 +53,7 @@ public class Normal2T extends BaseTransformer {
     }
 
     @Override
-    public Queue<BaseTransformer> availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
+    public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
         for(Section section:sections){
             if(section.sectionType == SectionType.FUNCTION){
                 if(section.sectionName.equals("main")){
@@ -72,7 +77,6 @@ public class Normal2T extends BaseTransformer {
                 }
             }
         }
-        return availTrans;
     }
 
     private void analyze_block(BasicBlock bBlock, Queue<BaseTransformer> availTrans){
