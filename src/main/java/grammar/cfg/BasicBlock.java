@@ -93,6 +93,18 @@ public class BasicBlock {
         this.statements.add(statement1);
     }
 
+    public void addData(AST.Data data){
+        this.data.add(data);
+    }
+
+    public void addQuery(AST.Query query){
+        this.queries.add(query);
+    }
+
+    public void addEdge(Edge edge){
+        this.edges.add(edge);
+    }
+
     public int getId() {
         return this.id;
     }
