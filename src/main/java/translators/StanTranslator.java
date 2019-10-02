@@ -190,21 +190,21 @@ public class StanTranslator implements ITranslator {
     }
 
     private String translate_block(BasicBlock bBlock) {
-        String output = "";
+        StringBuilder output = new StringBuilder();
         if (bBlock.getStatements().size() == 0)
-            return output;
+            return output.toString();
 
         for (Statement statement : bBlock.getStatements()) {
             if (statement.statement instanceof AST.AssignmentStatement) {
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
                 if (Utils.isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)) {
-                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "~" + new StanVisitor().evaluate(assignmentStatement.rhs) + ";\n";
+                    output.append(new StanVisitor().evaluate(assignmentStatement.lhs)).append("~").append(new StanVisitor().evaluate(assignmentStatement.rhs)).append(";\n");
                 } else {
-                    output += new StanVisitor().evaluate(assignmentStatement.lhs) + "=" + new StanVisitor().evaluate(assignmentStatement.rhs) + ";\n";
+                    output.append(new StanVisitor().evaluate(assignmentStatement.lhs)).append("=").append(new StanVisitor().evaluate(assignmentStatement.rhs)).append(";\n");
                 }
             } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;
-                output += "for(" + loop.toString() + ")\n";
+                output.append("for(").append(loop.toString()).append(")\n");
             } else if (statement.statement instanceof AST.Decl) {
                 AST.Decl declaration = (AST.Decl) statement.statement;
                 String declarationString = getDeclarationString(statement, declaration);
@@ -212,12 +212,34 @@ public class StanTranslator implements ITranslator {
                 if (statement.parent.getParent().sectionName.equalsIgnoreCase("main") && Utils.isPrior(statement, declaration.id)) {
                     this.paramSection += declarationString;
                 } else {
-                    output += declarationString;
+                    output.append(declarationString);
                 }
             }
             else if(statement.statement instanceof AST.IfStmt){
                 AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
-                output += "if(" + ifStmt.condition.toString() + ")\n";
+                output.append("if(").append(ifStmt.condition.toString()).append(")\n");
+            } else if (statement.statement instanceof AST.FunctionCallStatement) {
+                AST.FunctionCallStatement functionCallStatement = (AST.FunctionCallStatement) statement.statement;
+                output.append(new StanVisitor().evaluate(functionCallStatement.functionCall));
+                // if (functionCallStatement.functionCall.id.id.endsWith("lpdf") || functionCallStatement.functionCall.id.id.endsWith("lpmf")) {
+                //     StringBuilder restparams = new StringBuilder();
+                //     for (AST.Expression pp : functionCallStatement.functionCall.parameters) {
+                //         if (functionCallStatement.functionCall.parameters.indexOf(pp) != 0) {
+                //             if (functionCallStatement.functionCall.parameters.indexOf(pp)
+                //                     == functionCallStatement.functionCall.parameters.size() - 1)
+                //                 restparams.append(pp.toString());
+                //             else
+                //                 restparams.append(pp.toString()).append(",");
+                //         }
+                //     }
+                //     output.append(String.format("%s(%s|%s)\n",
+                //             functionCallStatement.functionCall.id.id,
+                //             functionCallStatement.functionCall.parameters.get(0),
+                //             restparams));
+                // } else {
+                //     output.append(functionCallStatement.toString());
+                // }
+
             }
         }
 
@@ -225,7 +247,7 @@ public class StanTranslator implements ITranslator {
 //            return "{\n" + output + "}\n";
 //        }
 
-        return output;
+        return output.toString();
     }
 
     private String getDeclarationString(Statement statement, AST.Decl declaration) {
