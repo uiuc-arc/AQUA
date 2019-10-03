@@ -27,15 +27,15 @@ public class TestStan2IRTranslation {
     public void test1(){
 
         try {
-            StanParser parser = Utils.readStanFile("src/test/resources/stan/stan1610.stan");
+            StanParser parser = Utils.readStanFile("src/test/resources/stan/stochastic-volatility.stan");
             ParseTreeWalker walker = new ParseTreeWalker();
-            Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator("src/test/resources/stan/stan1610.stan", "src/test/resources/stan/stan1610.data");
+            Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator("src/test/resources/stan/stochastic-volatility.stan", "src/test/resources/stan/stochastic-volatility.data.R");
             walker.walk(stan2IRTranslator, parser.program());
             String code = stan2IRTranslator.getCode();
             File file = temporaryFolder.newFile();
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
-            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/stan1610.png");
+            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/stochastic-volatility.png");
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Cant get path");
@@ -46,14 +46,13 @@ public class TestStan2IRTranslation {
     public void test2(){
         try {
             Stan2IRTranslator stan2IRTranslator =
-                    new Stan2IRTranslator("src/test/resources/stan/electric_1c_chr.stan",
-                    "src/test/resources/stan/electric_1c_chr.data.R");
-
+                    new Stan2IRTranslator("/home/zixin/Documents/are/PPVM/templates/basic_robust3/basic_robust3.copy2",
+                    "/home/zixin/Documents/are/PPVM/templates/basic_robust3/noisy.data.R");
             String code = stan2IRTranslator.getCode();
             File file = temporaryFolder.newFile();
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
-            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/electric_1c_chr.png");
+            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/basic_robust3_copy2.png");
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Cant get path");
