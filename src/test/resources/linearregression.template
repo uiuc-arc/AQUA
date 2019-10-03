@@ -8,6 +8,7 @@ float w
 float b
 w = normal(1.0,10.0)
 b = normal(1.0,10.0)
+@observe
 y = normal(w*x+b, 1.0)
 posterior(w)
 posterior(b)

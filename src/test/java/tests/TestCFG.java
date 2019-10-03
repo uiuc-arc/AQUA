@@ -1,8 +1,10 @@
 package tests;
 
 import grammar.cfg.CFGBuilder;
-import org.junit.Ignore;
 import org.junit.Test;
+import translators.StanTranslator;
+import translators.listeners.CFGWalker;
+import utils.ObserveRemover;
 
 public class TestCFG {
 
@@ -25,5 +27,20 @@ public class TestCFG {
     @Test
     public void TestNestedIfinLoop() {
         CFGBuilder builder = new CFGBuilder("src/test/resources/leukfr02.template", null, true);
+    }
+
+    @Test
+    public void TestRewriteOp(){
+        CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", null, false);
+        ObserveRemover observeRemover = new ObserveRemover(builder.getSections());
+        CFGWalker walker = new CFGWalker(builder.getSections(), observeRemover);
+        walker.walk();
+        StanTranslator translator = new StanTranslator();
+        try {
+            translator.translate(observeRemover.rewriter.rewrite());
+            System.out.println(translator.getCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
