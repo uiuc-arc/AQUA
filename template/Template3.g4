@@ -50,8 +50,12 @@ annotation returns [AST.Annotation value]
 //// types and dimensions
 dims returns [AST.Dims value]
 @init {$value = new AST.Dims();}
-: e1=expr {$value.dims.add($e1.value);} (',' e2=expr {$value.dims.add($e2.value);})*;
+: e1=dim {$value.dims.add($e1.value);} (',' e2=dim {$value.dims.add($e2.value);} )*;
 //vectorDIMS : '<' dims '>';
+
+dim returns [AST.Expression value]
+: e1=expr {$value = $e1.value;}
+|  {$value = null;} ;
 
 dtype returns [AST.Dtype value]
 @init {$value = new AST.Dtype();}
@@ -127,6 +131,11 @@ block returns [AST.Block value]
 @init {$value=new AST.Block();}
 : '{' (s=statement {$value.statements.add($s.value);})* '}'
 | s=statement {$value.statements.add($s.value);};
+
+//range returns [AST.Range value]
+//@init {$value=new AST.Range();}
+//: (e1=expr {$value.start = e1})? ':' (e2=expr {$value.end= e2})?;
+
 //
 //// function definitions
 //fparam : return_or_param_type ID;
@@ -155,7 +164,9 @@ expr returns [AST.Expression value]
     | e1=expr '==' e2=expr    {$value = new AST.EqOp($e1.value, $e2.value);}
     | e1=expr '&&' e2=expr    {$value = new AST.AndOp($e1.value, $e2.value);}
     | e1=expr '||' e2=expr    {$value = new AST.OrOp($e1.value, $e2.value);}
-//    | expr '[' expr ':' expr ']' #subset
+    | e1=expr ':' e2=expr   {$value = new AST.Range($e1.value, $e2.value);}
+    | e1=expr ':'           {$value = new AST.Range($e1.value, null); }
+    | ':' e2=expr           {$value = new AST.Range(null, $e2.value);}
     | function_call         {$value = $function_call.value;}
     | '-' expr              {$value = new AST.UnaryExpression($expr.value);}
     | '(' expr ')'          {$value = $expr.value;}
@@ -191,8 +202,8 @@ WS : [ \n\t\r]+ -> channel(HIDDEN) ;
 // primitives
 
 STRING : '"' ~["]* '"' ;
-INT : '-'?[0-9]+;
-DOUBLE : '-'? (([0-9]? '.' [0-9]+) | ([1-9][0-9]* '.' [0-9]*)) (('E'|'e') '-'? [0-9]+)?;
+INT : [0-9]+;
+DOUBLE : (([0-9]? '.' [0-9]+) | ([1-9][0-9]* '.' [0-9]*)) (('E'|'e') '-'? [0-9]+)?;
 INTEGERTYPE: 'int';
 FLOATTYPE: 'float';
 //holes

@@ -93,7 +93,7 @@ public class AST {
         }
     }
 
-    public static class Range extends ASTNode {
+    public static class Range extends Expression {
         public Expression start;
         public Expression end;
 
@@ -482,7 +482,10 @@ public class AST {
         public String toString() {
             String r = "";
             for (Expression e : dims) {
-                r += e.toString() + ",";
+                if(e != null)
+                    r += e.toString() + ",";
+                else
+                    r+= ",";
             }
 
             return r.length() > 0 ? r.substring(0, r.length() - 1) : r;

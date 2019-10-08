@@ -77,4 +77,22 @@ public class TestStan2IRTranslation {
         walker.walk(dataReader, parser.datafile());
         dataReader.printData();
     }
+
+    @Test
+    public void test5(){
+        try {
+            Stan2IRTranslator stan2IRTranslator =
+                    new Stan2IRTranslator("src/test/resources/stan/constant-synthesis.stan",
+                            "src/test/resources/stan/constant-synthesis.data.R");
+
+            String code = stan2IRTranslator.getCode();
+            File file = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(file, code);
+            System.out.println(code);
+            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/constant-synthesis.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Cant get path");
+        }
+    }
 }
