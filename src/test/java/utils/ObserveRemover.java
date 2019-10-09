@@ -45,4 +45,9 @@ public class ObserveRemover implements StatementListener {
     public void enterFunctionCallStatement(Statement statement) {
 
     }
+
+    @Override
+    public void enterData(AST.Data data) {
+
+    }
 }

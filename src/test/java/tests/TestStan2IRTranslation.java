@@ -79,7 +79,7 @@ public class TestStan2IRTranslation {
     }
 
     @Test
-    public void test5() throws IOException {
+    public void test6() throws IOException {
         String content = null;
         File file = new File("/home/zixin/Documents/are/c4pp/c4pp/programs/stan_con/stan_con_clean_b2/hBayesDM.run"); // For example, foo.txt
         FileReader reader = null;
@@ -124,5 +124,20 @@ public class TestStan2IRTranslation {
             // break;
         }
 
+    public void test5(){
+        try {
+            Stan2IRTranslator stan2IRTranslator =
+                    new Stan2IRTranslator("src/test/resources/stan/constant-synthesis.stan",
+                            "src/test/resources/stan/constant-synthesis.data.R");
+
+            String code = stan2IRTranslator.getCode();
+            File file = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(file, code);
+            System.out.println(code);
+            CFGBuilder builder = new CFGBuilder(file.getAbsolutePath(), "src/test/resources/constant-synthesis.png");
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Cant get path");
+        }
     }
 }

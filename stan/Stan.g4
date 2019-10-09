@@ -19,7 +19,7 @@ COMP_OP : '==' | '<' | '>' | '!=' | '&&' | '||' | '<=' | '>=' ;
 arrays : '{' (INT|DOUBLE) (',' (INT|DOUBLE))* '}' ;
 type : PRIMITIVE | COMPLEX ;
 inbuilt : 'to_vector' | 'block' | 'normal_cdf_log' | 'diag_matrix' | 'increment_log_prob' | 'log_sum_exp' | 'log' | 'gamma_p' | 'rep_vector' | 'rep_matrix' | 'rep_array' | ID;
-dim : INT | ID | expression ;
+dim : INT | ID | expression | ;
 dims : '[' dim (',' dim)* ']' ;
 limits : '<' ( 'lower' '=' expression ',' 'upper' '=' expression | 'lower' '=' expression | 'upper' '=' expression ) '>' ;
 //decl : ( (Type ID) | (Type ID '[' ID ']') | Type limits? dims ID ) ';' ;

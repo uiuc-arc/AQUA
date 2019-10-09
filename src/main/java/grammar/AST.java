@@ -93,7 +93,7 @@ public class AST {
         }
     }
 
-    public static class Range extends ASTNode {
+    public static class Range extends Expression {
         public Expression start;
         public Expression end;
 
@@ -183,6 +183,26 @@ public class AST {
         @Override
         public String toString() {
             return op1.toString() + "-" + op2.toString();
+        }
+    }
+
+    public static class VecDivOp extends Expression{
+        public Expression op1;
+        public Expression op2;
+
+        public VecDivOp(Expression op1, Expression op2){
+            this.op1 = op1;
+            this.op2 = op2;
+        }
+    }
+
+    public static class VecMulOp extends Expression{
+        public Expression op1;
+        public Expression op2;
+
+        public VecMulOp(Expression op1, Expression op2){
+            this.op1 = op1;
+            this.op2 = op2;
         }
     }
 
@@ -482,7 +502,10 @@ public class AST {
         public String toString() {
             String r = "";
             for (Expression e : dims) {
-                r += e.toString() + ",";
+                if(e != null)
+                    r += e.toString() + ",";
+                else
+                    r+= ",";
             }
 
             return r.length() > 0 ? r.substring(0, r.length() - 1) : r;

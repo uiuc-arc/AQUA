@@ -19,6 +19,14 @@ public abstract class BaseVisitor {
         return evaluate(minusOp.op1) + "-" + evaluate(minusOp.op2);
     }
 
+    public String evaluate(AST.VecDivOp vecDivOp){
+        return evaluate(vecDivOp.op1) + "./" + evaluate(vecDivOp.op2);
+    }
+
+    public String evaluate(AST.VecMulOp vecMulOp){
+        return evaluate(vecMulOp.op1) + "./" + evaluate(vecMulOp.op2);
+    }
+
     public  String evaluate(AST.DivOp divOp){
         return evaluate(divOp.op1) + "/" + evaluate(divOp.op2);
     }
@@ -82,6 +90,12 @@ public abstract class BaseVisitor {
         }
         else if(expression instanceof AST.Number){
             return evaluate((AST.Number)expression);
+        }
+        else if(expression instanceof AST.VecMulOp){
+            return evaluate((AST.VecMulOp)expression);
+        }
+        else if(expression instanceof AST.VecDivOp){
+            return evaluate((AST.VecDivOp)expression);
         }
         else{
             return expression.toString();

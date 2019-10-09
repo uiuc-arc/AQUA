@@ -260,6 +260,12 @@ public class Utils {
         else if(type.equals("vector")){
             return type;
         }
+        else if(type.equals("matrix")){
+            return type;
+        }
+        else if(type.equals("cov_matrix")){
+            return "matrix";
+        }
         else {
             System.out.println(type);
             assert false;

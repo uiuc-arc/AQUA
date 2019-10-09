@@ -9,6 +9,7 @@ import org.renjin.eval.Session;
 import org.renjin.script.RenjinScriptEngine;
 import org.renjin.script.RenjinScriptEngineFactory;
 import org.renjin.sexp.*;
+import translators.visitors.Stan2IRVisitor;
 import utils.DataReader;
 import utils.Utils;
 
@@ -270,7 +271,7 @@ public class Stan2IRTranslator extends StanBaseListener {
     public void enterDistribution_exp(StanParser.Distribution_expContext ctx) {
         String params = "";
         for(StanParser.ExpressionContext expr: ctx.expression()){
-            params += expr.getText() + ",";
+            params += new Stan2IRVisitor().visit(expr) + ",";
         }
 
         this.modelCode += String.format("%s(%s)", ctx.ID().getText(), params.substring(0, params.length()-1));
@@ -281,19 +282,20 @@ public class Stan2IRTranslator extends StanBaseListener {
     @Override
     public void enterAssign_stmt(StanParser.Assign_stmtContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
-        this.modelCode += String.format("%s = %s\n", ctx.expression(0).getText(), ctx.expression(1).getText());
+
+        this.modelCode += String.format("%s = %s\n", new Stan2IRVisitor().visit(ctx.expression(0)), new Stan2IRVisitor().visit(ctx.expression(1)));
     }
 
     @Override
     public void enterFunction_call_stmt(StanParser.Function_call_stmtContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
-        this.modelCode += ctx.function_call().getText() + "\n";
+        this.modelCode += new Stan2IRVisitor().visit(ctx.function_call()) + "\n";
     }
 
     @Override
     public void enterTarget_stmt(StanParser.Target_stmtContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
-        this.modelCode += "target = target + " + ctx.expression().getText() + "\n";
+        this.modelCode += "target = target + " + new Stan2IRVisitor().visit(ctx.expression()) + "\n";
     }
 
     @Override
