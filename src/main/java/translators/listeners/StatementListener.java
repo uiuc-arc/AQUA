@@ -1,5 +1,6 @@
 package translators.listeners;
 
+import grammar.AST;
 import grammar.cfg.Statement;
 
 public interface StatementListener extends CFGBaseListener{
@@ -12,4 +13,6 @@ public interface StatementListener extends CFGBaseListener{
     void enterDeclStatement(Statement statement);
 
     void enterFunctionCallStatement(Statement statement);
+
+    void enterData(AST.Data data);
 }

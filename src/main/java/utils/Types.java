@@ -4,5 +4,6 @@ public enum Types {
     INT,
     FLOAT,
     MATRIX,
-    VECTOR
+    VECTOR,
+    ROW_VECTOR
 }

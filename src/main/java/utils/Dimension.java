@@ -3,11 +3,17 @@ package utils;
 import java.util.ArrayList;
 
 public class Dimension {
-    public Types type;
-    public ArrayList<String> dims;
-
-    public Dimension(){
+    public Types getType() {
+        return type;
     }
+
+    public ArrayList<String> getDims() {
+        return dims;
+    }
+
+    private Types type;
+    private ArrayList<String> dims;
+
 
     public Dimension(Types type, ArrayList<String> dims){
         this.type = type;
@@ -20,6 +26,6 @@ public class Dimension {
     }
 
     public boolean isPrimitive(){
-        return  (this.type.equals("int") || this.type.equals("float")) && (this.dims == null || this.dims.size() ==0);
+        return   (this.type == Types.INT || this.type == Types.FLOAT && (this.dims == null || this.dims.size() ==0));
     }
 }
