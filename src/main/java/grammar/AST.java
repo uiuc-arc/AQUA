@@ -186,6 +186,26 @@ public class AST {
         }
     }
 
+    public static class VecDivOp extends Expression{
+        public Expression op1;
+        public Expression op2;
+
+        public VecDivOp(Expression op1, Expression op2){
+            this.op1 = op1;
+            this.op2 = op2;
+        }
+    }
+
+    public static class VecMulOp extends Expression{
+        public Expression op1;
+        public Expression op2;
+
+        public VecMulOp(Expression op1, Expression op2){
+            this.op1 = op1;
+            this.op2 = op2;
+        }
+    }
+
     public static class MulOp extends Expression {
         public Expression op1;
         public Expression op2;

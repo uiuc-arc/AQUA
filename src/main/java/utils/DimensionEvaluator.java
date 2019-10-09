@@ -21,6 +21,10 @@ public class DimensionEvaluator {
             return visit((AST.AddOp)expr);
         else if(expr instanceof AST.MinusOp)
             return visit((AST.MinusOp)expr);
+        else if(expr instanceof AST.VecDivOp)
+            return visit((AST.VecDivOp) expr);
+        else if(expr instanceof AST.VecMulOp)
+            return visit((AST.VecMulOp) expr);
         else if(expr instanceof AST.ArrayAccess)
             return visit((AST.ArrayAccess) expr);
         else if(expr instanceof AST.Transpose)
@@ -331,6 +335,16 @@ public class DimensionEvaluator {
         else{
             return a;
         }
+    }
+
+    private Dimension visit(AST.VecDivOp expr){
+        Dimension a = visit(expr.op1);
+        return a;
+    }
+
+    private Dimension visit(AST.VecMulOp expr){
+        Dimension a = visit(expr.op1);
+        return a;
     }
 
     public Dimension visit(AST.AddOp expr){

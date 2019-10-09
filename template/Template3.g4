@@ -153,9 +153,9 @@ expr returns [AST.Expression value]
     | e1=expr '/' e2=expr     {$value = new AST.DivOp($e1.value, $e2.value);}
     | e1=expr '*' e2=expr     {$value = new AST.MulOp($e1.value, $e2.value);}
     | e1=expr '+'  e2=expr    {$value = new AST.AddOp($e1.value, $e2.value);}
-    | e1=expr '-' e2=expr    {$value = new AST.MinusOp($e1.value, $e2.value);}
-//    | expr './' expr    #vecdivop
-//    | expr '.*' expr    #vecmulop
+    | e1=expr '-' e2=expr     {$value = new AST.MinusOp($e1.value, $e2.value);}
+    | e1=expr './' e2=expr    {$value = new AST.VecDivOp($e1.value, $e2.value);}
+    | e1=expr '.*' e2=expr    {$value = new AST.VecMulOp($e1.value, $e2.value);}
     | e1=expr '<' e2=expr     {$value = new AST.LtOp($e1.value, $e2.value);}
     | e1=expr '<=' e2=expr    {$value = new AST.LeqOp($e1.value, $e2.value);}
     | e1=expr '>' e2=expr     {$value = new AST.GtOp($e1.value, $e2.value);}
