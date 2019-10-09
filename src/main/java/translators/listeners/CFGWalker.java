@@ -19,6 +19,9 @@ public class CFGWalker {
         if(this.listener instanceof StatementListener){
             for(Section section:this.sections){
                 for(BasicBlock basicBlock:section.basicBlocks){
+                    for(AST.Data  data:basicBlock.getData()){
+                        ((StatementListener) this.listener).enterData(data);
+                    }
                     for(Statement statement:basicBlock.getStatements()){
                         if(statement.statement instanceof AST.AssignmentStatement)
                             ((StatementListener) this.listener).enterAssignmentStatement(statement);
