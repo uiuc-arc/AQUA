@@ -89,7 +89,25 @@ public class TestTransformer {
         try {
             Reweighter reweighter = new Reweighter();
             Queue<BaseTransformer> queuedTransformers = new LinkedList<>();
-            reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+            //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate(cfgBuilder.getSections());
+            System.out.println(stanTranslator.getCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+    @Test
+    public void TestReweighter2(){
+        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust3_copy.template", null, false);
+        try {
+           //  Reweighter reweighter = new Reweighter();
+           //  Queue<BaseTransformer> queuedTransformers = new LinkedList<>();
+           //  reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate(cfgBuilder.getSections());
+            System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();
         }

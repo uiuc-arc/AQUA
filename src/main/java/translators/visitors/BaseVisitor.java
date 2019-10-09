@@ -40,12 +40,15 @@ public abstract class BaseVisitor {
     }
 
     public  String evaluate(AST.FunctionCall functionCall){
-        String res = evaluate(functionCall.id) + "(";
+        StringBuilder res = new StringBuilder(evaluate(functionCall.id) + "(");
         for (AST.Expression e : functionCall.parameters) {
-            res += evaluate(e) + ",";
+            if (functionCall.parameters.indexOf(e) == 0 && (functionCall.id.id.endsWith("_lpdf") || functionCall.id.id.endsWith("_lpmf")))
+                res.append(evaluate(e)).append("|");
+            else
+                res.append(evaluate(e)).append(",");
         }
-        if (res.endsWith(","))
-            res = res.substring(0, res.length() - 1);
+        if (res.toString().endsWith(","))
+            res = new StringBuilder(res.substring(0, res.length() - 1));
         return res + ")";
     }
 

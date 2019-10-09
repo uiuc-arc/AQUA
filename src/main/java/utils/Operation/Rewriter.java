@@ -38,7 +38,7 @@ public class Rewriter {
             Section section1 = new Section(section.sectionType, section.sectionName);
             final_sections.add(section1);
             for(BasicBlock basicBlock:section.basicBlocks){
-                BasicBlock basicBlock1 = new BasicBlock(basicBlock.getId(), section1);
+                BasicBlock basicBlock1 = new BasicBlock(section1);
                 section1.basicBlocks.add(basicBlock1);
                 for(Statement statement:basicBlock.getStatements()){
                     if(this.rewriteRecords.containsKey(statement)){
