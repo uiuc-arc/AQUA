@@ -2,18 +2,33 @@ package grammar.cfg;
 
 import grammar.AST;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class SymbolTable {
     private Map<String, SymbolInfo> table;
     private BasicBlock parentBlock;
-    private SymbolTable parent;
+    private Set<SymbolTable> parents;
 
     public SymbolTable(BasicBlock basicBlock){
         this.parentBlock = basicBlock;
         this.table = new HashMap<>();
+        this.parents = new HashSet<>();
+    }
+
+    public Set<SymbolTable> getParent(){
+        return this.parents;
+    }
+
+    public void setParent(SymbolTable parent){
+        this.parents.add(parent);
+    }
+
+    public BasicBlock getParentBlock(){
+        return this.parentBlock;
+    }
+
+    public Set<Map.Entry<String, SymbolInfo>> getTable(){
+        return this.table.entrySet();
     }
 
     public void addEntry(String name, SymbolInfo symbolInfo) throws Exception {
@@ -50,16 +65,21 @@ public class SymbolTable {
         if(this.table.containsKey(name))
             return this.table.get(name);
         else {
-            SymbolTable curTable = this.parent;
-            if(curTable != null)
-                return curTable.fetch(name);
+            for(SymbolTable parent:this.parents){
+                SymbolInfo res = parent.fetch(name);
+                if(res != null)
+                    return res;
+            }
+//            SymbolTable curTable = this.parent;
+//            if(curTable != null)
+//                return curTable.fetch(name);
         }
         return null;
     }
 
     public void fork(BasicBlock basicBlock){
         SymbolTable symbolTable = basicBlock.getSymbolTable();
-        symbolTable.parent = this;
+        symbolTable.parents.add(this);
     }
 
     private boolean checkPrior(AST.Statement statement){

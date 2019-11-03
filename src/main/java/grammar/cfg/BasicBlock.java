@@ -22,6 +22,10 @@ public class BasicBlock {
         return parent;
     }
 
+    public void setParent(Section section){
+        this.parent = section;
+    }
+
     public SymbolTable getSymbolTable() {
         return symbolTable;
     }
@@ -37,6 +41,14 @@ public class BasicBlock {
     public Map<String, BasicBlock> getOutgoingEdges() {
         return outgoingEdges;
 
+    }
+
+    public void addIncomingEdge(BasicBlock basicBlock, String label){
+        this.incomingEdges.put(label, basicBlock);
+    }
+
+    public void addOutgoingEdge(BasicBlock basicBlock, String label){
+        this.outgoingEdges.put(label, basicBlock);
     }
 
     Map<String, BasicBlock> incomingEdges;

@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.jgrapht.Graph;
 import org.jgrapht.ext.JGraphXAdapter;
 import org.jgrapht.graph.DefaultDirectedGraph;
+import utils.Utils;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -124,7 +125,7 @@ public class CFGBuilder{
         }
 
         if(this.showCFG) {
-            showGraph();
+            Utils.showGraph(this.graph, this.outputfile);
         }
     }
 
@@ -286,19 +287,7 @@ public class CFGBuilder{
         return null;
     }
 
-    private void showGraph(){
-        JGraphXAdapter<BasicBlock, Edge> graphXAdapter = new JGraphXAdapter<BasicBlock, Edge>(this.graph);
-        mxIGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);// new mxCircleLayout(graphXAdapter);
-        layout.execute(graphXAdapter.getDefaultParent());
-        BufferedImage image =
-                mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
-        File imgFile = new File(this.outputfile);
-        try {
-            ImageIO.write(image, "PNG", imgFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+
 
 
     private BasicBlock createBasicBlock(Section section){

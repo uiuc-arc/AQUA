@@ -181,6 +181,7 @@ public class Stan2IRTranslator extends StanBaseListener {
         }
         else{
             if(ctx.type().PRIMITIVE() != null){
+                //TODO: fix dimension order
                 modelCode += ctx.type().PRIMITIVE().getText().replace("real", "float")+" ";
                 if(ctx.dims().size() > 1)
                     modelCode += ctx.dims(0).getText() + " ";

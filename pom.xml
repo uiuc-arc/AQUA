@@ -77,13 +77,15 @@
             <resource>
                 <directory>src/test/resources/scripts</directory>
                 <excludes>
+                    <exclude>cmdstan/**</exclude>
                     <exclude>cmdstan-2.19.1/**</exclude>
+                    <exclude>cmdstan-2.16.0/**</exclude>
                 </excludes>
             </resource>
         </resources>
         <testResources>
             <testResource>
-                <directory>src/test/resources/scripts/cmdstan-2.19.1</directory>
+                <directory>src/test/resources/scripts/cmdstan*</directory>
                 <excludes>
                     <exclude>
                         **
