@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 
-import static grammar.transformations.CFGUtil.*;
+import static grammar.transformations.util.CFGUtil.*;
 
 public class Poisson2Normal extends BaseTransformer {
 
@@ -31,7 +31,7 @@ public class Poisson2Normal extends BaseTransformer {
     }
 
     @Override
-    public boolean statementFilter(Statement statement) {
+    public boolean statementFilterFunction(Statement statement) {
         return false;
     }
 

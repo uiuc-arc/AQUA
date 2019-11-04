@@ -32,7 +32,7 @@ public class DataReader extends DataBaseListener {
         else {
             curArr = new ArrayList<>();
             for (DataParser.PrimitiveContext pr : ctx.primitive()) {
-                curArr.add(pr.getText());
+                curArr.add(pr.getText().replace("L","").replace("l",""));
             }
         }
     }
@@ -59,7 +59,7 @@ public class DataReader extends DataBaseListener {
         if(ctx.dt().array() != null)
             this.dataMap.put(this.curId, curArr);
         else if(ctx.dt().primitive() != null)
-            this.dataMap.put(this.curId, ctx.dt().primitive().getText());
+            this.dataMap.put(this.curId, ctx.dt().primitive().getText().replace("L","").replace("l",""));
     }
 
     public void printData(){

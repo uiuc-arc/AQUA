@@ -5,7 +5,7 @@ import grammar.cfg.*;
 
 import java.util.*;
 
-import static grammar.transformations.CFGUtil.*;
+import static grammar.transformations.util.CFGUtil.*;
 
 public class Normal2T extends BaseTransformer {
     private boolean transformed;
@@ -24,9 +24,10 @@ public class Normal2T extends BaseTransformer {
     }
 
     @Override
-    public boolean statementFilter(Statement statement) {
+    public boolean statementFilterFunction(Statement statement) {
         return false;
     }
+
 
     public void addInfo(AST.FunctionCall normalDist){
         assert !analysis : " Transformer used for analysis!";

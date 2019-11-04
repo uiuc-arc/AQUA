@@ -480,6 +480,10 @@ public class AST {
     }
 
     public static class UnaryExpression extends Expression {
+        @Override
+        public String toString() {
+            return "-" + this.expression.toString();
+        }
         public Expression expression;
 
         public UnaryExpression(Expression expression) {

@@ -1,8 +1,6 @@
 package grammar.transformations;
 
 import grammar.AST;
-import grammar.cfg.BasicBlock;
-import grammar.cfg.Edge;
 import grammar.cfg.Section;
 import grammar.cfg.Statement;
 import utils.Utils;
@@ -13,7 +11,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Random;
 
-import static grammar.transformations.CFGUtil.*;
+import static grammar.transformations.util.CFGUtil.*;
 
 public class Reweighter extends BaseTransformer {
     private boolean transformed;
@@ -69,58 +67,7 @@ public class Reweighter extends BaseTransformer {
                 newBlock.statements.add(assignmentStatement);
                 AST.ForLoop newForLoop = new AST.ForLoop(new AST.Id("reweight_i"), new AST.Range(new AST.Integer("1"), new AST.Id("N")), newBlock);
                 // newForLoop.block
-                currStatement.statement = newForLoop;
 
-                // //move the rest statements to a new block
-                // BasicBlock newBB = new BasicBlock();
-                // ArrayList<AST.Statement> succs = new ArrayList<>();
-                // int ind = currStatement.parent.getStatements().indexOf(currStatement);  //get this statement's index
-                // for (int i = ind; i != currStatement.parent.getStatements().size()-1; i++){
-                //     Statement succStmt = currStatement.parent.getStatements().get(i+1);
-                //     succs.add(succStmt.statement);
-                //     newBB.addStatement(succStmt.statement);
-                // }
-                // for (int i = ind; i != currStatement.parent.getStatements().size()-1; i++){
-                //     currStatement.parent.getStatements().remove(i+1);
-                // }
-                // AST.Block succBlock = new AST.Block();
-                // succBlock.statements.addAll(succs);
-                // currStatement.parent.getOutgoingEdges();
-
-                // BasicBlock loop_condition_block = new BasicBlock(currStatement.parent.getParent());
-                // currStatement.parent.getSymbolTable().fork(loop_condition_block);
-                // Edge newedge = new Edge()
-                // statement.parent.addEdge(loop_condition_block, null);
-
-                // if(curBlock.statements.size() > 0){
-                //     loop_condition_block = createBasicBlock(section);
-                //     curBlock.getSymbolTable().fork(loop_condition_block);
-                //     addEdge(curBlock, loop_condition_block, null);
-
-                // }
-                // //BasicBlock loop_condition_block = createBasicBlock(section);
-                // //BasicBlock loop_condition_block = curBlock;
-                // loop_condition_block.addStatement(forLoop);
-
-                // //curBlock.statements.add(forLoop);
-                // BasicBlock loopbody = new BasicBlock(forLoop.block.statements, statement.parent.getParent(), statement.parent, "true");
-                // BasicBlock newblock;
-//              //   if (loopbody.statements.size() != 0){
-//              //        newblock = createBasicBlock(section);
-//              //   }
-//              //   el se{
-//              //        newblock = loopbody;
-//              //   }
-
-                // newblock = createBasicBlock(section);
-                // //addEdge(loopbody, newblock, null);
-                // addEdge(loop_condition_block, newblock, "false");
-                // addEdge(loopbody, loop_condition_block, "back");
-
-                // loop_condition_block.getSymbolTable().fork(newblock);
-
-
-                // curBlock = newblock;
 
             }
         }
@@ -133,12 +80,17 @@ public class Reweighter extends BaseTransformer {
     }
 
     @Override
+    public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
+
+    }
+
+    @Override
     public boolean isTransformed() {
         return false;
     }
 
     @Override
-    public boolean statementFilter(Statement statement) {
+    public boolean statementFilterFunction(Statement statement) {
         // if statement is observe
         if (!statement.statement.annotations.isEmpty()){
             for (AST.Annotation annotation: statement.statement.annotations){
@@ -154,13 +106,23 @@ public class Reweighter extends BaseTransformer {
         return false;
     }
 
-    @Override
-    public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
-        ArrayList<Statement> statementList = statementFilterSection(sections, this);
-        for (Statement statement:statementList) {
-            BaseTransformer newTransformer = new Reweighter();
-            ((Reweighter) newTransformer).addInfo(statement);
-        }
+    // @Override
+    // public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
+    //     ArrayList<Statement> statementList = statementFilterSection(sections, this);
+    //     for (Statement statement:statementList) {
+    //         BaseTransformer newTransformer = new Reweighter();
+    //         ((Reweighter) newTransformer).addInfo(statement);
+    //     }
 
-    }
+    // }
+
+    // @Override
+    // public void undo() throws Exception {
+
+    // }
+
+    // @Override
+    // public boolean isTransformed() {
+    //     return false;
+    // }
 }

@@ -11,7 +11,7 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.Set;
 
-import static grammar.transformations.CFGUtil.*;
+import static grammar.transformations.util.CFGUtil.*;
 
 public class Binomial2Normal extends BaseTransformer {
     private boolean transformed;
@@ -30,7 +30,7 @@ public class Binomial2Normal extends BaseTransformer {
     }
 
     @Override
-    public boolean statementFilter(Statement statement) {
+    public boolean statementFilterFunction(Statement statement) {
         return false;
     }
 

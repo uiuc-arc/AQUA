@@ -220,6 +220,8 @@ public class Stan2IRTranslator extends StanBaseListener {
     @Override
     public void enterSample(StanParser.SampleContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
+        if (this.dataReader.getData(ctx.expression().getText()) != null)
+            this.modelCode += "@observe\n";
         this.modelCode += String.format("%s = ", ctx.expression().getText());
     }
 

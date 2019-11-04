@@ -85,14 +85,11 @@ vector[N] x_test : [1.65414326879598, 1.79899099977467, 1.52452273107997, 0.7926
 float w
 
 @prior
-float robust_local_w
-
-@prior
 @limits <lower=0>
 float sigma
 
-robust_local_w = normal(w, 1)
-Y = normal(robust_local_w * x, sigma)
+@observe
+Y = normal(w * x, sigma)
 
 @blk start generatedquantities
 vector[N] Y_pred

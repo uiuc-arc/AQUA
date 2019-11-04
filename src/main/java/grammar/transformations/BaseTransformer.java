@@ -13,5 +13,5 @@ public abstract class BaseTransformer {
     public abstract void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception;
     public abstract  boolean isTransformed();
 
-    public abstract boolean statementFilter(Statement statement);
+    public abstract boolean statementFilterFunction(Statement statement);
 }

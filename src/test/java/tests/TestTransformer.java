@@ -2,12 +2,19 @@ package tests;
 
 import grammar.AST;
 import grammar.cfg.CFGBuilder;
+import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import grammar.transformations.*;
+import org.junit.rules.TemporaryFolder;
+import translators.Stan2IRTranslator;
 import translators.StanTranslator;
+import translators.listeners.CFGWalker;
+import grammar.transformations.util.ObserveToLoop;
 import utils.Utils;
 
+import java.io.File;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -82,16 +89,31 @@ public class TestTransformer {
         }
     }
 
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
     @Test
     public void TestReweighter(){
-        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust4.template", null, false);
 
         try {
-            Reweighter reweighter = new Reweighter();
-            Queue<BaseTransformer> queuedTransformers = new LinkedList<>();
+            Stan2IRTranslator stan2IRTranslator =
+                    new Stan2IRTranslator("src/test/resources/stan/radon.pooling.stan",
+                            "src/test/resources/stan/radon.pooling.data.R");
+            String code = stan2IRTranslator.getCode();
+            System.out.println(code);
+            // Reweighter reweighter = new Reweighter();
+            File file = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(file, code);
+            System.out.println(code);
+            CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
+
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder.getSections());
+            CFGWalker walker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
+            walker.walk();
             //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
             StanTranslator stanTranslator = new StanTranslator();
-            stanTranslator.translate(cfgBuilder.getSections());
+            stanTranslator.translate(observeToLoop.rewriter.rewrite());
             System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();
