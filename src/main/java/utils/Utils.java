@@ -1,5 +1,10 @@
 package utils;
+import com.mxgraph.layout.hierarchical.mxHierarchicalLayout;
+import com.mxgraph.layout.mxIGraphLayout;
+import com.mxgraph.util.mxCellRenderer;
 import grammar.*;
+import grammar.cfg.BasicBlock;
+import grammar.cfg.Edge;
 import grammar.cfg.Statement;
 import grammar.cfg.SymbolInfo;
 import org.antlr.v4.runtime.CharStream;
@@ -8,13 +13,18 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jgrapht.Graph;
+import org.jgrapht.ext.JGraphXAdapter;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
+import javax.imageio.ImageIO;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 
@@ -241,6 +251,22 @@ public class Utils {
         return stanParser;
     }
 
+    public static Template3Parser readTemplateFile(String path){
+        CharStream stream = null;
+        try {
+            stream = CharStreams.fromFileName(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+       return readTemplateFromString(stream);
+    }
+
+    public static Template3Parser readTemplateFromString(CharStream stream){
+        Template3Lexer template3Lexer = new Template3Lexer(stream);
+        CommonTokenStream tokens = new CommonTokenStream(template3Lexer);
+        return new Template3Parser(tokens);
+    }
+
     public static DataParser readDataFile(String path){
         CharStream stream = null;
         try {
@@ -287,5 +313,19 @@ public class Utils {
         }
         return false;
 
+    }
+
+    public static void showGraph(Graph graph, String outputfile){
+        JGraphXAdapter<BasicBlock, Edge> graphXAdapter = new JGraphXAdapter<BasicBlock, Edge>(graph);
+        mxIGraphLayout layout = new mxHierarchicalLayout(graphXAdapter);// new mxCircleLayout(graphXAdapter);
+        layout.execute(graphXAdapter.getDefaultParent());
+        BufferedImage image =
+                mxCellRenderer.createBufferedImage(graphXAdapter, null, 2, Color.WHITE, true, null);
+        File imgFile = new File(outputfile);
+        try {
+            ImageIO.write(image, "PNG", imgFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
