@@ -262,6 +262,7 @@ public class Stan2IRTranslator extends StanBaseListener {
         this.modelCode += ctx.getText()+ "\n";
     }
 
+
     @Override
     public void exitSample(StanParser.SampleContext ctx) {
         this.modelCode += "\n";
@@ -277,6 +278,12 @@ public class Stan2IRTranslator extends StanBaseListener {
         this.modelCode += String.format("%s(%s)", ctx.ID().getText(), params.substring(0, params.length()-1));
     }
 
+	// @Override
+    // public void enterCondition(StanParser.ConditionContext ctx) {
+    //     System.out.println(ctx.getText());
+    //     this.modelCode += ctx.getText().replace("|", ",");
+
+    // }
 
 
     @Override
@@ -289,7 +296,8 @@ public class Stan2IRTranslator extends StanBaseListener {
     @Override
     public void enterFunction_call_stmt(StanParser.Function_call_stmtContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
-        this.modelCode += new Stan2IRVisitor().visit(ctx.function_call()) + "\n";
+        // Fix in lpdf |
+        this.modelCode += ctx.function_call().getText().replace("|",",") + "\n";
     }
 
     @Override

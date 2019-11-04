@@ -398,7 +398,7 @@ public class AST {
     }
 
     public static class FunctionCallStatement extends Statement {
-        private final FunctionCall functionCall;
+        public final FunctionCall functionCall;
 
         public FunctionCallStatement(FunctionCall functionCall) {
             this.functionCall = functionCall;
