@@ -291,8 +291,8 @@ public class CFGBuilder{
 
 
     private BasicBlock createBasicBlock(Section section){
-        BasicBlock basicBlock = new BasicBlock(section);
-        // blockId++;
+        BasicBlock basicBlock = new BasicBlock(blockId, section);
+        blockId++;
         graph.addVertex(basicBlock);
         section.basicBlocks.add(basicBlock);
         return basicBlock;

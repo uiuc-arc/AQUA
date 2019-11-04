@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BasicBlock {
-    private static int idCount=1;
     public ArrayList<Statement> getStatements() {
         return statements;
     }
@@ -76,12 +75,10 @@ public class BasicBlock {
         outgoingEdges = new HashMap<>();
     }
 
-    public BasicBlock(Section section){
+    public BasicBlock(int id, Section section){
         this();
-        this.id = idCount;
-        idCount++;
+        this.id = id;
         this.parent = section;
-
     }
 
     @Override
