@@ -111,17 +111,21 @@ public class TestTransformer {
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
-            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder.getSections());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder);
 
-            Template3Parser parser = Utils.readTemplateFromString(CharStreams.fromString(code));
             ParseTreeWalker walker = new ParseTreeWalker();
             CFGWalker cfgWalker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
             cfgWalker.walk();
+            Template3Parser parser = cfgBuilder.parser;
+            parser.reset();
             walker.walk(observeToLoop, parser.template());
+            String templateCode = observeToLoop.antlrRewriter.getText();
+            System.out.println(templateCode);
 
-            //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+            File transfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(transfile, templateCode);
             StanTranslator stanTranslator = new StanTranslator();
-            stanTranslator.translate(observeToLoop.rewriter.rewrite());
+            stanTranslator.translate((new CFGBuilder(transfile.getAbsolutePath(), null)).getSections());
             System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();
@@ -142,12 +146,13 @@ public class TestTransformer {
             // System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null);
 
-            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder.getSections());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder);
             CFGWalker walker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
             walker.walk();
             //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
             StanTranslator stanTranslator = new StanTranslator();
-            stanTranslator.translate(observeToLoop.rewriter.rewrite());
+            // stanTranslator.translate(observeToLoop.rewriter.rewrite());
+            stanTranslator.translate(cfgBuilder.getSections());
             System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();

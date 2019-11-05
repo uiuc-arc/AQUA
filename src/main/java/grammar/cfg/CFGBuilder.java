@@ -36,6 +36,7 @@ public class CFGBuilder{
     Graph<BasicBlock, Edge> graph;
     String outputfile;
     boolean showCFG;
+    public Template3Parser parser;
 
     private int blockId = 1;
 
@@ -86,7 +87,7 @@ public class CFGBuilder{
     }
 
     public void createCFG(String filename){
-        Template3Parser parser = getParser(filename);
+        this.parser = getParser(filename);
         AST.Program program = parser.template().value;
         BasicBlock basicBlock = null;
         Section section = null;
