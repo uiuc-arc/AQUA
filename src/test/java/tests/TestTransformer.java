@@ -1,7 +1,11 @@
 package tests;
 
+import com.sun.org.apache.xpath.internal.axes.FilterExprWalker;
 import grammar.AST;
+import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -102,15 +106,19 @@ public class TestTransformer {
                             "src/test/resources/stan/radon.pooling.data.R");
             String code = stan2IRTranslator.getCode();
             System.out.println(code);
-            // Reweighter reweighter = new Reweighter();
+            Reweighter reweighter = new Reweighter();
             File file = temporaryFolder.newFile();
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
-
             ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder.getSections());
-            CFGWalker walker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
-            walker.walk();
+
+            Template3Parser parser = Utils.readTemplateFromString(CharStreams.fromString(code));
+            ParseTreeWalker walker = new ParseTreeWalker();
+            CFGWalker cfgWalker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
+            cfgWalker.walk();
+            walker.walk(observeToLoop, parser.template());
+
             //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
             StanTranslator stanTranslator = new StanTranslator();
             stanTranslator.translate(observeToLoop.rewriter.rewrite());
@@ -122,13 +130,24 @@ public class TestTransformer {
     }
     @Test
     public void TestReweighter2(){
-        CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/basic_robust3_copy.template", null, false);
         try {
-           //  Reweighter reweighter = new Reweighter();
-           //  Queue<BaseTransformer> queuedTransformers = new LinkedList<>();
-           //  reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
+            // Stan2IRTranslator stan2IRTranslator =
+            //         new Stan2IRTranslator("src/test/resources/stan/stan1610.stan",
+            //                 "src/test/resources/stan/stan1610.data");
+            // String code = stan2IRTranslator.getCode();
+            // System.out.println(code);
+            // // Reweighter reweighter = new Reweighter();
+            // File file = temporaryFolder.newFile();
+            // FileUtils.writeStringToFile(file, code);
+            // System.out.println(code);
+            CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null);
+
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder.getSections());
+            CFGWalker walker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
+            walker.walk();
+            //reweighter.availTransformers(cfgBuilder.getSections(), queuedTransformers);
             StanTranslator stanTranslator = new StanTranslator();
-            stanTranslator.translate(cfgBuilder.getSections());
+            stanTranslator.translate(observeToLoop.rewriter.rewrite());
             System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();

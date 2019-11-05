@@ -2,13 +2,14 @@ package grammar.transformations.util;
 
 import grammar.AST;
 import grammar.cfg.*;
+import utils.Dimension;
+import utils.DimensionChecker;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 public class CFGUtil {
-    //ArrayList<String>
 
     public static BasicBlock getNextBlock(BasicBlock curBlock){
         if(curBlock.getEdges().size() > 0){

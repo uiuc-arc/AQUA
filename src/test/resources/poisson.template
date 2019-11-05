@@ -15,7 +15,8 @@ kappa = beta(7.0,3.0)
 
 for(obs in 1:Nobs)
 {
-    y[obs]= poisson(20*kappa)
+    @observe
+    y[obs] = poisson(20*kappa)
 }
 
 posterior(kappa)
