@@ -20,34 +20,20 @@ import utils.Utils;
 
 import java.util.ArrayList;
 
-public class ObserveToLoop implements Template3Listener, StatementListener {
+public class ObserveToLoop implements Template3Listener{
 
     public TokenStreamRewriter antlrRewriter;
-    public Rewriter rewriter;
     public ArrayList<Section> sections;
     public String dimMatch;
 
     public ObserveToLoop(CFGBuilder cfgBuilder){
-        rewriter = new Rewriter(cfgBuilder.getSections());
         antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
         this.sections = cfgBuilder.getSections();
     }
 
+/*
     @Override
     public void enterAssignmentStatement(Statement statement) {
-        if(statement.statement.annotations.size() > 0){
-            for(AST.Annotation annotation:statement.statement.annotations){
-                if(annotation.annotationType == AST.AnnotationType.Observe) {
-                    AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) statement.statement);
-                    Dimension dim;
-                    dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
-                    ArrayList<String> dataDim = dim.getDims();
-                    dimMatch = dataDim.get(0);
-
-                    // oneDimToLoop(statement);
-                }
-            }
-        }
     }
 
     @Override
@@ -74,7 +60,9 @@ public class ObserveToLoop implements Template3Listener, StatementListener {
     public void enterData(AST.Data data) {
 
     }
+*/
 
+/*
     void oneDimToLoop(Statement statement) {
         AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) statement.statement);
         Dimension dim;
@@ -94,9 +82,11 @@ public class ObserveToLoop implements Template3Listener, StatementListener {
             basicBlock.getSymbolTable().fork(loopBody);
             System.out.println(statement.statement.toString());
             dimMatch = dataDim.get(0);
+*/
 /*            AST.Dims newDim = new AST.Dims();
             newDim.dims.add(new AST.Id(dataDim.get(0)));
-            samplingStatement.lhs = new AST.ArrayAccess((AST.Id) samplingStatement.lhs, newDim);*/
+            samplingStatement.lhs = new AST.ArrayAccess((AST.Id) samplingStatement.lhs, newDim);*//*
+
 
             loopBody.addStatement(statement.statement);
 
@@ -108,6 +98,7 @@ public class ObserveToLoop implements Template3Listener, StatementListener {
             this.rewriter.replace(statement, basicBlock.getStatements().get(0));
         }
     }
+*/
 
 
     @Override
@@ -292,21 +283,25 @@ public class ObserveToLoop implements Template3Listener, StatementListener {
 
     @Override
     public void enterStatement(Template3Parser.StatementContext ctx) {
+        for (AST.Annotation annotation: ctx.value.annotations){
+            if(annotation.annotationType == AST.AnnotationType.Observe){
+                AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) ctx.value);
+                Dimension dim;
+                dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
+                ArrayList<String> dataDim = dim.getDims();
+                if (dataDim.size() != 0) {
+                    dimMatch = dataDim.get(0);
+                    antlrRewriter.insertBefore(ctx.getStart(), String.format("for(observe_i in 1:%1$s){\n", dimMatch));
+                    antlrRewriter.insertAfter(ctx.getStop(), String.format("\n}"));
+                }
+                else
+                    dimMatch = "0";
+            }
+        }
     }
 
     @Override
     public void exitStatement(Template3Parser.StatementContext ctx) {
-        for (AST.Annotation annotation: ctx.value.annotations){
-            if(annotation.annotationType == AST.AnnotationType.Observe){
-//                for (int childID=0; 0 < ctx.getChildCount(); childID++) {
-//                    if (ctx.getChild(childID) instanceof Template3Parser.ExprContext) {
-//                        Template3Parser.ExprContext childCtx = (Template3Parser.ExprContext) ctx.getChild(childID);
-//                    }
-//                }
-                antlrRewriter.insertBefore(ctx.getStart(), String.format("for(observe_i in 1:%1$s){\n", dimMatch));
-                antlrRewriter.insertAfter(ctx.getStop(), String.format("\n}"));
-            }
-        }
 
 
     }
@@ -323,15 +318,12 @@ public class ObserveToLoop implements Template3Listener, StatementListener {
     @Override
     public void enterExpr(Template3Parser.ExprContext ctx) {
         if (ctx.ID() != null) {
-            ArrayList<String> idDims = DimensionChecker.getDimension(ctx.value, sections).getDims();
-            if (idDims.size() > 0 && idDims.get(0).equals(dimMatch)) {
-                // AST.Dims newDim = new AST.Dims();
-                // newDim.dims.add(new AST.Id(dimMatch));
-                System.out.println(ctx.getStart());
-                System.out.println(ctx.getStop());
-                antlrRewriter.replace(ctx.getStart(), ctx.getStop(), ctx.ID().toString() + "[observe_i]");
-                //ctx.value = new AST.ArrayAccess(new AST.Id(ctx.ID().toString()), newDim);
-                System.out.println(ctx.getText());
+            Dimension dimension = DimensionChecker.getDimension(ctx.value, sections);
+            if (dimension != null) {
+                ArrayList<String> idDims = dimension.getDims();
+                if (idDims.size() > 0 && idDims.get(0).equals(dimMatch)) {
+                    antlrRewriter.replace(ctx.getStart(), ctx.getStop(), ctx.ID().toString() + "[observe_i]");
+                }
             }
         }
 
