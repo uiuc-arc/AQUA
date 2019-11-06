@@ -31,76 +31,6 @@ public class ObserveToLoop implements Template3Listener{
         this.sections = cfgBuilder.getSections();
     }
 
-/*
-    @Override
-    public void enterAssignmentStatement(Statement statement) {
-    }
-
-    @Override
-    public void enterForLoopStatement(Statement statement) {
-
-    }
-
-    @Override
-    public void enterIfStmt(Statement statement) {
-
-    }
-
-    @Override
-    public void enterDeclStatement(Statement statement) {
-
-    }
-
-    @Override
-    public void enterFunctionCallStatement(Statement statement) {
-
-    }
-
-    @Override
-    public void enterData(AST.Data data) {
-
-    }
-*/
-
-/*
-    void oneDimToLoop(Statement statement) {
-        AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) statement.statement);
-        Dimension dim;
-        dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
-        ArrayList<String> dataDim = dim.getDims();
-        if (dataDim.size() == 1) {
-            String loop = "";
-            loop = String.format("for(observe_i in 1:%s){}", dataDim.get(0));
-            Template3Parser parser = Utils.readTemplateFromString(CharStreams.fromString(loop));
-            AST.Program program = parser.template().value;
-            BasicBlock basicBlock = new BasicBlock();
-            statement.parent.getSymbolTable().fork(basicBlock);
-            basicBlock.addStatement(program.statements.get(0));
-
-
-            BasicBlock loopBody = new BasicBlock();
-            basicBlock.getSymbolTable().fork(loopBody);
-            System.out.println(statement.statement.toString());
-            dimMatch = dataDim.get(0);
-*/
-/*            AST.Dims newDim = new AST.Dims();
-            newDim.dims.add(new AST.Id(dataDim.get(0)));
-            samplingStatement.lhs = new AST.ArrayAccess((AST.Id) samplingStatement.lhs, newDim);*//*
-
-
-            loopBody.addStatement(statement.statement);
-
-            basicBlock.addOutgoingEdge(loopBody, "true");
-            basicBlock.addIncomingEdge(loopBody, "back");
-            loopBody.addIncomingEdge(basicBlock, "true");
-            loopBody.addOutgoingEdge(basicBlock, "back");
-
-            this.rewriter.replace(statement, basicBlock.getStatements().get(0));
-        }
-    }
-*/
-
-
     @Override
     public void enterPrimitive(Template3Parser.PrimitiveContext ctx) {
 
@@ -283,20 +213,27 @@ public class ObserveToLoop implements Template3Listener{
 
     @Override
     public void enterStatement(Template3Parser.StatementContext ctx) {
+        Boolean isTargetStatement = false;
         for (AST.Annotation annotation: ctx.value.annotations){
+            System.out.println("aaaaaaaaaaaaaaaaaaaaaa");
+            System.out.println(annotation.annotationType.toString());
             if(annotation.annotationType == AST.AnnotationType.Observe){
-                AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) ctx.value);
-                Dimension dim;
-                dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
-                ArrayList<String> dataDim = dim.getDims();
-                if (dataDim.size() != 0) {
-                    dimMatch = dataDim.get(0);
-                    antlrRewriter.insertBefore(ctx.getStart(), String.format("for(observe_i in 1:%1$s){\n", dimMatch));
-                    antlrRewriter.insertAfter(ctx.getStop(), String.format("\n}"));
-                }
-                else
-                    dimMatch = "0";
+                isTargetStatement = true;
             }
+        }
+        if (isTargetStatement) {
+            AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) ctx.value);
+            Dimension dim;
+            dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
+            ArrayList<String> dataDim = dim.getDims();
+            if (dataDim.size() != 0) {
+                dimMatch = dataDim.get(0);
+                antlrRewriter.insertBefore(ctx.getStart(), String.format("for(observe_i in 1:%1$s){\n", dimMatch));
+                antlrRewriter.insertAfter(ctx.getStop(), String.format("\n}"));
+            }
+            else
+                dimMatch = "0";
+
         }
     }
 
@@ -381,4 +318,43 @@ public class ObserveToLoop implements Template3Listener{
     //     DimensionChecker(statement,)
 
     // }
+/*
+    void oneDimToLoop(Statement statement) {
+        AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) statement.statement);
+        Dimension dim;
+        dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
+        ArrayList<String> dataDim = dim.getDims();
+        if (dataDim.size() == 1) {
+            String loop = "";
+            loop = String.format("for(observe_i in 1:%s){}", dataDim.get(0));
+            Template3Parser parser = Utils.readTemplateFromString(CharStreams.fromString(loop));
+            AST.Program program = parser.template().value;
+            BasicBlock basicBlock = new BasicBlock();
+            statement.parent.getSymbolTable().fork(basicBlock);
+            basicBlock.addStatement(program.statements.get(0));
+
+
+            BasicBlock loopBody = new BasicBlock();
+            basicBlock.getSymbolTable().fork(loopBody);
+            System.out.println(statement.statement.toString());
+            dimMatch = dataDim.get(0);
+*/
+/*            AST.Dims newDim = new AST.Dims();
+            newDim.dims.add(new AST.Id(dataDim.get(0)));
+            samplingStatement.lhs = new AST.ArrayAccess((AST.Id) samplingStatement.lhs, newDim);*//*
+
+
+            loopBody.addStatement(statement.statement);
+
+            basicBlock.addOutgoingEdge(loopBody, "true");
+            basicBlock.addIncomingEdge(loopBody, "back");
+            loopBody.addIncomingEdge(basicBlock, "true");
+            loopBody.addOutgoingEdge(basicBlock, "back");
+
+            this.rewriter.replace(statement, basicBlock.getStatements().get(0));
+        }
+    }
+*/
+
+
 }
