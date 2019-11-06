@@ -22,6 +22,7 @@ public class Reweighter implements Template3Listener {
     private String dimMatch;
     private String iMatch;
     private Boolean inFor_loop = false;
+    private Boolean isPriorAdded = false;
 
     public Reweighter(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
         this.antlrRewriter = antlrRewriter;
@@ -164,12 +165,17 @@ public class Reweighter implements Template3Listener {
         if (inFor_loop) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
             if (params.size() > 0) {
-                System.out.println("functioncalllllllllllllllllllllll" + ctx.getText());
                 System.out.println(dataList);
                 System.out.println(params.get(0).toString().split("\\[")[0]);
                 if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
                     antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
                             ctx.getText() + String.format("*robust_weight[%s]", iMatch));
+
+                    if (! isPriorAdded) {
+                        antlrRewriter.insertAfter(lastDataStop,
+                                String.format("\n\n@prior\n@limits <lower=0,upper=1>\nfloat robust_weight[%s]", dimMatch));
+                        isPriorAdded = true;
+                    }
 
                 }
 
@@ -187,7 +193,7 @@ public class Reweighter implements Template3Listener {
     @Override
     public void enterFor_loop(Template3Parser.For_loopContext ctx) {
         this.dimMatch = ctx.e2.getText();
-        this.iMatch = ctx.e1.getText();
+        this.iMatch = ctx.value.loopVar.id;
         this.inFor_loop = true;
 
     }

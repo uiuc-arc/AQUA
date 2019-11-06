@@ -5,6 +5,7 @@ import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
 import grammar.transformations.util.SampleToTarget;
+import grammar.transformations.util.TransWriter;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -21,6 +22,7 @@ import grammar.transformations.util.ObserveToLoop;
 import utils.Utils;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -191,7 +193,6 @@ public class TestTransformer {
             TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
             ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
             SampleToTarget sampleToTarget = new SampleToTarget(cfgBuilder, antlrRewriter);
-            Reweighter reweighter = new Reweighter(cfgBuilder, antlrRewriter);
 
             ParseTreeWalker walker = new ParseTreeWalker();
             Template3Parser parser = cfgBuilder.parser;
@@ -199,19 +200,86 @@ public class TestTransformer {
             walker.walk(observeToLoop, parser.template());
             parser.reset();
             walker.walk(sampleToTarget, parser.template());
+
+
+
+            String templateCode = antlrRewriter.getText();
+            File tempfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(tempfile, templateCode);
+            cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
+            parser = cfgBuilder.parser;
+            antlrRewriter = new TokenStreamRewriter(parser.getTokenStream());
+            Reweighter reweighter = new Reweighter(cfgBuilder, antlrRewriter);
             parser.reset();
             walker.walk(reweighter, parser.template());
-            String templateCode = antlrRewriter.getText();
+            templateCode = antlrRewriter.getText();
             System.out.println(templateCode);
 
-            File transfile = temporaryFolder.newFile();
-            FileUtils.writeStringToFile(transfile, templateCode);
+            tempfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(tempfile, templateCode);
             StanTranslator stanTranslator = new StanTranslator();
-            stanTranslator.translate((new CFGBuilder(transfile.getAbsolutePath(), null)).getSections());
+            stanTranslator.translate((new CFGBuilder(tempfile.getAbsolutePath(), null)).getSections());
             System.out.println(stanTranslator.getCode());
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+    }
+    @Test
+    public void TestReweighter2(){
+        try {
+            Stan2IRTranslator stan2IRTranslator =
+                    new Stan2IRTranslator("src/test/resources/stan/radon.pooling.stan",
+                            "src/test/resources/stan/radon.pooling.data.R");
+            String code = stan2IRTranslator.getCode();
+            System.out.println(code);
+            File file = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(file, code);
+            System.out.println(code);
+            CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
+            SampleToTarget sampleToTarget = new SampleToTarget(cfgBuilder, antlrRewriter);
+
+            ParseTreeWalker walker = new ParseTreeWalker();
+            Template3Parser parser = cfgBuilder.parser;
+            parser.reset();
+            walker.walk(observeToLoop, parser.template());
+            parser.reset();
+            walker.walk(sampleToTarget, parser.template());
+
+
+
+            String templateCode = antlrRewriter.getText();
+            File tempfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(tempfile, templateCode);
+            cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null, false);
+            parser = cfgBuilder.parser;
+            antlrRewriter = new TokenStreamRewriter(parser.getTokenStream());
+            Reweighter reweighter = new Reweighter(cfgBuilder, antlrRewriter);
+            parser.reset();
+            walker.walk(reweighter, parser.template());
+            templateCode = antlrRewriter.getText();
+            System.out.println(templateCode);
+
+            tempfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(tempfile, templateCode);
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate((new CFGBuilder(tempfile.getAbsolutePath(), null, false)).getSections());
+            System.out.println(stanTranslator.getCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Test
+    public void TestWhatever() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                            "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        transWriter.transformReweighter();
+        System.out.println(transWriter.getStanCode());
     }
 }
