@@ -227,9 +227,10 @@ public class SampleToTarget implements Template3Listener {
                         }
                     }
                     assert(newID != null);
+                    String oldParamString = ((AST.FunctionCall) samplingStatement.rhs).parameters.toString();
                     antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
                             String.format("target = target + %1$s(%2$s, %3$s)",
-                                    newID,samplingStatement.lhs.toString(), samplingStatement.rhs.toString()));
+                                    newID,samplingStatement.lhs.toString(), oldParamString.substring(1,oldParamString.length() - 1)));
                 }
             }
         }

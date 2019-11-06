@@ -1,11 +1,13 @@
 package grammar.transformations;
 
 
+import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -15,6 +17,11 @@ import java.util.ArrayList;
 public class Reweighter implements Template3Listener {
     public TokenStreamRewriter antlrRewriter;
     public ArrayList<Section> sections;
+    private Token lastDataStop;
+    private ArrayList<String> dataList = new ArrayList<>();
+    private String dimMatch;
+    private String iMatch;
+    private Boolean inFor_loop = false;
 
     public Reweighter(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
         this.antlrRewriter = antlrRewriter;
@@ -148,11 +155,27 @@ public class Reweighter implements Template3Listener {
 
     @Override
     public void exitData(Template3Parser.DataContext ctx) {
+        this.lastDataStop = ctx.getStop();
 
     }
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
+        if (inFor_loop) {
+            ArrayList<AST.Expression> params = ctx.value.parameters;
+            if (params.size() > 0) {
+                System.out.println("functioncalllllllllllllllllllllll" + ctx.getText());
+                System.out.println(dataList);
+                System.out.println(params.get(0).toString().split("\\[")[0]);
+                if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
+                    antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
+                            ctx.getText() + String.format("*robust_weight[%s]", iMatch));
+
+                }
+
+            }
+            
+        }
 
     }
 
@@ -163,6 +186,9 @@ public class Reweighter implements Template3Listener {
 
     @Override
     public void enterFor_loop(Template3Parser.For_loopContext ctx) {
+        this.dimMatch = ctx.e2.getText();
+        this.iMatch = ctx.e1.getText();
+        this.inFor_loop = true;
 
     }
 
@@ -198,6 +224,7 @@ public class Reweighter implements Template3Listener {
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
+        dataList.add(ctx.value.id.toString());
 
     }
 

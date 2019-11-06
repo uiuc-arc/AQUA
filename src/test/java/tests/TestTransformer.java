@@ -199,6 +199,8 @@ public class TestTransformer {
             walker.walk(observeToLoop, parser.template());
             parser.reset();
             walker.walk(sampleToTarget, parser.template());
+            parser.reset();
+            walker.walk(reweighter, parser.template());
             String templateCode = antlrRewriter.getText();
             System.out.println(templateCode);
 
