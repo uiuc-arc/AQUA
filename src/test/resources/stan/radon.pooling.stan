@@ -9,6 +9,6 @@ parameters {
   real<lower=0> sigma_y;
 }
 model {
-  target += normal_lpdf(y | a + b * x, sigma_y);
-  // y ~ normal(a + b * x, sigma_y);
+  // target += normal_lpdf(y | a + b * x, sigma_y);
+  y ~ normal(a + b * x, sigma_y);
 }

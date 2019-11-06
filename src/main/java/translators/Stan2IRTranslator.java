@@ -299,12 +299,8 @@ public class Stan2IRTranslator extends StanBaseListener {
 
     @Override
     public void enterFunction_call_stmt(StanParser.Function_call_stmtContext ctx) {
-        System.out.println("ssssssssssssssssssssssssss");
         checkBlockEndAnnotation(ctx.getParent());
         // Fix in lpdf |
-        List<StanParser.ExpressionContext> exprs = ctx.function_call().expression();
-        if (exprs.size() > 0 && this.dataReader.getData(exprs.get(0).getText()) != null)
-            this.modelCode += "@score\n";
         this.modelCode += ctx.function_call().getText().replace("|",",") + "\n";
     }
 

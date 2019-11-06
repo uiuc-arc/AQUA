@@ -1,128 +1,274 @@
 package grammar.transformations;
 
-import grammar.AST;
+
+import grammar.Template3Listener;
+import grammar.Template3Parser;
+import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
-import grammar.cfg.Statement;
-import utils.Utils;
+import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.TokenStreamRewriter;
+import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
-import javax.json.JsonObject;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Random;
 
-import static grammar.transformations.util.CFGUtil.*;
+public class Reweighter implements Template3Listener {
+    public TokenStreamRewriter antlrRewriter;
+    public ArrayList<Section> sections;
 
-public class Reweighter extends BaseTransformer {
-    private boolean transformed;
-    private boolean analysis;
-    private final List<JsonObject> models= Utils.getDistributions(null);
-    private Statement currStatement;
-
-    public void addInfo(Statement statement){
-        assert !analysis : " Transformer used for analysis!";
-        this.currStatement = statement;
+    public Reweighter(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
+        this.antlrRewriter = antlrRewriter;
+        this.sections = cfgBuilder.getSections();
     }
 
     @Override
-    public void transform() throws Exception {
-        System.out.println("Reweighter transform");
-        System.out.println(currStatement.statement.toString());
-        String newParam = "robust_weight" + (String.valueOf(new Random().nextLong()).substring(1));
-        if (currStatement.statement instanceof AST.AssignmentStatement) {
-            AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) currStatement.statement;
-            if (assignmentStatement.lhs.toString().equals("target")) {
-                if (assignmentStatement.rhs instanceof AST.AddOp) {
-                    AST.AddOp targetRhs = (AST.AddOp) assignmentStatement.rhs;
-                    targetRhs.op2 = new AST.MulOp(targetRhs.op2, new AST.Id(newParam));
-                    // String toweight = (assignmentStatement.rhs.toString().replaceAll(" ", "").split("target\\+")[1]);
-                    System.out.println(assignmentStatement.toString());
-                }
-            }
-            else if (isData(currStatement, assignmentStatement.lhs)) {
-                if (assignmentStatement.rhs instanceof AST.FunctionCall) {
-                    AST.FunctionCall functionCall = (AST.FunctionCall) assignmentStatement.rhs;
-                    String newID = null;
-                    for (JsonObject model:this.models) {
-                        if (functionCall.id.id.contains(model.getString("name"))){
-                            if(model.getString("type").equals("C")) {
-                                newID = functionCall.id.id + "_lpdf";
-                            } else {
-                                newID = functionCall.id.id + "_lpmf";
-                            }
-                            break;
-                        }
-                    }
-                    assert(newID != null);
-                    functionCall.id.id = newID;
-                    AST.Dims newDim = new AST.Dims();
-                    newDim.dims.add(new AST.Id("reweight_i"));
-                    functionCall.parameters.add(0, new AST.ArrayAccess(new AST.Id(assignmentStatement.lhs.toString()),
-                            newDim));
-                    assignmentStatement.lhs = new AST.Id("target");
-                    assignmentStatement.rhs = new AST.AddOp(new AST.Id("target"), new AST.MulOp(functionCall,
-                            new AST.ArrayAccess(new AST.Id(newParam), newDim)));
-                }
-                AST.Block newBlock = new AST.Block();
-                newBlock.statements.add(assignmentStatement);
-                AST.ForLoop newForLoop = new AST.ForLoop(new AST.Id("reweight_i"), new AST.Range(new AST.Integer("1"), new AST.Id("N")), newBlock);
-                // newForLoop.block
-
-
-            }
-        }
+    public void enterPrimitive(Template3Parser.PrimitiveContext ctx) {
 
     }
 
     @Override
-    public void undo() throws Exception {
+    public void exitPrimitive(Template3Parser.PrimitiveContext ctx) {
 
     }
 
     @Override
-    public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
+    public void enterNumber(Template3Parser.NumberContext ctx) {
 
     }
 
     @Override
-    public boolean isTransformed() {
-        return false;
+    public void exitNumber(Template3Parser.NumberContext ctx) {
+
     }
 
     @Override
-    public boolean statementFilterFunction(Statement statement) {
-        // if statement is observe
-        if (!statement.statement.annotations.isEmpty()){
-            for (AST.Annotation annotation: statement.statement.annotations){
-                if(annotation.annotationType == AST.AnnotationType.Observe)
-                    return true;
-            }
-        }
-        // if statement is assignment to target or data
-        if (statement.statement instanceof AST.AssignmentStatement) {
-            AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
-            return assignmentStatement.lhs.toString().equals("target") || isData(statement, assignmentStatement.lhs);
-        }
-        return false;
+    public void enterLimits(Template3Parser.LimitsContext ctx) {
+
     }
 
-    // @Override
-    // public void availTransformers(ArrayList<Section> sections, Queue<BaseTransformer> availTrans) throws Exception {
-    //     ArrayList<Statement> statementList = statementFilterSection(sections, this);
-    //     for (Statement statement:statementList) {
-    //         BaseTransformer newTransformer = new Reweighter();
-    //         ((Reweighter) newTransformer).addInfo(statement);
-    //     }
+    @Override
+    public void exitLimits(Template3Parser.LimitsContext ctx) {
 
-    // }
+    }
 
-    // @Override
-    // public void undo() throws Exception {
+    @Override
+    public void enterMarker(Template3Parser.MarkerContext ctx) {
 
-    // }
+    }
 
-    // @Override
-    // public boolean isTransformed() {
-    //     return false;
-    // }
+    @Override
+    public void exitMarker(Template3Parser.MarkerContext ctx) {
+
+    }
+
+    @Override
+    public void enterAnnotation_type(Template3Parser.Annotation_typeContext ctx) {
+
+    }
+
+    @Override
+    public void exitAnnotation_type(Template3Parser.Annotation_typeContext ctx) {
+
+    }
+
+    @Override
+    public void enterAnnotation_value(Template3Parser.Annotation_valueContext ctx) {
+
+    }
+
+    @Override
+    public void exitAnnotation_value(Template3Parser.Annotation_valueContext ctx) {
+
+    }
+
+    @Override
+    public void enterAnnotation(Template3Parser.AnnotationContext ctx) {
+
+    }
+
+    @Override
+    public void exitAnnotation(Template3Parser.AnnotationContext ctx) {
+
+    }
+
+    @Override
+    public void enterDims(Template3Parser.DimsContext ctx) {
+
+    }
+
+    @Override
+    public void exitDims(Template3Parser.DimsContext ctx) {
+
+    }
+
+    @Override
+    public void enterDim(Template3Parser.DimContext ctx) {
+
+    }
+
+    @Override
+    public void exitDim(Template3Parser.DimContext ctx) {
+
+    }
+
+    @Override
+    public void enterDtype(Template3Parser.DtypeContext ctx) {
+
+    }
+
+    @Override
+    public void exitDtype(Template3Parser.DtypeContext ctx) {
+
+    }
+
+    @Override
+    public void enterArray(Template3Parser.ArrayContext ctx) {
+
+    }
+
+    @Override
+    public void exitArray(Template3Parser.ArrayContext ctx) {
+
+    }
+
+    @Override
+    public void enterVector(Template3Parser.VectorContext ctx) {
+
+    }
+
+    @Override
+    public void exitVector(Template3Parser.VectorContext ctx) {
+
+    }
+
+    @Override
+    public void enterData(Template3Parser.DataContext ctx) {
+
+    }
+
+    @Override
+    public void exitData(Template3Parser.DataContext ctx) {
+
+    }
+
+    @Override
+    public void enterFunction_call(Template3Parser.Function_callContext ctx) {
+
+    }
+
+    @Override
+    public void exitFunction_call(Template3Parser.Function_callContext ctx) {
+
+    }
+
+    @Override
+    public void enterFor_loop(Template3Parser.For_loopContext ctx) {
+
+    }
+
+    @Override
+    public void exitFor_loop(Template3Parser.For_loopContext ctx) {
+
+    }
+
+    @Override
+    public void enterIf_stmt(Template3Parser.If_stmtContext ctx) {
+
+    }
+
+    @Override
+    public void exitIf_stmt(Template3Parser.If_stmtContext ctx) {
+
+    }
+
+    @Override
+    public void enterAssign(Template3Parser.AssignContext ctx) {
+
+    }
+
+    @Override
+    public void exitAssign(Template3Parser.AssignContext ctx) {
+
+    }
+
+    @Override
+    public void enterDecl(Template3Parser.DeclContext ctx) {
+
+    }
+
+    @Override
+    public void exitDecl(Template3Parser.DeclContext ctx) {
+
+    }
+
+    @Override
+    public void enterStatement(Template3Parser.StatementContext ctx) {
+
+    }
+
+    @Override
+    public void exitStatement(Template3Parser.StatementContext ctx) {
+
+    }
+
+    @Override
+    public void enterBlock(Template3Parser.BlockContext ctx) {
+
+    }
+
+    @Override
+    public void exitBlock(Template3Parser.BlockContext ctx) {
+
+    }
+
+    @Override
+    public void enterExpr(Template3Parser.ExprContext ctx) {
+
+    }
+
+    @Override
+    public void exitExpr(Template3Parser.ExprContext ctx) {
+
+    }
+
+    @Override
+    public void enterQuery(Template3Parser.QueryContext ctx) {
+
+    }
+
+    @Override
+    public void exitQuery(Template3Parser.QueryContext ctx) {
+
+    }
+
+    @Override
+    public void enterTemplate(Template3Parser.TemplateContext ctx) {
+
+    }
+
+    @Override
+    public void exitTemplate(Template3Parser.TemplateContext ctx) {
+
+    }
+
+    @Override
+    public void visitTerminal(TerminalNode terminalNode) {
+
+    }
+
+    @Override
+    public void visitErrorNode(ErrorNode errorNode) {
+
+    }
+
+    @Override
+    public void enterEveryRule(ParserRuleContext parserRuleContext) {
+
+    }
+
+    @Override
+    public void exitEveryRule(ParserRuleContext parserRuleContext) {
+
+    }
 }
+

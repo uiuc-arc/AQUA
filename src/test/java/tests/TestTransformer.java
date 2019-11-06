@@ -4,7 +4,9 @@ import com.sun.org.apache.xpath.internal.axes.FilterExprWalker;
 import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.util.SampleToTarget;
 import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.FileUtils;
 import org.junit.Ignore;
@@ -98,7 +100,7 @@ public class TestTransformer {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void TestReweighter(){
+    public void ObserveToLoop(){
 
         try {
             Stan2IRTranslator stan2IRTranslator =
@@ -106,20 +108,20 @@ public class TestTransformer {
                             "src/test/resources/stan/radon.pooling.data.R");
             String code = stan2IRTranslator.getCode();
             System.out.println(code);
-            Reweighter reweighter = new Reweighter();
             File file = temporaryFolder.newFile();
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
-            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder);
 
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
             ParseTreeWalker walker = new ParseTreeWalker();
             // CFGWalker cfgWalker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
             // cfgWalker.walk();
             Template3Parser parser = cfgBuilder.parser;
             parser.reset();
             walker.walk(observeToLoop, parser.template());
-            String templateCode = observeToLoop.antlrRewriter.getText();
+            String templateCode = antlrRewriter.getText();
             System.out.println(templateCode);
 
             File transfile = temporaryFolder.newFile();
@@ -133,28 +135,71 @@ public class TestTransformer {
 
     }
     @Test
-    public void TestReweighter2(){
+    public void TestObserveToLoop2(){
         try {
-            // Stan2IRTranslator stan2IRTranslator =
-            //         new Stan2IRTranslator("src/test/resources/stan/stan1610.stan",
-            //                 "src/test/resources/stan/stan1610.data");
-            // String code = stan2IRTranslator.getCode();
-            // System.out.println(code);
-            // // Reweighter reweighter = new Reweighter();
-            // File file = temporaryFolder.newFile();
-            // FileUtils.writeStringToFile(file, code);
-            // System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null);
-
-            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder);
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
 
             ParseTreeWalker walker = new ParseTreeWalker();
-            // CFGWalker cfgWalker = new CFGWalker(cfgBuilder.getSections(), observeToLoop);
-            // cfgWalker.walk();
             Template3Parser parser = cfgBuilder.parser;
             parser.reset();
             walker.walk(observeToLoop, parser.template());
-            String templateCode = observeToLoop.antlrRewriter.getText();
+            String templateCode = antlrRewriter.getText();
+            System.out.println(templateCode);
+
+            File transfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(transfile, templateCode);
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate((new CFGBuilder(transfile.getAbsolutePath(), null)).getSections());
+            System.out.println(stanTranslator.getCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    @Test
+    public void TestSampleToTarget(){
+        try {
+            CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null);
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
+            SampleToTarget sampleToTarget = new SampleToTarget(cfgBuilder, antlrRewriter);
+
+            ParseTreeWalker walker = new ParseTreeWalker();
+            Template3Parser parser = cfgBuilder.parser;
+            parser.reset();
+            walker.walk(observeToLoop, parser.template());
+            parser.reset();
+            walker.walk(sampleToTarget, parser.template());
+            String templateCode = antlrRewriter.getText();
+            System.out.println(templateCode);
+
+            File transfile = temporaryFolder.newFile();
+            FileUtils.writeStringToFile(transfile, templateCode);
+            StanTranslator stanTranslator = new StanTranslator();
+            stanTranslator.translate((new CFGBuilder(transfile.getAbsolutePath(), null)).getSections());
+            System.out.println(stanTranslator.getCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+    @Test
+    public void TestReweighter(){
+        try {
+            CFGBuilder cfgBuilder = new CFGBuilder("src/test/resources/poisson.template", null);
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
+            SampleToTarget sampleToTarget = new SampleToTarget(cfgBuilder, antlrRewriter);
+            Reweighter reweighter = new Reweighter(cfgBuilder, antlrRewriter);
+
+            ParseTreeWalker walker = new ParseTreeWalker();
+            Template3Parser parser = cfgBuilder.parser;
+            parser.reset();
+            walker.walk(observeToLoop, parser.template());
+            parser.reset();
+            walker.walk(sampleToTarget, parser.template());
+            String templateCode = antlrRewriter.getText();
             System.out.println(templateCode);
 
             File transfile = temporaryFolder.newFile();

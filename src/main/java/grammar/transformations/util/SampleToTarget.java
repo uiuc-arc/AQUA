@@ -3,36 +3,30 @@ package grammar.transformations.util;
 import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
-import grammar.cfg.BasicBlock;
 import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
-import grammar.cfg.Statement;
-import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.antlr.v4.runtime.TokenStreamRewriter;
-import translators.listeners.StatementListener;
-import utils.Dimension;
-import utils.DimensionChecker;
-import utils.Operation.Rewriter;
 import utils.Utils;
 
+import javax.json.JsonObject;
 import java.util.ArrayList;
+import java.util.List;
 
-public class ObserveToLoop implements Template3Listener{
-
+public class SampleToTarget implements Template3Listener {
+    private final List<JsonObject> models= Utils.getDistributions(null);
     public TokenStreamRewriter antlrRewriter;
     public ArrayList<Section> sections;
     private ArrayList<String> dataList = new ArrayList<>();
-    public String dimMatch;
-    Boolean containData = false;
 
-    public ObserveToLoop(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter){
+    public SampleToTarget(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter){
         this.antlrRewriter = antlrRewriter;
         this.sections = cfgBuilder.getSections();
     }
 
+    Boolean inObserve = false;
     @Override
     public void enterPrimitive(Template3Parser.PrimitiveContext ctx) {
 
@@ -165,19 +159,7 @@ public class ObserveToLoop implements Template3Listener{
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (ctx.value.parameters.size() > 0) {
-            if (dataList.contains(ctx.value.parameters.get(0).toString())) {
-                Dimension dim;
-                dim = DimensionChecker.getDimension(ctx.value.parameters.get(0), sections);
-                ArrayList<String> dataDim = dim.getDims();
-                if (dataDim.size() != 0) {
-                    dimMatch = dataDim.get(0);
-                    containData = true;
-                }
-                else
-                    dimMatch = "0";
-            }
-        }
+
     }
 
     @Override
@@ -222,36 +204,40 @@ public class ObserveToLoop implements Template3Listener{
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
-        dataList.add(ctx.value.id.toString());
+
     }
 
     @Override
     public void enterStatement(Template3Parser.StatementContext ctx) {
-        for (AST.Annotation annotation: ctx.value.annotations){
-            if(annotation.annotationType == AST.AnnotationType.Observe){
+        for (AST.Annotation annotation: ctx.value.annotations) {
+            if (annotation.annotationType == AST.AnnotationType.Observe) {
+                inObserve = true;
                 AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) ctx.value);
-                Dimension dim;
-                dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
-                ArrayList<String> dataDim = dim.getDims();
-                if (dataDim.size() != 0) {
-                    dimMatch = dataDim.get(0);
-                    containData = true;
+                if (samplingStatement.rhs instanceof AST.FunctionCall) {
+                    AST.FunctionCall functionCall = (AST.FunctionCall) samplingStatement.rhs;
+                    String newID = null;
+                    for (JsonObject model : this.models) {
+                        if (functionCall.id.id.contains(model.getString("name"))) {
+                            if (model.getString("type").equals("C")) {
+                                newID = functionCall.id.id + "_lpdf";
+                            } else {
+                                newID = functionCall.id.id + "_lpmf";
+                            }
+                            break;
+                        }
+                    }
+                    assert(newID != null);
+                    antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
+                            String.format("target = target + %1$s(%2$s, %3$s)",
+                                    newID,samplingStatement.lhs.toString(), samplingStatement.rhs.toString()));
                 }
-                else
-                    dimMatch = "0";
             }
         }
+
     }
 
     @Override
     public void exitStatement(Template3Parser.StatementContext ctx) {
-        if (containData) {
-            if (dimMatch != null && ! dimMatch.equals("0")) {
-                antlrRewriter.insertBefore(ctx.getStart(), String.format("for(observe_i in 1:%1$s){\n", dimMatch));
-                antlrRewriter.insertAfter(ctx.getStop(), String.format("\n}"));
-            }
-            containData = false;
-        }
 
     }
 
@@ -264,18 +250,9 @@ public class ObserveToLoop implements Template3Listener{
     public void exitBlock(Template3Parser.BlockContext ctx) {
 
     }
+
     @Override
     public void enterExpr(Template3Parser.ExprContext ctx) {
-        if (containData)
-            if (ctx.ID() != null) {
-                Dimension dimension = DimensionChecker.getDimension(ctx.value, sections);
-                if (dimension != null) {
-                    ArrayList<String> idDims = dimension.getDims();
-                    if (idDims.size() > 0 && idDims.get(0).equals(dimMatch)) {
-                        antlrRewriter.replace(ctx.getStart(), ctx.getStop(), ctx.ID().toString() + "[observe_i]");
-                    }
-                }
-            }
 
     }
 
@@ -323,51 +300,4 @@ public class ObserveToLoop implements Template3Listener{
     public void exitEveryRule(ParserRuleContext parserRuleContext) {
 
     }
-
-    // public ArrayList<AST.Id> getSameDimIds(AST.Expression rhs, Dimension dim) {
-    //     String dimMatch = dim.getDims().get(0);
-    //     for (ss: rhs)
-
-    //     DimensionChecker(statement,)
-
-    // }
-/*
-    void oneDimToLoop(Statement statement) {
-        AST.AssignmentStatement samplingStatement = ((AST.AssignmentStatement) statement.statement);
-        Dimension dim;
-        dim = DimensionChecker.getDimension(samplingStatement.lhs, sections);
-        ArrayList<String> dataDim = dim.getDims();
-        if (dataDim.size() == 1) {
-            String loop = "";
-            loop = String.format("for(observe_i in 1:%s){}", dataDim.get(0));
-            Template3Parser parser = Utils.readTemplateFromString(CharStreams.fromString(loop));
-            AST.Program program = parser.template().value;
-            BasicBlock basicBlock = new BasicBlock();
-            statement.parent.getSymbolTable().fork(basicBlock);
-            basicBlock.addStatement(program.statements.get(0));
-
-
-            BasicBlock loopBody = new BasicBlock();
-            basicBlock.getSymbolTable().fork(loopBody);
-            System.out.println(statement.statement.toString());
-            dimMatch = dataDim.get(0);
-*/
-/*            AST.Dims newDim = new AST.Dims();
-            newDim.dims.add(new AST.Id(dataDim.get(0)));
-            samplingStatement.lhs = new AST.ArrayAccess((AST.Id) samplingStatement.lhs, newDim);*//*
-
-
-            loopBody.addStatement(statement.statement);
-
-            basicBlock.addOutgoingEdge(loopBody, "true");
-            basicBlock.addIncomingEdge(loopBody, "back");
-            loopBody.addIncomingEdge(basicBlock, "true");
-            loopBody.addOutgoingEdge(basicBlock, "back");
-
-            this.rewriter.replace(statement, basicBlock.getStatements().get(0));
-        }
-    }
-*/
-
-
 }
