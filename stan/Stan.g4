@@ -53,7 +53,7 @@ expression :  expression '\''               #transpose
             | expression '<=' expression    #le
             | expression '>=' expression    #ge
             | expression '?' expression ':' expression   #ternary_if
-            | ID '|' expression (',' expression )*   #condition
+            | (array_access | ID) '|' expression (',' expression )*   #condition
             | arrays              #array_decl
             | '-' expression    #unary
             | '(' expression ')' #brackets

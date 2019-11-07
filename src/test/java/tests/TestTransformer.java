@@ -282,4 +282,19 @@ public class TestTransformer {
         transWriter.transformReweighter();
         System.out.println(transWriter.getStanCode());
     }
+
+    @Test
+    public void TestPred() throws Exception {
+        try {
+            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                    "src/test/resources/stan/radon.pooling.data.R");
+            transWriter.transformObserveToLoop();
+            transWriter.transformSampleToTarget();
+            transWriter.transformOrgPredCode();
+            System.out.println(transWriter.getPredCode());
+            System.out.println(transWriter.getStanPredCode());
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+}
 }

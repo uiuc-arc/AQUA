@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public class Stan2IRVisitor extends StanBaseVisitor<String> {
     @Override
     public String visitCondition(StanParser.ConditionContext ctx) {
-        String res = ctx.ID().getText() + ",";
+        String res = ctx.getChild(0).getText() + ",";
         for(StanParser.ExpressionContext expr: ctx.expression()){
             res+= visit(expr) + ",";
         }
