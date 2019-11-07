@@ -331,6 +331,20 @@ public class TestTransformer {
     }
 
     @Test
+    public void TestConstToParam() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformConstToParam();
+        System.out.println("Transformed? " + transformed);
+        transWriter.transformLocalizer(1);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+
+    }
+
+    @Test
     public void TestReparamLocalizer2() throws Exception {
         TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
         transWriter.transformObserveToLoop();

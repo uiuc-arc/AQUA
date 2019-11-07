@@ -1,6 +1,7 @@
 package grammar.transformations.util;
 
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.ConstToParam;
 import grammar.transformations.Localizer;
 import grammar.transformations.ReparamLocalizer;
 import grammar.transformations.Reweighter;
@@ -141,6 +142,7 @@ public class TransWriter {
         return localizer.existNext;
     }
 
+    //Return whether there is a normal distr
     public Boolean transformReparamLocalizer() throws IOException {
         File file = File.createTempFile(tempFileName, suffix);
         FileUtils.writeStringToFile(file, code);
@@ -151,5 +153,17 @@ public class TransWriter {
         walker.walk(reparamLocalizer, cfgBuilder.parser.template());
         code = antlrRewriter.getText();
         return reparamLocalizer.transformed;
+    }
+
+    public Boolean transformConstToParam() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        ConstToParam constToParam = new ConstToParam(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(constToParam, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return constToParam.transformed;
     }
 }
