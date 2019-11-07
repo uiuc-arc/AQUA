@@ -1,6 +1,7 @@
 package grammar.transformations.util;
 
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.Localizer;
 import grammar.transformations.Reweighter;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -13,12 +14,13 @@ import java.io.IOException;
 
 
 public class TransWriter {
-
-
     String tempFileName;
     String suffix = ".tmpT";
     String code;
+    String reuseCode;
     String predCode;
+
+
     String functionPrefix = "functions {\n" +
             "    real pl_RU(real f_lp_corr, real f_lp_good, real f_lp_org_good) {\n" +
             "        return exp(f_lp_corr + f_lp_good - f_lp_org_good);\n" +
@@ -39,6 +41,14 @@ public class TransWriter {
         System.out.println("========Stan Code=======");
         System.out.println(code);
 
+    }
+
+    public void setReuseCode() {
+        reuseCode = code;
+    }
+
+    public void resetCode() {
+        code = reuseCode;
     }
 
     public void transformOrgPredCode() throws IOException {
@@ -107,5 +117,18 @@ public class TransWriter {
         cfgBuilder.parser.reset();
         walker.walk(reweighter, cfgBuilder.parser.template());
         code = antlrRewriter.getText();
+    }
+
+    // Return whether next transformation exist
+    public Boolean transformLocalizer(int paramToTransform) throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        Localizer localizer = new Localizer(cfgBuilder, antlrRewriter, paramToTransform);
+        cfgBuilder.parser.reset();
+        walker.walk(localizer, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return localizer.existNext;
     }
 }

@@ -151,7 +151,7 @@ public class Reweighter implements Template3Listener {
 
     @Override
     public void enterData(Template3Parser.DataContext ctx) {
-
+        dataList.add(ctx.decl.ID.getText());
     }
 
     @Override
@@ -229,7 +229,6 @@ public class Reweighter implements Template3Listener {
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
-        dataList.add(ctx.value.id.toString());
 
     }
 

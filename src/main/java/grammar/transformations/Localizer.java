@@ -1,12 +1,44 @@
 package grammar.transformations;
 
+import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
+import grammar.cfg.CFGBuilder;
+import grammar.cfg.Section;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import utils.Utils;
+
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Localizer implements Template3Listener {
+    private final List<JsonObject> models= Utils.getDistributions(null);
+    public TokenStreamRewriter antlrRewriter;
+    public ArrayList<Section> sections;
+    public Boolean existNext=true;
+    private Token lastDeclStop;
+    private int paramToTransform;
+    private ArrayList<String> dataList = new ArrayList<>();
+    private String dimMatch;
+    private String iMatch;
+    private Boolean inFor_loop = false;
+    private Boolean isPriorAdded = false;
+    private Token startLastAssign;
+
+    public Localizer(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter, int paramToTransform) {
+        this.antlrRewriter = antlrRewriter;
+        this.sections = cfgBuilder.getSections();
+        this.paramToTransform = paramToTransform;
+    }
+
     @Override
     public void enterPrimitive(Template3Parser.PrimitiveContext ctx) {
 
@@ -129,6 +161,7 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void enterData(Template3Parser.DataContext ctx) {
+        dataList.add(ctx.decl.ID.getText());
 
     }
 
@@ -139,7 +172,55 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
+        if (inFor_loop && ! isPriorAdded) {
+            ArrayList<AST.Expression> params = ctx.value.parameters;
+            if (params.size() > 0) {
+                if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
+                    ParserRuleContext paramToTransformCtx = ctx.expr(1 + paramToTransform);
+                    String newParamName = "robust_local_" + paramToTransformCtx.getText().replaceAll("[^a-zA-Z0-9_-]", "").replaceAll(iMatch,"");
+                    // Add robust_local_param prior normal(original_param, 0.25)
+                    antlrRewriter.insertBefore(startLastAssign, String.format("%1$s[%2$s] = normal(%3$s, 0.25)\n", newParamName,  iMatch, paramToTransformCtx.getText()));
+                    // replace original_param
+                    antlrRewriter.replace(paramToTransformCtx.getStart(), paramToTransformCtx.getStop(), String.format("%1$s[%2$s]", newParamName,  iMatch));
+                    // Add decl for robust_local_param
+                    String limits = findLimits(ctx.ID.getText().replace("_lpdf","").replace("_lpmf",""), paramToTransform);
+                    antlrRewriter.insertAfter(lastDeclStop, String.format("\n\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n\n", newParamName, dimMatch, limits));
 
+                    isPriorAdded = true;
+                    if (ctx.expr().size() <= 2 + paramToTransform)
+                        existNext = false;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    private String findLimits(String functionID, int paramToTransform) {
+        String lower = null;
+        String upper = null;
+        String ret = "";
+        for (JsonObject model : this.models) {
+            if (functionID.equals(model.getString("name"))) {
+                JsonArray modelParams = model.getJsonArray("args");
+                JsonValue currParam = modelParams.get(paramToTransform);
+                String paramType = currParam.asJsonObject().getString("type");
+                if (paramType.contains("+")) {
+                    lower = "lower=0";
+                    if (functionID.contains("normal") && paramToTransform == 1)
+                        upper = "upper=10";
+                } else if (paramType.contains("p")){
+                    lower = "lower=0";
+                    upper = "upper=1";
+                }
+                break;
+            }
+        }
+        if (upper != null && lower != null) {ret = "<" + lower + "," + upper + ">";}
+        else if (lower != null) {ret = "<" + lower + ">"; }
+        return ret;
     }
 
     @Override
@@ -149,11 +230,15 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void enterFor_loop(Template3Parser.For_loopContext ctx) {
+        this.dimMatch = ctx.e2.getText();
+        this.iMatch = ctx.value.loopVar.id;
+        this.inFor_loop = true;
 
     }
 
     @Override
     public void exitFor_loop(Template3Parser.For_loopContext ctx) {
+        this.inFor_loop = false;
 
     }
 
@@ -169,6 +254,7 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void enterAssign(Template3Parser.AssignContext ctx) {
+        startLastAssign = ctx.getStart();
 
     }
 
@@ -184,6 +270,7 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
+        lastDeclStop = ctx.getStop();
 
     }
 

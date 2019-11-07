@@ -293,8 +293,27 @@ public class TestTransformer {
             transWriter.transformOrgPredCode();
             System.out.println(transWriter.getPredCode());
             System.out.println(transWriter.getStanPredCode());
-    } catch (Exception e) {
-        e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
-}
+
+    @Test
+    public void TestLocalizer() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        transWriter.setReuseCode();
+        Boolean existNext = true;
+        int paramCount = 0;
+        while (existNext){
+            System.out.println("Localizing Param " + paramCount + "=========================");
+            transWriter.resetCode();
+            existNext = transWriter.transformLocalizer(paramCount);
+            System.out.println(transWriter.getCode());
+            System.out.println(transWriter.getStanCode());
+            paramCount++;
+        }
+    }
 }
