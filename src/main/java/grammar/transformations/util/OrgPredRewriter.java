@@ -26,6 +26,7 @@ public class OrgPredRewriter implements Template3Listener {
     public Token ps_org_goodAssignStart;
     public Token lastForStop;
     public String dataCorrupted;
+    public String reweighterCorrection;
     private Boolean inFor_loop = false;
 
     public OrgPredRewriter(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
@@ -168,6 +169,13 @@ public class OrgPredRewriter implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
+        if (dataCorrupted.split("_corrupted")[0].equals(ctx.e1.getText().split("\\[")[0])) {
+            String paramUsed = ctx.e2.getText();
+            // Don't know why but it works
+            // TODO:
+            // System.out.println("ERROR" +  ctx.e1.getText() + ctx.e2.getText() + ctx.getText());
+            reweighterCorrection = "-log(" + ctx.ID.getText() + "_C(" + paramUsed + ", robust_weight))";
+        }
 
     }
 

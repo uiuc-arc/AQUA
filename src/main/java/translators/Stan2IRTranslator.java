@@ -141,43 +141,49 @@ public class Stan2IRTranslator extends StanBaseListener {
             }
             else {
                 dataCode += Utils.complexTypeMap(ctx.type().COMPLEX().getText())+" ";
-                if(ctx.dims().size() > 1)
-                    dataCode += ctx.dims(0).getText() + " ";
+//                String typeName = Utils.complexTypeMap(ctx.type().COMPLEX().getText());
+//                dataCode += ctx.getText().replaceFirst(ctx.type().getText(), typeName);
+//                if(ctx.dims().size() > 1)
+                dataCode += ctx.dims(0).getText() + " ";
                 dataCode += ctx.ID().getText();
                 if(ctx.dims().size() > 1)
                     dataCode += ctx.dims(1).getText() ;
-                else if(ctx.dims().size() > 0)
-                    dataCode += ctx.dims(0).getText();
+//                else if(ctx.dims().size() > 0)
+                  //  dataCode += ctx.dims(0).getText();
                 dataCode += " : " + this.dataReader.getData(ctx.ID().getText());
                 dataCode+="\n";
             }
         }
         else if(curBlock == StanParser.ParamblkContext.class){
             if(ctx.limits() != null){
-                dataCode+= "@limits "+ ctx.limits().getText() + "\n";
+                modelCode+= "@limits "+ ctx.limits().getText() + "\n";
             }
-            dataCode+="@prior\n";
+            modelCode+="@prior\n";
             if(ctx.type().PRIMITIVE() != null){
-                dataCode += ctx.type().PRIMITIVE().getText().replace("real", "float")+" ";
+                modelCode += ctx.type().PRIMITIVE().getText().replace("real", "float")+" ";
                 if(ctx.dims().size() > 1)
-                    dataCode += ctx.dims(0).getText() + " ";
-                dataCode += ctx.ID().getText();
+                    modelCode += ctx.dims(0).getText() + " ";
+                modelCode += ctx.ID().getText();
                 if(ctx.dims().size() > 1)
-                    dataCode += ctx.dims(1).getText() ;
+                    modelCode += ctx.dims(1).getText() ;
                 else if(ctx.dims().size() > 0)
-                    dataCode += ctx.dims(0).getText();
-                dataCode+="\n";
+                    modelCode += ctx.dims(0).getText();
+                modelCode+="\n";
             }
             else {
-                dataCode += Utils.complexTypeMap(ctx.type().COMPLEX().getText())+" ";
+                modelCode += Utils.complexTypeMap(ctx.type().COMPLEX().getText())+" ";
+                modelCode += ctx.dims(0).getText() + " ";
+                modelCode += ctx.ID().getText();
                 if(ctx.dims().size() > 1)
-                    dataCode += ctx.dims(0).getText() + " ";
-                dataCode += ctx.ID().getText();
-                if(ctx.dims().size() > 1)
-                    dataCode += ctx.dims(1).getText() ;
-                else if(ctx.dims().size() > 0)
-                    dataCode += ctx.dims(0).getText();
-                dataCode+="\n";
+                    modelCode += ctx.dims(1).getText() ;
+//                if(ctx.dims().size() > 1)
+//                    modelCode += ctx.dims(0).getText() + " ";
+//                modelCode += ctx.ID().getText();
+//                if(ctx.dims().size() > 1)
+//                    modelCode += ctx.dims(1).getText() ;
+//                else if(ctx.dims().size() > 0)
+//                    modelCode += ctx.dims(0).getText();
+                modelCode+="\n";
             }
         }
         else{
@@ -195,13 +201,17 @@ public class Stan2IRTranslator extends StanBaseListener {
             }
             else {
                 modelCode += Utils.complexTypeMap(ctx.type().COMPLEX().getText())+" ";
-                if(ctx.dims().size() > 1)
-                    modelCode += ctx.dims(0).getText() + " ";
+                modelCode += ctx.dims(0).getText() + " ";
                 modelCode += ctx.ID().getText();
                 if(ctx.dims().size() > 1)
                     modelCode += ctx.dims(1).getText() ;
-                else if(ctx.dims().size() > 0)
-                    modelCode += ctx.dims(0).getText();
+//                if(ctx.dims().size() > 1)
+//                    modelCode += ctx.dims(0).getText() + " ";
+//                modelCode += ctx.ID().getText();
+//                if(ctx.dims().size() > 1)
+//                    modelCode += ctx.dims(1).getText() ;
+//                else if(ctx.dims().size() > 0)
+//                    modelCode += ctx.dims(0).getText();
                 modelCode+="\n";
             }
         }

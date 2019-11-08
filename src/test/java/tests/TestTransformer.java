@@ -301,11 +301,11 @@ public class TestTransformer {
     @Test
     public void TestAddPred() throws Exception {
         try {
-            // TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
-            //        "src/test/resources/stan/radon.pooling.data.R");
+            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                   "src/test/resources/stan/radon.pooling.data.R");
             // TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
-            TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
-                    "src/test/resources/stan/logistic.data.R");
+            // TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
+            //         "src/test/resources/stan/logistic.data.R");
             transWriter.transformObserveToLoop();
             transWriter.transformSampleToTarget();
             transWriter.setReuseCode();
@@ -344,6 +344,12 @@ public class TestTransformer {
             if (transformed)
                 transWriter.addPredCode(transWriter.getCode(), "robust_reparam");
 
+            // Reparam, Normal2T
+            System.out.println("========Logit========");
+            transWriter.resetCode();
+            transformed = transWriter.transformLogit();
+            if (transformed)
+                transWriter.addPredCode(transWriter.getCode(), "robust_logit");
 
             System.out.println(transWriter.getPredCode());
             System.out.println(transWriter.getStanPredCode());
@@ -397,12 +403,13 @@ public class TestTransformer {
     @Test
     public void TestConstToParam() throws Exception {
         TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
-                "src/test/resources/stan/radon.pooling.data.R");
-        transWriter.transformObserveToLoop();
-        transWriter.transformSampleToTarget();
-        Boolean transformed = transWriter.transformConstToParam();
-        System.out.println("Transformed? " + transformed);
-        transWriter.transformLocalizer(1);
+               "src/test/resources/stan/radon.pooling.data.R");
+        // TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
+        // transWriter.transformObserveToLoop();
+        // transWriter.transformSampleToTarget();
+        // Boolean transformed = transWriter.transformConstToParam();
+        // System.out.println("Transformed? " + transformed);
+        // transWriter.transformLocalizer(1);
         System.out.println(transWriter.getCode());
         System.out.println(transWriter.getStanCode());
 

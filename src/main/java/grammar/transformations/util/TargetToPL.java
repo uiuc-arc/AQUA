@@ -340,6 +340,9 @@ public class TargetToPL implements Template3Listener {
                 psCorr = psCorr.replaceAll(pp + "\\[" + iMatch + "\\]", pp);
             }
         }
+        if (transName.equals("robust_reweight")) {
+                psCorr += orgPredRewriter.reweighterCorrection;
+        }
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrAssignStop,
                 String.format("\n%1$s=%1$s+%2$s\n%3$s=%3$s+%4$s",
                         "ps_" + transName + "_good", psGood , "ps_" + transName + "_corr", psCorr));
