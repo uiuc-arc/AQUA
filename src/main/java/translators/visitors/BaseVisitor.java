@@ -39,6 +39,9 @@ public abstract class BaseVisitor {
         return "-" + evaluate(unaryExpression.expression);
     }
 
+    public  String evaluate(AST.Braces unaryExpression){
+        return "(" + evaluate(unaryExpression.expression) + ")";
+    }
     public String evaluate(AST.MulOp mulOp){
         return evaluate(mulOp.op1)+ "*" + evaluate(mulOp.op2);
     }
@@ -87,6 +90,9 @@ public abstract class BaseVisitor {
         }
         else if(expression instanceof AST.UnaryExpression){
             return evaluate((AST.UnaryExpression) expression);
+        }
+        else if(expression instanceof AST.Braces){
+            return evaluate((AST.Braces) expression);
         }
         else if(expression instanceof AST.Number){
             return evaluate((AST.Number)expression);

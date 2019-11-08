@@ -169,7 +169,7 @@ expr returns [AST.Expression value]
     | ':' e2=expr           {$value = new AST.Range(null, $e2.value);}
     | function_call         {$value = $function_call.value;}
     | '-' expr              {$value = new AST.UnaryExpression($expr.value);}
-    | '(' expr ')'          {$value = $expr.value;}
+    | '(' expr ')'          {$value = new AST.Braces($expr.value);}
     | n=number              {$value = $n.value;}
     | id=ID                 {$value = new AST.Id($id.getText()); }
     | ID '[' dims ']'       {$value = new AST.ArrayAccess(new AST.Id($ID.getText()), $dims.value);}

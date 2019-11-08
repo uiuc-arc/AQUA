@@ -22,7 +22,7 @@ public class OrgPredCode implements Template3Listener {
     private String dimMatch;
     private String iMatch;
     private ArrayList<Template3Parser.DataContext> dataList = new ArrayList<Template3Parser.DataContext>();
-    private Boolean inFor_loop;
+    private Boolean inFor_loop=false;
     private String dataCorrupted;
     private Boolean yAdded=false;
     private String psGood = "";
@@ -175,10 +175,10 @@ public class OrgPredCode implements Template3Listener {
                     if (dd.value.decl.id.toString().equals(currParam)) {
                         dataCorrupted = currParam;
                         // if (dd.value.array != null && dd.value.decl != null)
-                        String dataDecl = "\n" + dd.value.decl.dtype.toString().toLowerCase()
+                        String dataDecl = "\n" + dd.value.decl.dtype.toString().toLowerCase().replace("eger", "")
                                     + " " + dd.value.decl.id.toString()
                                     + "_corrupted[" + dd.value.decl.dims.toString()
-                                    + "] : " + dd.children.get(2).getText() + "\n";
+                                    + "] : " + dd.array.getText() + "\n";
                         antlrRewriter.insertAfter(lastDataStop,dataDecl);
                         dimMatch = dd.value.decl.dims.toString();
                         iMatch = params.get(0).toString().split("\\[")[1].split("\\]")[0];
@@ -298,9 +298,9 @@ public class OrgPredCode implements Template3Listener {
                         + "float ps_org_corr\n"
                         + "ps_org_good=0\n"
                         + "ps_org_corr=0\n"
-                        + "for (observe_i in 1:N) {\n"
-                        + String.format("ps_org_good = ps_org_good + %s\n", psGood)
-                        + String.format("ps_org_corr = ps_org_corr + %s\n", psCorr)
+                        + "for (" + iMatch + " in 1:N) {\n"
+                        + String.format("ps_org_good=ps_org_good+%s\n", psGood)
+                        + String.format("ps_org_corr=ps_org_corr+%s\n", psCorr)
                         + "}\n"
                         + "pl_org = exp(ps_org_corr)\n"
                         + "}\n");

@@ -39,6 +39,8 @@ public class DimensionEvaluator {
             return visit((AST.FunctionCall) expr);
         else if(expr instanceof AST.UnaryExpression)
             return visit((AST.UnaryExpression) expr);
+        else if(expr instanceof AST.Braces)
+            return visit(((AST.Braces) expr).expression);
         else if(expr instanceof AST.Id)
             return visit((AST.Id) expr);
         else if(expr instanceof AST.StringValue)
@@ -66,6 +68,9 @@ public class DimensionEvaluator {
         return visit(expr.expression);
     }
 
+    private Dimension visit(AST.Braces expr) {
+        return visit(expr.expression);
+    }
     private Dimension visit(AST.FunctionCall expr) {
         String functionName = expr.id.toString();
         if(realfunctions.contains(functionName)){

@@ -301,8 +301,11 @@ public class TestTransformer {
     @Test
     public void TestAddPred() throws Exception {
         try {
-            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
-                    "src/test/resources/stan/radon.pooling.data.R");
+            // TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+            //        "src/test/resources/stan/radon.pooling.data.R");
+            // TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
+            TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
+                    "src/test/resources/stan/logistic.data.R");
             transWriter.transformObserveToLoop();
             transWriter.transformSampleToTarget();
             transWriter.setReuseCode();
@@ -310,31 +313,31 @@ public class TestTransformer {
             Boolean transformed;
 
             // ConstToParam
-//            System.out.println("========ConstToParam========");
-//            transWriter.resetCode();
-//            transformed = transWriter.transformConstToParam();
-//            if (transformed)
-//                transWriter.addPredCode(transWriter.getCode(), "robust_const");
+            System.out.println("========ConstToParam========");
+            transWriter.resetCode();
+            transformed = transWriter.transformConstToParam();
+            if (transformed)
+                transWriter.addPredCode(transWriter.getCode(), "robust_const");
 
 
             // Reweighter
-//            System.out.println("========Reweighting========");
-//            transWriter.resetCode();
-//            transWriter.transformReweighter();
-//            transWriter.addPredCode(transWriter.getCode(), "robust_reweight");
+            System.out.println("========Reweighting========");
+            transWriter.resetCode();
+            transWriter.transformReweighter();
+            transWriter.addPredCode(transWriter.getCode(), "robust_reweight");
 
             // Localizer
-//            Boolean existNext = true;
-//            int paramCount = 0;
-//            while (existNext){
-//                System.out.println("========Localizing Param " + paramCount + "========");
-//                transWriter.resetCode();
-//                existNext = transWriter.transformLocalizer(paramCount);
-//                transWriter.addPredCode(transWriter.getCode(), "robust_local" + (1 + paramCount));
-//                paramCount++;
-//            }
-//
-//            // Reparam, Normal2T
+            Boolean existNext = true;
+            int paramCount = 0;
+            while (existNext){
+                System.out.println("========Localizing Param " + paramCount + "========");
+                transWriter.resetCode();
+                existNext = transWriter.transformLocalizer(paramCount);
+                transWriter.addPredCode(transWriter.getCode(), "robust_local" + (1 + paramCount));
+                paramCount++;
+            }
+
+            // Reparam, Normal2T
             System.out.println("========Reparam:Normal2T========");
             transWriter.resetCode();
             transformed = transWriter.transformReparamLocalizer();
@@ -377,7 +380,18 @@ public class TestTransformer {
         System.out.println("Find Normal? " + transformed);
         System.out.println(transWriter.getCode());
         System.out.println(transWriter.getStanCode());
+    }
 
+    @Test
+    public void TestLogit() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
+                "src/test/resources/stan/logistic.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformLogit();
+        System.out.println("Find Logit? " + transformed);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
     }
 
     @Test

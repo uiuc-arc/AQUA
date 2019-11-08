@@ -1,5 +1,4 @@
-package grammar.transformations.util;
-
+package grammar.transformations;
 
 import grammar.Template3Listener;
 import grammar.Template3Parser;
@@ -13,23 +12,20 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 
-public class OrgPredRewriter implements Template3Listener {
-    public TokenStreamRewriter antlrRewriter;
+public class Logit implements Template3Listener {
+    private final TokenStreamRewriter antlrRewriter;
     public ArrayList<Section> sections;
-    public String dimMatch;
-    public String iMatch;
-    public Token pl_orgDeclStop;
-    public Token ps_org_corrDeclStop;
-    public Token ps_org_corrInitStop;
-    public Token ps_org_corrAssignStop;
-    public Token pl_orgAssignStop;
-    public Token ps_org_goodAssignStart;
-    public Token lastForStop;
-    public String dataCorrupted;
+    public Boolean transformed=false;
+    private Token lastDeclStop;
+    private ArrayList<String> dataList = new ArrayList<>();
+    private String dimMatch;
+    private String iMatch;
     private Boolean inFor_loop = false;
+    private Boolean isPriorAdded = false;
+    private Token startLastAssign;
+    private Boolean inBernoulli_lpmf=false;
 
-    public OrgPredRewriter(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
-        System.out.println("========In OrgPredRewriter========");
+    public Logit(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
         this.antlrRewriter = antlrRewriter;
         this.sections = cfgBuilder.getSections();
     }
@@ -156,24 +152,45 @@ public class OrgPredRewriter implements Template3Listener {
 
     @Override
     public void enterData(Template3Parser.DataContext ctx) {
+        dataList.add(ctx.decl.ID.getText());
 
     }
 
     @Override
     public void exitData(Template3Parser.DataContext ctx) {
-        if (ctx.getText().contains("_corrupted"))
-            dataCorrupted = ctx.decl.ID.getText();
 
     }
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-
+        if (inFor_loop && ! isPriorAdded) {
+            String newParamName = "robust_local_alpha";
+            if (ctx.ID.getText().contains("bernoulli_logit_lpmf")) {
+                String e2Prob = ctx.e2.getText();
+                antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
+                        ctx.getText().replace("bernoulli_logit_lpmf","bernoulli_lpmf").
+                                replace(e2Prob, String.format("%1$s+(1-2*%1$s)*inv_logit(%2$s)", newParamName, e2Prob)));
+                antlrRewriter.insertAfter(lastDeclStop,
+                        String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", newParamName, "<lower=0,upper=0.25>"));
+                isPriorAdded = true;
+                transformed = true;
+            } else if (ctx.ID.getText().contains("bernoulli_lpmf")) {
+                inBernoulli_lpmf = true;
+            } else if (ctx.ID.getText().equals("inv_logit") && inBernoulli_lpmf) {
+                antlrRewriter.replace(ctx.getStart(),ctx.getStop(), String.format("(%1$s+(1-2*%1$s)*%2$s)", newParamName, ctx.getText()));
+                antlrRewriter.insertAfter(lastDeclStop,
+                        String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", newParamName, "<lower=0,upper=0.25>"));
+                isPriorAdded = true;
+                transformed = true;
+            }
+        }
     }
 
     @Override
     public void exitFunction_call(Template3Parser.Function_callContext ctx) {
-
+        if (ctx.ID.getText().contains("bernoulli_lpmf")) {
+            inBernoulli_lpmf = false;
+        }
     }
 
     @Override
@@ -181,7 +198,6 @@ public class OrgPredRewriter implements Template3Listener {
         this.dimMatch = ctx.e2.getText();
         this.iMatch = ctx.value.loopVar.id;
         this.inFor_loop = true;
-        this.lastForStop = ctx.block.getStart();
 
     }
 
@@ -203,15 +219,7 @@ public class OrgPredRewriter implements Template3Listener {
 
     @Override
     public void enterAssign(Template3Parser.AssignContext ctx) {
-        if (ctx.getText().contains("pl_org=")) {
-            pl_orgAssignStop = ctx.getStop();
-        } else if (ctx.getText().contains("ps_org_corr=0")) {
-            ps_org_corrInitStop = ctx.getStop();
-        } else if (ctx.getText().contains("ps_org_corr=ps_org_corr")) {
-            ps_org_corrAssignStop = ctx.getStop();
-        } else if (ctx.getText().contains("ps_org_good=ps_org_good")) {
-            ps_org_goodAssignStart = ctx.getStart();
-        }
+        startLastAssign = ctx.getStart();
 
     }
 
@@ -222,16 +230,12 @@ public class OrgPredRewriter implements Template3Listener {
 
     @Override
     public void enterDecl(Template3Parser.DeclContext ctx) {
-        if (ctx.getText().contains("floatpl_org")) {
-            pl_orgDeclStop = ctx.getStop();
-        } else if (ctx.getText().contains("floatps_org_corr")) {
-            ps_org_corrDeclStop = ctx.getStop();
-        }
 
     }
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
+        lastDeclStop = ctx.getStop();
 
     }
 

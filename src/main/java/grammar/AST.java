@@ -464,6 +464,17 @@ public class AST {
 
     }
 
+    public static class Braces extends Expression {
+        @Override
+        public String toString() {
+            return "(" + this.expression.toString() + ")";
+        }
+        public Expression expression;
+
+        public Braces(Expression expression) {
+            this.expression = expression;
+        }
+    }
     public static class ArrayAccess extends Expression {
         public Id id;
         public Dims dims;

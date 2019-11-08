@@ -12,6 +12,7 @@ import utils.Utils;
 
 import javax.json.JsonObject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class TargetToPL implements Template3Listener {
@@ -23,6 +24,7 @@ public class TargetToPL implements Template3Listener {
     private String psGood = "";
     private String psCorr = "";
     private String transName;
+    private HashMap<String,String> newParamLimits = new HashMap<>();
 
     public TargetToPL(OrgPredRewriter orgPredRewriter, String transName) {
         System.out.println("========In TargetToPL " + transName + "========");
@@ -198,19 +200,46 @@ public class TargetToPL implements Template3Listener {
 
     @Override
     public void enterAssign(Template3Parser.AssignContext ctx) {
-        String lhs = ctx.e1.getText();
-        if (lhs.contains("robust_local") ||
-                lhs.contains("robust_const")) {
+        String lhs = ctx.e1.getText().split("\\[")[0];
+        if (lhs.contains("robust_")) {
             String dist;
             dist = ctx.e2.getText().split("\\(")[0];
+            String[] paramList = ctx.e2.getText().split("[^\\w']+");
             String newDist = dist+"_rng";
-            String newSampling = lhs.split("\\[")[0]+"="+ctx.e2.getText().replace(dist,newDist);
-            System.out.println(newSampling);
-            orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\n" + newSampling);
-
+            String newSampling = ctx.e2.getText().replace(dist,newDist);
+            String anotherParam = null;
+            for (String ss:paramList) {
+                if (ss.startsWith("robust_") && !lhs.equals(ss)) {
+                    anotherParam = ss;
+                    break;
+                }
+            }
+            if (anotherParam != null) {
+                String anotherLimit = newParamLimits.get(anotherParam);
+                if (anotherLimit != null) {
+                    String lowerLimit = anotherLimit.split("[=,>]")[1];
+                    String upperLimit = anotherLimit.split("[=,>]")[3];
+                    orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\nfloat " + anotherParam);
+                    orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrAssignStop,
+                            "\n" + anotherParam + String.format("=uniform_rng(%1$s,%2$s)", lowerLimit, upperLimit));
+                    newParamLimits.remove(anotherParam);
+                }
+            }
+            String limit = newParamLimits.get(lhs);
+            if (limit != null) {
+                String[] limits = limit.split("([<>, ])");
+                for (String ll:limits) {
+                    if (ll.contains("lower=")) {
+                        newSampling = "fmax(" + newSampling + "," + ll.split("=")[1] + ")";
+                    } else if (ll.contains("upper=")) {
+                        newSampling = "fmin(" + newSampling + "," + ll.split("=")[1] + ")";
+                    }
+                }
+            }
+            orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\nfloat " + lhs);
+            orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrAssignStop, "\n" + lhs + "=" + newSampling);
+            newParamLimits.remove(lhs);
         }
-
-
     }
 
     @Override
@@ -240,14 +269,16 @@ public class TargetToPL implements Template3Listener {
     @Override
     public void enterStatement(Template3Parser.StatementContext ctx) {
         Boolean isPrior = false;
+        String limits = null;
         for (AST.Annotation annotation: ctx.value.annotations) {
             if (annotation.annotationType == AST.AnnotationType.Prior) {
                 isPrior = true;
 
             } else if (annotation.annotationType == AST.AnnotationType.Limits)
-                System.out.println(annotation.annotationValue.toString());
+                limits = annotation.annotationValue.toString();
         }
-
+        if (isPrior && limits != null && ctx.decl.ID.getText().contains("robust_"))
+            newParamLimits.put(ctx.decl.ID.getText(), limits);
     }
 
     @Override
@@ -294,21 +325,40 @@ public class TargetToPL implements Template3Listener {
     public void exitTemplate(Template3Parser.TemplateContext ctx) {
         // pl * 2
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.pl_orgDeclStop,
-                "\nfloat pl_" + transName + "\nfloat pl_" + transName + "_c\n" );
+                "\nfloat pl_" + transName + "\nfloat pl_" + transName + "_c" );
         // ps decl *2
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrDeclStop,
-                "\nfloat ps_" + transName + "_good\nfloat ps_" + transName + "_corr\n" );
+                "\nfloat ps_" + transName + "_good\nfloat ps_" + transName + "_corr" );
         // ps init *2
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrInitStop,
-                "\nps_" + transName + "_good=0\nps_" + transName + "_corr=0\n" );
+                "\nps_" + transName + "_good=0\nps_" + transName + "_corr=0" );
         // ps assign *2
+        String psGoodCopy = psGood;
+        for (String pp: psGoodCopy.split("[^\\w']+")) {
+            if (pp.startsWith("robust_")) {
+                psGood = psGood.replaceAll(pp + "\\[" + iMatch + "\\]", pp);
+                psCorr = psCorr.replaceAll(pp + "\\[" + iMatch + "\\]", pp);
+            }
+        }
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrAssignStop,
-                String.format("\n%1$s=%1$s+%2$s\n%3$s=%3$s+%4$s\n",
+                String.format("\n%1$s=%1$s+%2$s\n%3$s=%3$s+%4$s",
                         "ps_" + transName + "_good", psGood , "ps_" + transName + "_corr", psCorr));
         // pl assign * 2
         orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.pl_orgAssignStop,
                 String.format("\npl_%1$s=pl_RU(ps_%1$s_corr, ps_%1$s_good, ps_org_good)", transName) +
-                        String.format("\npl_%1$s_c= pl_RL(ps_%1$s_good, ps_org_good)\n",transName));
+                        String.format("\npl_%1$s_c=pl_RL(ps_%1$s_good, ps_org_good)",transName));
+
+        for (String anotherParam: newParamLimits.keySet()) {
+            String anotherLimit = newParamLimits.get(anotherParam);
+            if (anotherLimit != null) {
+                String lowerLimit = anotherLimit.split("[=,>]")[1];
+                String upperLimit = anotherLimit.split("[=,>]")[3];
+                orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\nfloat " + anotherParam);
+                orgPredRewriter.antlrRewriter.insertBefore(orgPredRewriter.ps_org_goodAssignStart,
+                        "\n" + anotherParam + String.format("=uniform_rng(%1$s,%2$s)\n", lowerLimit, upperLimit));
+                newParamLimits.remove(anotherParam);
+            }
+        }
 
     }
 

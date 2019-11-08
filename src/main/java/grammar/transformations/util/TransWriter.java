@@ -1,10 +1,7 @@
 package grammar.transformations.util;
 
 import grammar.cfg.CFGBuilder;
-import grammar.transformations.ConstToParam;
-import grammar.transformations.Localizer;
-import grammar.transformations.ReparamLocalizer;
-import grammar.transformations.Reweighter;
+import grammar.transformations.*;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.FileUtils;
@@ -33,7 +30,7 @@ public class TransWriter {
             "    real pl_RL(real f_lp_good, real f_lp_org_good) {\n" +
             "        return exp(f_lp_good - f_lp_org_good);\n" +
             "    }\n" +
-            "    real normal_re_C(real f_s, real f_lambda) {\n" +
+            "    real normal_lpdf_C(real f_s, real f_lambda) {\n" +
             "        return ((2*pi())^(0.5 - 0.5*f_lambda)*f_s^(1 - f_lambda))/sqrt(f_lambda);\n" +
             "    }\n" +
             "}\n";
@@ -150,6 +147,19 @@ public class TransWriter {
         walker.walk(reweighter, cfgBuilder.parser.template());
         code = antlrRewriter.getText();
     }
+
+    public Boolean transformLogit() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        Logit logit = new Logit(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(logit, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return logit.transformed;
+    }
+
 
     // Return whether next transformation exist
     public Boolean transformLocalizer(int paramToTransform) throws IOException {

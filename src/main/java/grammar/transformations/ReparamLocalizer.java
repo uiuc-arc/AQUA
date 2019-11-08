@@ -182,9 +182,9 @@ public class ReparamLocalizer implements Template3Listener {
                     antlrRewriter.replace(paramToTransformCtx.getStart(), paramToTransformCtx.getStop(), String.format("inv_sqrt(robust_local_tau[%1$s])*(%2$s)", iMatch, paramToTransformCtx.getText()));
                     // Add decl for robust_local_param
                     antlrRewriter.insertAfter(lastDeclStop,
-                            String.format("\n\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n\n", "robust_local_tau", dimMatch, "<lower=0,upper=10>"));
+                            String.format("\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n", "robust_local_tau", dimMatch, "<lower=0,upper=10>"));
                     antlrRewriter.insertAfter(lastDeclStop,
-                            String.format("\n\n@prior\n@limits %2$s\nfloat %1$s\n\n", "robust_local_nu", "<lower=0,upper=10>"));
+                            String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_local_nu", "<lower=0,upper=10>"));
 
                     isPriorAdded = true;
                     transformed = true;
