@@ -322,12 +322,51 @@ public class TestTransformer {
         Boolean existNext = true;
         int paramCount = 0;
         while (existNext){
-            System.out.println("Localizing Param " + paramCount + "=========================");
+            System.out.println("========Localizing Param " + paramCount + "========");
             transWriter.resetCode();
             existNext = transWriter.transformLocalizer(paramCount);
             System.out.println(transWriter.getCode());
             System.out.println(transWriter.getStanCode());
             paramCount++;
         }
+    }
+
+    @Test
+    public void TestReparamLocalizer() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformReparamLocalizer();
+        System.out.println("Find Normal? " + transformed);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+
+    }
+
+    @Test
+    public void TestConstToParam() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformConstToParam();
+        System.out.println("Transformed? " + transformed);
+        transWriter.transformLocalizer(1);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+
+    }
+
+    @Test
+    public void TestReparamLocalizer2() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformReparamLocalizer();
+        System.out.println("Find Normal? " + transformed);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+
     }
 }

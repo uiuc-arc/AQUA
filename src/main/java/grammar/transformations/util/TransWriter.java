@@ -1,7 +1,9 @@
 package grammar.transformations.util;
 
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.ConstToParam;
 import grammar.transformations.Localizer;
+import grammar.transformations.ReparamLocalizer;
 import grammar.transformations.Reweighter;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -11,6 +13,8 @@ import translators.StanTranslator;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 
 public class TransWriter {
@@ -38,9 +42,15 @@ public class TransWriter {
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         tempFileName = stanfile.replace(".stan", "");
         code = stan2IRTranslator.getCode();
-        System.out.println("========Stan Code=======");
+        System.out.println("========Stan Code to Template=======");
         System.out.println(code);
 
+    }
+
+
+    public TransWriter(String templateFile) throws IOException {
+        tempFileName = templateFile.replace(".template","");
+        code = new String(Files.readAllBytes(Paths.get(templateFile)));
     }
 
     public void setReuseCode() {
@@ -141,5 +151,30 @@ public class TransWriter {
         walker.walk(localizer, cfgBuilder.parser.template());
         code = antlrRewriter.getText();
         return localizer.existNext;
+    }
+
+    //Return whether there is a normal distr
+    public Boolean transformReparamLocalizer() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        ReparamLocalizer reparamLocalizer = new ReparamLocalizer(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(reparamLocalizer, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return reparamLocalizer.transformed;
+    }
+
+    public Boolean transformConstToParam() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        ConstToParam constToParam = new ConstToParam(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(constToParam, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return constToParam.transformed;
     }
 }
