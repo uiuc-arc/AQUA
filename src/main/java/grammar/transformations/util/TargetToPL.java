@@ -3,35 +3,34 @@ package grammar.transformations.util;
 import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
-import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
+import utils.Utils;
 
+import javax.json.JsonObject;
 import java.util.ArrayList;
+import java.util.List;
 
-public class OrgPredCode implements Template3Listener {
-    // Run after ObserveToLoop and SampleToTarget
-    public TokenStreamRewriter antlrRewriter;
-    public ArrayList<Section> sections;
-    private Token lastDataStop;
-    private String dimMatch;
-    private String iMatch;
-    private ArrayList<Template3Parser.DataContext> dataList = new ArrayList<Template3Parser.DataContext>();
-    private Boolean inFor_loop;
-    private String dataCorrupted;
-    private Boolean yAdded=false;
+public class TargetToPL implements Template3Listener {
+    private final List<JsonObject> models= Utils.getDistributions(null);
+    public String dimMatch;
+    public String iMatch;
+    private Boolean inFor_loop = false;
+    private OrgPredRewriter orgPredRewriter;
     private String psGood = "";
     private String psCorr = "";
+    private String transName;
 
-    public OrgPredCode(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
-        this.antlrRewriter = antlrRewriter;
-        this.sections = cfgBuilder.getSections();
+    public TargetToPL(OrgPredRewriter orgPredRewriter, String transName) {
+        System.out.println("========In TargetToPL " + transName + "========");
+        this.orgPredRewriter = orgPredRewriter;
+        this.transName = transName;
     }
+
+
 
     @Override
     public void enterPrimitive(Template3Parser.PrimitiveContext ctx) {
@@ -155,38 +154,16 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void enterData(Template3Parser.DataContext ctx) {
-        dataList.add(ctx);
 
     }
 
     @Override
     public void exitData(Template3Parser.DataContext ctx) {
-        this.lastDataStop = ctx.getStop();
 
     }
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (inFor_loop && ! yAdded) {
-            ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 0) {
-                String currParam = params.get(0).toString().split("\\[")[0];
-                for (Template3Parser.DataContext dd : dataList) {
-                    if (dd.value.decl.id.toString().equals(currParam)) {
-                        dataCorrupted = currParam;
-                        // if (dd.value.array != null && dd.value.decl != null)
-                        String dataDecl = "\n" + dd.value.decl.dtype.toString().toLowerCase()
-                                    + " " + dd.value.decl.id.toString()
-                                    + "_corrupted[" + dd.value.decl.dims.toString()
-                                    + "] : " + dd.children.get(2).getText() + "\n";
-                        antlrRewriter.insertAfter(lastDataStop,dataDecl);
-                        dimMatch = dd.value.decl.dims.toString();
-                        iMatch = params.get(0).toString().split("\\[")[1].split("\\]")[0];
-                        yAdded = true;
-                    }
-                }
-            }
-        }
 
     }
 
@@ -197,6 +174,8 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void enterFor_loop(Template3Parser.For_loopContext ctx) {
+        this.dimMatch = ctx.e2.getText();
+        this.iMatch = ctx.value.loopVar.id;
         this.inFor_loop = true;
 
     }
@@ -219,6 +198,18 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void enterAssign(Template3Parser.AssignContext ctx) {
+        String lhs = ctx.e1.getText();
+        if (lhs.contains("robust_local") ||
+                lhs.contains("robust_const")) {
+            String dist;
+            dist = ctx.e2.getText().split("\\(")[0];
+            String newDist = dist+"_rng";
+            String newSampling = lhs.split("\\[")[0]+"="+ctx.e2.getText().replace(dist,newDist);
+            System.out.println(newSampling);
+            orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\n" + newSampling);
+
+        }
+
 
     }
 
@@ -230,9 +221,10 @@ public class OrgPredCode implements Template3Listener {
                 psCorr += " + ";
             }
             psGood += ctx.e2.getChild(2).getText();
-            psCorr += ctx.e2.getChild(2).getText().replaceAll(dataCorrupted + "\\[" + iMatch + "\\]", dataCorrupted + "_corrupted\\[" + iMatch + "\\]");
+            psCorr += ctx.e2.getChild(2).getText().replaceAll(
+                    orgPredRewriter.dataCorrupted.replace("_corrupted","") + "\\[" + orgPredRewriter.iMatch + "\\]",
+                    orgPredRewriter.dataCorrupted + "\\[" + orgPredRewriter.iMatch + "\\]");
         }
-
     }
 
     @Override
@@ -247,11 +239,20 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void enterStatement(Template3Parser.StatementContext ctx) {
+        Boolean isPrior = false;
+        for (AST.Annotation annotation: ctx.value.annotations) {
+            if (annotation.annotationType == AST.AnnotationType.Prior) {
+                isPrior = true;
+
+            } else if (annotation.annotationType == AST.AnnotationType.Limits)
+                System.out.println(annotation.annotationValue.toString());
+        }
 
     }
 
     @Override
     public void exitStatement(Template3Parser.StatementContext ctx) {
+
     }
 
     @Override
@@ -291,19 +292,23 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void exitTemplate(Template3Parser.TemplateContext ctx) {
-        antlrRewriter.insertAfter(ctx.getStop(),
-                "\n@blk start generatedquantities\nfloat pl_org\n"
-                        + "@blk end generatedquantities\n"
-                        + "if(1)\n{\nfloat ps_org_good\n"
-                        + "float ps_org_corr\n"
-                        + "ps_org_good=0\n"
-                        + "ps_org_corr=0\n"
-                        + "for (observe_i in 1:N) {\n"
-                        + String.format("ps_org_good = ps_org_good + %s\n", psGood)
-                        + String.format("ps_org_corr = ps_org_corr + %s\n", psCorr)
-                        + "}\n"
-                        + "pl_org = exp(ps_org_corr)\n"
-                        + "}\n");
+        // pl * 2
+        orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.pl_orgDeclStop,
+                "\nfloat pl_" + transName + "\nfloat pl_" + transName + "_c\n" );
+        // ps decl *2
+        orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrDeclStop,
+                "\nfloat ps_" + transName + "_good\nfloat ps_" + transName + "_corr\n" );
+        // ps init *2
+        orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrInitStop,
+                "\nps_" + transName + "_good=0\nps_" + transName + "_corr=0\n" );
+        // ps assign *2
+        orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.ps_org_corrAssignStop,
+                String.format("\n%1$s=%1$s+%2$s\n%3$s=%3$s+%4$s\n",
+                        "ps_" + transName + "_good", psGood , "ps_" + transName + "_corr", psCorr));
+        // pl assign * 2
+        orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.pl_orgAssignStop,
+                String.format("\npl_%1$s=pl_RU(ps_%1$s_corr, ps_%1$s_good, ps_org_good)", transName) +
+                        String.format("\npl_%1$s_c= pl_RL(ps_%1$s_good, ps_org_good)\n",transName));
 
     }
 

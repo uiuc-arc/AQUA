@@ -23,6 +23,7 @@ public class TransWriter {
     String code;
     String reuseCode;
     String predCode;
+    OrgPredRewriter orgPredRewriter = null;
 
 
     String functionPrefix = "functions {\n" +
@@ -88,15 +89,25 @@ public class TransWriter {
         return functionPrefix + stanTranslator.getCode();
     }
 
-    public void addPredCode(String transCode) throws Exception {
+    public void addPredCode(String transCode, String transName) throws Exception {
+        if (orgPredRewriter == null) {
+            File file = File.createTempFile(tempFileName, suffix);
+            FileUtils.writeStringToFile(file, predCode);
+            CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+            TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+            orgPredRewriter = new OrgPredRewriter(cfgBuilder, antlrRewriter);
+            cfgBuilder.parser.reset();
+            walker.walk(orgPredRewriter, cfgBuilder.parser.template());
+        }
         File file = File.createTempFile(tempFileName, suffix);
-        FileUtils.writeStringToFile(file, code);
+        FileUtils.writeStringToFile(file, transCode);
         CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
         TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
-        OrgPredCode orgPredCode = new OrgPredCode(cfgBuilder, antlrRewriter);
+        TargetToPL targetToPL = new TargetToPL(orgPredRewriter, transName);
         cfgBuilder.parser.reset();
-        walker.walk(orgPredCode, cfgBuilder.parser.template());
-        predCode =  antlrRewriter.getText();
+        walker.walk(targetToPL, cfgBuilder.parser.template());
+        predCode = orgPredRewriter.antlrRewriter.getText();
+
     }
 
     public String getStanCode() throws Exception {
