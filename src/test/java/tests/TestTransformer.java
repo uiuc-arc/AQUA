@@ -299,6 +299,20 @@ public class TestTransformer {
     }
 
     @Test
+    public void TestAddPred() throws Exception {
+        try {
+            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                    "src/test/resources/stan/radon.pooling.data.R");
+            transWriter.transformObserveToLoop();
+            transWriter.transformSampleToTarget();
+            transWriter.transformOrgPredCode();
+            System.out.println(transWriter.getPredCode());
+            System.out.println(transWriter.getStanPredCode());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    @Test
     public void TestLocalizer() throws Exception {
         TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
                 "src/test/resources/stan/radon.pooling.data.R");

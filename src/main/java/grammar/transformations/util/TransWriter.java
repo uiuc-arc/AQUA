@@ -78,6 +78,17 @@ public class TransWriter {
         return functionPrefix + stanTranslator.getCode();
     }
 
+    public void addPredCode(String transCode) throws Exception {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        OrgPredCode orgPredCode = new OrgPredCode(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(orgPredCode, cfgBuilder.parser.template());
+        predCode =  antlrRewriter.getText();
+    }
+
     public String getStanCode() throws Exception {
         File file = File.createTempFile(tempFileName, suffix);
         FileUtils.writeStringToFile(file, code);
