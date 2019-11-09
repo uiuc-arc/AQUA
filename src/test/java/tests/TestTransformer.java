@@ -453,23 +453,22 @@ public class TestTransformer {
         File folder = new File("../PPVM/templates/org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../PPVM/autotemp/org/";
+        String targetOrgDir = "../PPVM/autotemp/trans/";
 
         for (File orgProgDir : listOfFiles)
             if (orgProgDir.isDirectory()) {
-                new File(targetOrgDir + orgProgDir.getName()).mkdir();
+                File newDir = new File(targetOrgDir + orgProgDir.getName());
+                newDir.mkdir();
                 System.out.println(orgProgDir.getAbsolutePath());
                 for (File orgProgDirFile : orgProgDir.listFiles())
                     if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".stan")) {
-                        FileUtils.copyFile(orgProgDirFile.getAbsoluteFile(), new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName()));
-                        stanFileWriter.tryAllTrans(orgProgDirFile.getAbsolutePath());
+                        FileUtils.copyFileToDirectory(orgProgDirFile.getAbsoluteFile(), newDir);
                     } else if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".data.R")) {
-                        FileUtils.copyFile(orgProgDirFile, new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName()));
+                        FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
                     } else if (orgProgDirFile.getName().equals("gen_data.R")) {
-                        File newFile = new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName());
-                        newFile.setExecutable(true);
-                        FileUtils.copyFile(orgProgDirFile, newFile);
+                        FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
                     }
+                stanFileWriter.tryAllTrans(newDir);
                 break;
             }
 
