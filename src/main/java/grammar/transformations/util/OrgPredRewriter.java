@@ -174,7 +174,7 @@ public class OrgPredRewriter implements Template3Listener {
             // Don't know why but it works
             // TODO:
             // System.out.println("ERROR" +  ctx.e1.getText() + ctx.e2.getText() + ctx.getText());
-            reweighterCorrection = "-log(" + ctx.ID.getText() + "_C(" + paramUsed + ", robust_weight))";
+            reweighterCorrection = "-(" + ctx.ID.getText() + "_C(" + paramUsed + ", robust_weight))";
         }
 
     }

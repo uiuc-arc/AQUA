@@ -4,7 +4,9 @@ import com.sun.org.apache.xpath.internal.axes.FilterExprWalker;
 import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.util.StanFileWriter;
 import grammar.transformations.util.SampleToTarget;
+import grammar.transformations.util.StanFileWriter;
 import grammar.transformations.util.TransWriter;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.TokenStreamRewriter;
@@ -303,9 +305,9 @@ public class TestTransformer {
         try {
 //            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
 //                   "src/test/resources/stan/radon.pooling.data.R");
-             TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
-            // TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
-            //         "src/test/resources/stan/logistic.data.R");
+//             TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
+             TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
+                     "src/test/resources/stan/logistic.data.R");
             transWriter.transformObserveToLoop();
             transWriter.transformSampleToTarget();
             transWriter.setReuseCode();
@@ -443,6 +445,33 @@ public class TestTransformer {
         System.out.println("Find Normal? " + transformed);
         System.out.println(transWriter.getCode());
         System.out.println(transWriter.getStanCode());
+
+    }
+
+    @Test
+    public void TestTransformAll() throws Exception {
+        File folder = new File("../PPVM/templates/org/");
+        File[] listOfFiles = folder.listFiles();
+        StanFileWriter stanFileWriter = new StanFileWriter();
+        String targetOrgDir = "../PPVM/autotemp/org/";
+
+        for (File orgProgDir : listOfFiles)
+            if (orgProgDir.isDirectory()) {
+                new File(targetOrgDir + orgProgDir.getName()).mkdir();
+                System.out.println(orgProgDir.getAbsolutePath());
+                for (File orgProgDirFile : orgProgDir.listFiles())
+                    if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".stan")) {
+                        FileUtils.copyFile(orgProgDirFile.getAbsoluteFile(), new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName()));
+                        stanFileWriter.tryAllTrans(orgProgDirFile.getAbsolutePath());
+                    } else if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".data.R")) {
+                        FileUtils.copyFile(orgProgDirFile, new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName()));
+                    } else if (orgProgDirFile.getName().equals("gen_data.R")) {
+                        File newFile = new File(targetOrgDir + orgProgDir.getName() + "/" + orgProgDirFile.getName());
+                        newFile.setExecutable(true);
+                        FileUtils.copyFile(orgProgDirFile, newFile);
+                    }
+                break;
+            }
 
     }
 }

@@ -33,13 +33,34 @@ public class TransWriter {
             "    real normal_lpdf_C(real f_s, real f_lambda) {\n" +
             "        return log(((2*pi())^(0.5 - 0.5*f_lambda)*f_s^(1 - f_lambda))/sqrt(f_lambda));\n" +
             "    }\n" +
+            "    real bernoulli_lpmf_C(real f_s, real f_lambda) {\n" +
+            "        return log((1 - f_s)^f_lambda + f_s^f_lambda);\n" +
+            "    }\n" +
+            "    real bernoulli_logit_lpmf_C(real f_s, real f_lambda) {\n" +
+            "        real s;\n" +
+            "        s = inv_logit(f_s);\n" +
+            "        return log((1 - s)^f_lambda + s^f_lambda);\n" +
+            "    }\n" +
+            "    real binomial_lpmf_C(real f_s, real f_n, real f_lambda) {\n" +
+            "        return log(((1 - f_s)^f_n))*f_lambda;\n" +
+            "    }\n" +
+            "    real binomial_logit_lpmf_C(real f_s, real f_n, real f_lambda) {\n" +
+            "        real s;\n" +
+            "        s = inv_logit(f_s);\n" +
+            "        return log(((1 - s)^f_n))*f_lambda;\n" +
+            "    }\n" +
             "    real poisson_lpmf_C(real f_s, real f_lambda) {\n" +
-            "        real k[400];\n" +
-            "        for (i in 0:200) {k[i+1] = poisson_lpmf(i| f_s) * f_lambda;}\n" +
-            "        for (i in 201:399) {k[i+1] = poisson_lpmf(i*2| f_s) * f_lambda;}\n" +
-            "        return log_sum_exp(k);\n" +
+            "        if (f_s > 100) {\n" +
+            "            return log(((2*pi())^(0.5 - 0.5*f_lambda)*sqrt(f_s)^(1 - f_lambda))/sqrt(f_lambda));\n" +
+            "        }\n" +
+            "        else {\n" +
+            "            real k[200];\n" +
+            "            for (i in 0:199) {k[i+1] = poisson_lpmf(i| f_s) * f_lambda;}\n" +
+            "            return log_sum_exp(k);\n" +
+            "        }\n" +
             "    }\n" +
             "}\n";
+
     ParseTreeWalker walker = new ParseTreeWalker();
 
     public TransWriter(String stanfile, String standata) {

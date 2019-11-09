@@ -269,7 +269,7 @@ public class ObserveToLoop implements Template3Listener{
         if (containData)
             if (ctx.ID() != null) {
                 Dimension dimension = DimensionChecker.getDimension(ctx.value, sections);
-                if (dimension != null) {
+                if (dimension != null && dimension.getDims() != null) {
                     ArrayList<String> idDims = dimension.getDims();
                     if (idDims.size() > 0 && idDims.get(0).equals(dimMatch)) {
                         antlrRewriter.replace(ctx.getStart(), ctx.getStop(), ctx.ID().toString() + "[observe_i]");
