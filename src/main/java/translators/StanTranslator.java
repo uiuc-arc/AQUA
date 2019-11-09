@@ -198,9 +198,13 @@ public class StanTranslator implements ITranslator {
             if (statement.statement instanceof AST.AssignmentStatement) {
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
                 if (Utils.isPrior(statement, assignmentStatement.lhs) || isData(statement, assignmentStatement.lhs)) {
-                    output.append(new StanVisitor().evaluate(assignmentStatement.lhs)).append("~").append(new StanVisitor().evaluate(assignmentStatement.rhs)).append(";\n");
+                    String newAssign;
+                    newAssign = (new StanVisitor().evaluate(assignmentStatement.lhs)) + ("~") + (new StanVisitor().evaluate(assignmentStatement.rhs)) + (";\n");
+                    output.append(newAssign.replace("target=target+","target+="));
                 } else {
-                    output.append(new StanVisitor().evaluate(assignmentStatement.lhs)).append("=").append(new StanVisitor().evaluate(assignmentStatement.rhs)).append(";\n");
+                    String newAssign;
+                    newAssign = (new StanVisitor().evaluate(assignmentStatement.lhs))+("=")+(new StanVisitor().evaluate(assignmentStatement.rhs))+(";\n");
+                    output.append(newAssign.replace("target=target+","target+="));
                 }
             } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;

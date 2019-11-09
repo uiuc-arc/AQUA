@@ -250,9 +250,7 @@ public class TargetToPL implements Template3Listener {
                 psCorr += " + ";
             }
             psGood += ctx.e2.getChild(2).getText();
-            psCorr += ctx.e2.getChild(2).getText().replaceAll(
-                    orgPredRewriter.dataCorrupted.replace("_corrupted","") + "\\[" + orgPredRewriter.iMatch + "\\]",
-                    orgPredRewriter.dataCorrupted + "\\[" + orgPredRewriter.iMatch + "\\]");
+            psCorr += ctx.e2.getChild(2).getText();
         }
     }
 
@@ -340,6 +338,10 @@ public class TargetToPL implements Template3Listener {
                 psCorr = psCorr.replaceAll(pp + "\\[" + iMatch + "\\]", pp);
             }
         }
+        //TODO: match only dataCorrupted. Now it can also match sigma_y[iMatch]
+        psCorr = psCorr.replaceAll(
+                orgPredRewriter.dataCorrupted.replace("_corrupted","") + "\\[" + orgPredRewriter.iMatch + "\\]",
+                orgPredRewriter.dataCorrupted + "\\[" + orgPredRewriter.iMatch + "\\]");
         if (transName.equals("robust_reweight")) {
                 psCorr += orgPredRewriter.reweighterCorrection;
         }

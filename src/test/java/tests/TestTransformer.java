@@ -344,7 +344,7 @@ public class TestTransformer {
             if (transformed)
                 transWriter.addPredCode(transWriter.getCode(), "robust_reparam");
 
-            // Reparam, Normal2T
+            // Logit
             System.out.println("========Logit========");
             transWriter.resetCode();
             transformed = transWriter.transformLogit();

@@ -175,12 +175,20 @@ public class OrgPredCode implements Template3Listener {
                     if (dd.value.decl.id.toString().equals(currParam)) {
                         dataCorrupted = currParam;
                         // if (dd.value.array != null && dd.value.decl != null)
-                        String dataDecl = "\n" + dd.value.decl.dtype.toString().toLowerCase().replace("eger", "")
+                        String dataDim = "";
+                        if (dd.value.decl.dims != null) {
+                            dataDim = "[" + dd.value.decl.dims.toString() + "]";
+                            dimMatch = dd.value.decl.dims.toString();
+                        } else {
+                            dimMatch = dd.value.decl.dtype.dims.toString();
+                        }
+                        String dataDecl = "\n" + dd.value.decl.dtype.toString().replace("FLOAT", "real").
+                                replace("INTEGER", "int").
+                                replace("VECTOR", "vector").replace("MATRIX", "matrix")
                                     + " " + dd.value.decl.id.toString()
-                                    + "_corrupted[" + dd.value.decl.dims.toString()
-                                    + "] : " + dd.array.getText() + "\n";
+                                    + "_corrupted" + dataDim
+                                    + " : " + dd.array.getText() + "\n";
                         antlrRewriter.insertAfter(lastDataStop,dataDecl);
-                        dimMatch = dd.value.decl.dims.toString();
                         iMatch = params.get(0).toString().split("\\[")[1].split("\\]")[0];
                         yAdded = true;
                     }
