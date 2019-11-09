@@ -31,7 +31,13 @@ public class TransWriter {
             "        return exp(f_lp_good - f_lp_org_good);\n" +
             "    }\n" +
             "    real normal_lpdf_C(real f_s, real f_lambda) {\n" +
-            "        return ((2*pi())^(0.5 - 0.5*f_lambda)*f_s^(1 - f_lambda))/sqrt(f_lambda);\n" +
+            "        return log(((2*pi())^(0.5 - 0.5*f_lambda)*f_s^(1 - f_lambda))/sqrt(f_lambda));\n" +
+            "    }\n" +
+            "    real poisson_lpmf_C(real f_s, real f_lambda) {\n" +
+            "        real k[400];\n" +
+            "        for (i in 0:200) {k[i+1] = poisson_lpmf(i| f_s) * f_lambda;}\n" +
+            "        for (i in 201:399) {k[i+1] = poisson_lpmf(i*2| f_s) * f_lambda;}\n" +
+            "        return log_sum_exp(k);\n" +
             "    }\n" +
             "}\n";
     ParseTreeWalker walker = new ParseTreeWalker();
@@ -197,5 +203,17 @@ public class TransWriter {
         walker.walk(constToParam, cfgBuilder.parser.template());
         code = antlrRewriter.getText();
         return constToParam.transformed;
+    }
+
+    public Boolean transformMixNormal() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        MixNormal mixNormal = new MixNormal(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(mixNormal, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return mixNormal.transformed;
     }
 }

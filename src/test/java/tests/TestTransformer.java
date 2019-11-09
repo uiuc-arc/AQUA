@@ -301,9 +301,9 @@ public class TestTransformer {
     @Test
     public void TestAddPred() throws Exception {
         try {
-            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
-                   "src/test/resources/stan/radon.pooling.data.R");
-            // TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
+//            TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+//                   "src/test/resources/stan/radon.pooling.data.R");
+             TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
             // TransWriter transWriter = new TransWriter("src/test/resources/stan/logistic.stan",
             //         "src/test/resources/stan/logistic.data.R");
             transWriter.transformObserveToLoop();
@@ -351,6 +351,13 @@ public class TestTransformer {
             if (transformed)
                 transWriter.addPredCode(transWriter.getCode(), "robust_logit");
 
+            // MixNormal
+            System.out.println("========MixNormal========");
+            transWriter.resetCode();
+            transformed = transWriter.transformMixNormal();
+            if (transformed)
+                transWriter.addPredCode(transWriter.getCode(), "robust_mix");
+
             System.out.println(transWriter.getPredCode());
             System.out.println(transWriter.getStanPredCode());
         } catch (Exception e) {
@@ -396,6 +403,18 @@ public class TestTransformer {
         transWriter.transformSampleToTarget();
         Boolean transformed = transWriter.transformLogit();
         System.out.println("Find Logit? " + transformed);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+    }
+
+    @Test
+    public void TestMixNormal() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformMixNormal();
+        System.out.println("Find Normal? " + transformed);
         System.out.println(transWriter.getCode());
         System.out.println(transWriter.getStanCode());
     }

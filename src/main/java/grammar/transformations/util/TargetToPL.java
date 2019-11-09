@@ -14,6 +14,7 @@ import javax.json.JsonObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 public class TargetToPL implements Template3Listener {
     private final List<JsonObject> models= Utils.getDistributions(null);
@@ -230,7 +231,10 @@ public class TargetToPL implements Template3Listener {
                 String[] limits = limit.split("([<>, ])");
                 for (String ll:limits) {
                     if (ll.contains("lower=")) {
-                        newSampling = "fmax(" + newSampling + "," + ll.split("=")[1] + ")";
+                        String lowerBound = ll.split("=")[1];
+                        if (ll.split("=")[1].equals("0"))
+                            lowerBound = "0.0000000000000001";
+                        newSampling = "fmax(" + newSampling + "," + lowerBound + ")";
                     } else if (ll.contains("upper=")) {
                         newSampling = "fmin(" + newSampling + "," + ll.split("=")[1] + ")";
                     }
@@ -353,14 +357,15 @@ public class TargetToPL implements Template3Listener {
                 String.format("\npl_%1$s=pl_RU(ps_%1$s_corr, ps_%1$s_good, ps_org_good)", transName) +
                         String.format("\npl_%1$s_c=pl_RL(ps_%1$s_good, ps_org_good)",transName));
 
-        for (String anotherParam: newParamLimits.keySet()) {
+        ArrayList<String> keySet = new ArrayList<String>(newParamLimits.keySet());
+        for (String anotherParam: keySet) {
             String anotherLimit = newParamLimits.get(anotherParam);
             if (anotherLimit != null) {
                 String lowerLimit = anotherLimit.split("[=,>]")[1];
                 String upperLimit = anotherLimit.split("[=,>]")[3];
                 orgPredRewriter.antlrRewriter.insertAfter(orgPredRewriter.lastForStop, "\nfloat " + anotherParam);
                 orgPredRewriter.antlrRewriter.insertBefore(orgPredRewriter.ps_org_goodAssignStart,
-                        "\n" + anotherParam + String.format("=uniform_rng(%1$s,%2$s)\n", lowerLimit, upperLimit));
+                         anotherParam + String.format("=uniform_rng(%1$s,%2$s)\n", lowerLimit, upperLimit));
                 newParamLimits.remove(anotherParam);
             }
         }
