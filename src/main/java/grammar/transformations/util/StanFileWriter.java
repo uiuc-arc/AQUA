@@ -72,7 +72,7 @@ public class StanFileWriter {
         transName="robust_reweight";
         transWriter.resetCode();
         transWriter.transformReweighter();
-        writeStanCode(transWriter.code, strFilePath + "_" + transName + "/" + progName + "_" + transName + ".stan");
+        transCodeToDir(transWriter, transName, filePath);
         transWriter.addPredCode(transWriter.getCode(), transName);
 
         // Localizer
