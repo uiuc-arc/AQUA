@@ -82,8 +82,9 @@ public class StanFileWriter {
             System.out.println("========Localizing Param " + paramCount + "========");
             transWriter.resetCode();
             existNext = transWriter.transformLocalizer(paramCount);
+            transName = "robust_local" + (1 + paramCount);
             transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), "robust_local" + (1 + paramCount));
+            transWriter.addPredCode(transWriter.getCode(), transName);
             paramCount++;
         }
 
@@ -92,8 +93,9 @@ public class StanFileWriter {
         transWriter.resetCode();
         transformed = transWriter.transformReparamLocalizer();
         if (transformed) {
+            transName = "robust_reparam";
             transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), "robust_reparam");
+            transWriter.addPredCode(transWriter.getCode(), transName);
         }
 
         // Logit
@@ -101,8 +103,9 @@ public class StanFileWriter {
         transWriter.resetCode();
         transformed = transWriter.transformLogit();
         if (transformed) {
+            transName = "robust_logit";
             transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), "robust_logit");
+            transWriter.addPredCode(transWriter.getCode(), transName);
         }
 
         // MixNormal
@@ -110,8 +113,9 @@ public class StanFileWriter {
         transWriter.resetCode();
         transformed = transWriter.transformMixNormal();
         if (transformed) {
+            transName = "robust_mix";
             transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), "robust_mix");
+            transWriter.addPredCode(transWriter.getCode(), transName);
         }
 
         predCodeToDir(transWriter, filePath);

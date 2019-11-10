@@ -25,6 +25,7 @@ import utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -450,27 +451,39 @@ public class TestTransformer {
 
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../PPVM/templates/org/");
+        File folder = new File("../templates/org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../PPVM/autotemp/trans/";
+        String targetOrgDir = "../autotemp/trans/";
 
-        for (File orgProgDir : listOfFiles)
+        int i = 0;
+        ArrayList<String> restFiles=new ArrayList<>();
+        for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                File newDir = new File(targetOrgDir + orgProgDir.getName());
-                newDir.mkdir();
-                System.out.println(orgProgDir.getAbsolutePath());
-                for (File orgProgDirFile : orgProgDir.listFiles())
-                    if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".stan")) {
-                        FileUtils.copyFileToDirectory(orgProgDirFile.getAbsoluteFile(), newDir);
-                    } else if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".data.R")) {
-                        FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
-                    } else if (orgProgDirFile.getName().equals("gen_data.R")) {
-                        FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
-                    }
-                stanFileWriter.tryAllTrans(newDir);
-                break;
+                if (!orgProgDir.getName().contains("radon_no_pool"))
+                    continue;
+                try {
+                    File newDir = new File(targetOrgDir + orgProgDir.getName());
+                    newDir.mkdir();
+                    System.out.println(orgProgDir.getAbsolutePath());
+                    for (File orgProgDirFile : orgProgDir.listFiles())
+                        if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".stan")) {
+                            FileUtils.copyFileToDirectory(orgProgDirFile.getAbsoluteFile(), newDir);
+                        } else if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".data.R")) {
+                            FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
+                        } else if (orgProgDirFile.getName().equals("gen_data.R")) {
+                            FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
+                        }
+                    stanFileWriter.tryAllTrans(newDir);
+                } catch (Exception e) {
+                    restFiles.add(orgProgDir.getName());
+                }
             }
+            i++;
+            // if (i>15)
+            //     break;
+        }
+        System.out.println(restFiles);
 
     }
 }
