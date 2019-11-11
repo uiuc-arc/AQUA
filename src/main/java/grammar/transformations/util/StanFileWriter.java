@@ -55,79 +55,127 @@ public class StanFileWriter {
 
         TransWriter transWriter = new TransWriter(strFilePath+ "/" + progName + ".stan",
                 strFilePath + "/" + progName + ".data.R");
-        transWriter.transformObserveToLoop();
-        genStanCodeToDir(transWriter.getStanGenCode(), filePath);
+
+        try {
+            transWriter.transformObserveToLoop();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+            genStanCodeToDir(transWriter.getStanGenCode(), filePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // if (true)
         //     return;
-        transWriter.transformSampleToTarget();
+        try {
+            transWriter.transformSampleToTarget();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         transWriter.setReuseCode();
-        transWriter.transformOrgPredCode();
-        Boolean transformed;
+        try {
+            transWriter.transformOrgPredCode();
+        } catch (Exception e){
+            e.printStackTrace();
+
+        }
+        Boolean transformed=false;
 
         String transName;
         // ConstToParam
-        System.out.println("========ConstToParam========");
-        transName = "robust_const";
-        transWriter.resetCode();
-        transformed = transWriter.transformConstToParam();
-        if (transformed) {
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
+        try {
+            System.out.println("========ConstToParam========");
+            transName = "robust_const";
+            transWriter.resetCode();
+            transformed = transWriter.transformConstToParam();
+            if (transformed) {
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
 
         // Reweighter
-        System.out.println("========Reweighting========");
-        transName="robust_reweight";
-        transWriter.resetCode();
-        transWriter.transformReweighter();
-        transCodeToDir(transWriter, transName, filePath);
-        transWriter.addPredCode(transWriter.getCode(), transName);
+        try {
+            System.out.println("========Reweighting========");
+            transName = "robust_reweight";
+            transWriter.resetCode();
+            transWriter.transformReweighter();
+            transCodeToDir(transWriter, transName, filePath);
+            transWriter.addPredCode(transWriter.getCode(), transName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Localizer
         Boolean existNext = true;
         int paramCount = 0;
-        while (existNext){
-            System.out.println("========Localizing Param " + paramCount + "========");
-            transWriter.resetCode();
-            existNext = transWriter.transformLocalizer(paramCount);
-            transName = "robust_local" + (1 + paramCount);
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
-            paramCount++;
+        try {
+            while (existNext){
+                System.out.println("========Localizing Param " + paramCount + "========");
+                transWriter.resetCode();
+                existNext = transWriter.transformLocalizer(paramCount);
+                transName = "robust_local" + (1 + paramCount);
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+                paramCount++;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // Reparam, Normal2T
-        System.out.println("========Reparam:Normal2T========");
-        transWriter.resetCode();
-        transformed = transWriter.transformReparamLocalizer();
-        if (transformed) {
-            transName = "robust_reparam";
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
+        try {
+            System.out.println("========Reparam:Normal2T========");
+            transWriter.resetCode();
+            transformed = transWriter.transformReparamLocalizer();
+            if (transformed) {
+                transName = "robust_reparam";
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         // Logit
-        System.out.println("========Logit========");
-        transWriter.resetCode();
-        transformed = transWriter.transformLogit();
-        if (transformed) {
-            transName = "robust_logit";
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
+        try {
+            System.out.println("========Logit========");
+            transWriter.resetCode();
+            transformed = transWriter.transformLogit();
+            if (transformed) {
+                transName = "robust_logit";
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        // MixNormal
-        System.out.println("========MixNormal========");
-        transWriter.resetCode();
-        transformed = transWriter.transformMixNormal();
-        if (transformed) {
-            transName = "robust_mix";
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
+        try {
+            // MixNormal
+            System.out.println("========MixNormal========");
+            transWriter.resetCode();
+            transformed = transWriter.transformMixNormal();
+            if (transformed) {
+                transName = "robust_mix";
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        predCodeToDir(transWriter, filePath);
-        System.out.println(transWriter.getStanPredCode());
+        try {
+            predCodeToDir(transWriter, filePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

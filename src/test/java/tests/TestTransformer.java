@@ -451,18 +451,18 @@ public class TestTransformer {
 
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../templates/org/");
+        File folder = new File("../PPVM/templates/org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../autotemp/trans/";
+        String targetOrgDir = "../PPVM/autotemp/trans/";
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                //if (!orgProgDir.getName().equals("electric"))
-                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
-                   continue;
+                if (!orgProgDir.getName().contains("ARD"))
+//                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
+                    continue;
                 try {
                     File newDir = new File(targetOrgDir + orgProgDir.getName());
                     newDir.mkdir();

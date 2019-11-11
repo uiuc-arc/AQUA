@@ -169,7 +169,7 @@ public class ObserveToLoop implements Template3Listener{
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (ctx.value.parameters.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad")) {
+        if (ctx.value.parameters.size() > 1 && !ctx.ID.getText().contains("cov_exp_quad")) {
             if (dataList.contains(ctx.value.parameters.get(0).toString())) {
                 Dimension dim;
                 dim = DimensionChecker.getDimension(ctx.value.parameters.get(0), sections);

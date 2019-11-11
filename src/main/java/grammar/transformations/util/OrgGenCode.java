@@ -265,8 +265,11 @@ public class OrgGenCode implements Template3Listener {
 
     @Override
     public void exitTemplate(Template3Parser.TemplateContext ctx) {
+        System.out.println(dataName);
+        System.out.println(samplingStr.replaceAll("\\b" + dataName + "\\b", dataName + "_test"));
         genCode =
                 "\n@blk start generatedquantities\nfloat "+ dataName+"_test[" + dimMatch +"]\n"
+                       // + transParamCode
                         + "@blk end generatedquantities\n"
                         + "for (" + iMatch + " in 1:" + dimMatch + ") {\n"
                         + samplingStr.replaceAll("\\b" + dataName + "\\b", dataName + "_test")

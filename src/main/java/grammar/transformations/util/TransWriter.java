@@ -147,6 +147,14 @@ public class TransWriter {
 
     }
 
+    public StanTranslator getStanTranslator() throws Exception {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        StanTranslator stanTranslator = new StanTranslator();
+        stanTranslator.translate((new CFGBuilder(file.getAbsolutePath(), null, false)).getSections());
+        return stanTranslator;
+    }
+
     public String getStanCode() throws Exception {
         File file = File.createTempFile(tempFileName, suffix);
         FileUtils.writeStringToFile(file, code);
