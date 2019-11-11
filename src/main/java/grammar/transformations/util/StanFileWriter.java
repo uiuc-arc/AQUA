@@ -33,6 +33,12 @@ public class StanFileWriter {
         writeStanCode(transWriter.getCode(), strFilePath + "_" + transName + "/" + progName + "_" + transName + ".template");
     }
 
+    public void genStanCodeToDir(String genStanCode, File oldFilePath) throws Exception {
+        String strFilePath = oldFilePath.getAbsolutePath();
+        String progName = oldFilePath.getName();
+        writeStanCode(genStanCode, strFilePath + "/" + progName + ".genquant");
+    }
+
     public void predCodeToDir(TransWriter transWriter, File oldFilePath) throws Exception {
         String transName = "NPL";
         String strFilePath = oldFilePath.getAbsolutePath().replace("/trans/","/pred/");
@@ -50,6 +56,9 @@ public class StanFileWriter {
         TransWriter transWriter = new TransWriter(strFilePath+ "/" + progName + ".stan",
                 strFilePath + "/" + progName + ".data.R");
         transWriter.transformObserveToLoop();
+        genStanCodeToDir(transWriter.getStanGenCode(), filePath);
+        if (true)
+            return;
         transWriter.transformSampleToTarget();
         transWriter.setReuseCode();
         transWriter.transformOrgPredCode();

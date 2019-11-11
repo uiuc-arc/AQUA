@@ -113,6 +113,19 @@ public class TransWriter {
         return functionPrefix + stanTranslator.getCode();
     }
 
+    public String getStanGenCode () throws Exception {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        OrgGenCode orgGenCode = new OrgGenCode(cfgBuilder);
+        cfgBuilder.parser.reset();
+        walker.walk(orgGenCode, cfgBuilder.parser.template());
+        FileUtils.writeStringToFile(file, orgGenCode.genCode);
+        StanTranslator stanTranslator = new StanTranslator();
+        stanTranslator.translate((new CFGBuilder(file.getAbsolutePath(), null, false)).getSections());
+        return stanTranslator.getCode();
+    }
+
     public void addPredCode(String transCode, String transName) throws Exception {
         if (orgPredRewriter == null) {
             File file = File.createTempFile(tempFileName, suffix);

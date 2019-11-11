@@ -155,7 +155,7 @@ public class OrgPredCode implements Template3Listener {
 
     @Override
     public void enterData(Template3Parser.DataContext ctx) {
-        dataList.add(ctx);
+            dataList.add(ctx);
 
     }
 
@@ -169,7 +169,7 @@ public class OrgPredCode implements Template3Listener {
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
         if (inFor_loop && ! yAdded) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 0) {
+            if (params.size() > 1) {
                 String currParam = params.get(0).toString().split("\\[")[0];
                 for (Template3Parser.DataContext dd : dataList) {
                     if (dd.value.decl.id.toString().equals(currParam)) {
@@ -182,7 +182,7 @@ public class OrgPredCode implements Template3Listener {
                         } else {
                             dimMatch = dd.value.decl.dtype.dims.toString();
                         }
-                        String dataDecl = "\n" + dd.value.decl.dtype.toString().replace("FLOAT", "real").
+                        String dataDecl = "\n" + dd.value.decl.dtype.toString().replace("FLOAT", "float").
                                 replace("INTEGER", "int").
                                 replace("VECTOR", "vector").replace("MATRIX", "matrix")
                                     + " " + dd.value.decl.id.toString()
@@ -238,7 +238,7 @@ public class OrgPredCode implements Template3Listener {
                 psCorr += " + ";
             }
             psGood += ctx.e2.getChild(2).getText();
-            psCorr += ctx.e2.getChild(2).getText().replaceAll(dataCorrupted + "\\[" + iMatch + "\\]", dataCorrupted + "_corrupted\\[" + iMatch + "\\]");
+            psCorr += ctx.e2.getChild(2).getText().replaceAll("\\b" + dataCorrupted + "\\b" , dataCorrupted + "_corrupted");
         }
 
     }

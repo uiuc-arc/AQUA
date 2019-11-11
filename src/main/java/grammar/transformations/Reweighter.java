@@ -164,7 +164,7 @@ public class Reweighter implements Template3Listener {
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
         if (inFor_loop) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 0) {
+            if (params.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad")) {
                 if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
                     antlrRewriter.replace(ctx.getStart(), ctx.getStop(),
                             ctx.getText() + String.format("*robust_weight[%s]", iMatch));

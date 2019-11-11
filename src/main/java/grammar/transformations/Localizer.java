@@ -174,10 +174,10 @@ public class Localizer implements Template3Listener {
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
         if (inFor_loop && ! isPriorAdded) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 0) {
-                if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
+            if (params.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad")) {
+                if (dataList.contains(params.get(0).toString().split("\\[")[0]) && ctx.e2 != null) {
                     ParserRuleContext paramToTransformCtx = ctx.expr(1 + paramToTransform);
-                    String newParamName = "robust_local_" + paramToTransformCtx.getText().replaceAll("[^a-zA-Z0-9_-]", "").replaceAll(iMatch,"");
+                    String newParamName = "robust_local_" + paramToTransformCtx.getText().replaceAll("[^a-zA-Z0-9_]", "").replaceAll(iMatch,"");
                     // Add robust_local_param prior normal(original_param, 0.25)
                     antlrRewriter.insertBefore(startLastAssign, String.format("%1$s[%2$s] = normal(%3$s, 0.25)\n", newParamName,  iMatch, paramToTransformCtx.getText()));
                     // replace original_param

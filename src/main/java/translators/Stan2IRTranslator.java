@@ -231,8 +231,9 @@ public class Stan2IRTranslator extends StanBaseListener {
     @Override
     public void enterSample(StanParser.SampleContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
-        if (this.dataReader.getData(ctx.expression().getText()) != null)
+        if (this.dataReader.getData(ctx.expression().getText().split("\\[")[0]) != null) {
             this.modelCode += "@observe\n";
+        }
         this.modelCode += String.format("%s = ", ctx.expression().getText());
     }
 
@@ -304,7 +305,7 @@ public class Stan2IRTranslator extends StanBaseListener {
     public void enterAssign_stmt(StanParser.Assign_stmtContext ctx) {
         checkBlockEndAnnotation(ctx.getParent());
 
-        this.modelCode += String.format("%s = %s\n", new Stan2IRVisitor().visit(ctx.expression(0)), new Stan2IRVisitor().visit(ctx.expression(1)));
+        this.modelCode += (String.format("%s = %s\n", new Stan2IRVisitor().visit(ctx.expression(0)), new Stan2IRVisitor().visit(ctx.expression(1)))).replace("|",",");
     }
 
     @Override

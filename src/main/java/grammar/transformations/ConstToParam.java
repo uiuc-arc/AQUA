@@ -173,7 +173,7 @@ public class ConstToParam implements Template3Listener {
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
         if (inFor_loop && ! isPriorAdded) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 0) {
+            if (params.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad")) {
                 if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
                     for(ParserRuleContext paramToTransformCtx: ctx.expr()) {
                         if (paramToTransformCtx.getText().replaceAll("[a-zA-Z]","_").contains("_"))

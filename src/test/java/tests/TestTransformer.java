@@ -460,7 +460,8 @@ public class TestTransformer {
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("radon_no_pool"))
+                // if (!orgProgDir.getName().contains("gauss_mix_asym_prior"))
+                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;
                 try {
                     File newDir = new File(targetOrgDir + orgProgDir.getName());
@@ -477,6 +478,7 @@ public class TestTransformer {
                     stanFileWriter.tryAllTrans(newDir);
                 } catch (Exception e) {
                     restFiles.add(orgProgDir.getName());
+                    e.printStackTrace();
                 }
             }
             i++;

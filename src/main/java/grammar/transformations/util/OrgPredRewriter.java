@@ -169,7 +169,7 @@ public class OrgPredRewriter implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (dataCorrupted.split("_corrupted")[0].equals(ctx.e1.getText().split("\\[")[0])) {
+        if (dataCorrupted != null && ctx.e2 != null && !ctx.ID.getText().equals("cov_exp_quad") && dataCorrupted.split("_corrupted")[0].equals(ctx.e1.getText().split("\\[")[0])) {
             String paramUsed = ctx.e2.getText();
             // Don't know why but it works
             // TODO:
