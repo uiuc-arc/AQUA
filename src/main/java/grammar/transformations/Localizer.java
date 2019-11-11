@@ -32,6 +32,7 @@ public class Localizer implements Template3Listener {
     private Boolean inFor_loop = false;
     private Boolean isPriorAdded = false;
     private Token startLastAssign;
+    private Boolean startTransformedparam=false;
 
     public Localizer(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter, int paramToTransform) {
         this.antlrRewriter = antlrRewriter;
@@ -270,7 +271,11 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
-        lastDeclStop = ctx.getStop();
+        for (AST.Annotation annotation: ctx.value.annotations) {
+            if (annotation.annotationType == AST.AnnotationType.Prior) {
+                lastDeclStop = ctx.getStop();
+            }
+        }
 
     }
 

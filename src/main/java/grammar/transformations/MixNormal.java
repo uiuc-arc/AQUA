@@ -1,5 +1,6 @@
 package grammar.transformations;
 
+import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
@@ -229,7 +230,11 @@ public class MixNormal implements Template3Listener {
 
     @Override
     public void exitDecl(Template3Parser.DeclContext ctx) {
-        lastDeclStop = ctx.getStop();
+        for (AST.Annotation annotation: ctx.value.annotations) {
+            if (annotation.annotationType == AST.AnnotationType.Prior) {
+                lastDeclStop = ctx.getStop();
+            }
+        }
 
     }
 

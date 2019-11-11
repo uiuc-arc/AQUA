@@ -57,8 +57,8 @@ public class StanFileWriter {
                 strFilePath + "/" + progName + ".data.R");
         transWriter.transformObserveToLoop();
         genStanCodeToDir(transWriter.getStanGenCode(), filePath);
-        if (true)
-            return;
+        // if (true)
+        //     return;
         transWriter.transformSampleToTarget();
         transWriter.setReuseCode();
         transWriter.transformOrgPredCode();
