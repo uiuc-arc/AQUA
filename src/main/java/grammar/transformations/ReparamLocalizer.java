@@ -29,7 +29,7 @@ public class ReparamLocalizer implements Template3Listener {
     private String dimMatch;
     private String iMatch;
     private Boolean inFor_loop = false;
-    private Boolean isPriorAdded = false;
+    private String priorAddedForParam = "";
     private Token startLastAssign;
 
     public ReparamLocalizer(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
@@ -170,23 +170,26 @@ public class ReparamLocalizer implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (inFor_loop && ! isPriorAdded && ctx.ID.getText().contains("normal")) {
+        if (inFor_loop && ctx.ID.getText().contains("normal")) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
             if (params.size() > 0) {
                 if (dataList.contains(params.get(0).toString().split("\\[")[0])) {
                     ParserRuleContext paramToTransformCtx = ctx.expr(2);
                     // Add robust_local_param prior normal(original_param, 0.25)
-                    // robust_local_tau ~ gamma(robust_local_nu/2, robust_local_nu/2);
-                    antlrRewriter.insertBefore(startLastAssign, String.format("robust_local_tau[%1$s] = gamma(robust_local_nu/2, robust_local_nu/2)\n", iMatch));
                     // replace original_param
-                    antlrRewriter.replace(paramToTransformCtx.getStart(), paramToTransformCtx.getStop(), String.format("inv_sqrt(robust_local_tau[%1$s])*(%2$s)", iMatch, paramToTransformCtx.getText()));
-                    // Add decl for robust_local_param
-                    antlrRewriter.insertAfter(lastDeclStop,
-                            String.format("\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n", "robust_local_tau", dimMatch, "<lower=0,upper=10>"));
-                    antlrRewriter.insertAfter(lastDeclStop,
-                            String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_local_nu", "<lower=0,upper=10>"));
+                    String newParamName = paramToTransformCtx.getText().replaceAll("[^a-zA-Z0-9_]", "");
+                    antlrRewriter.replace(paramToTransformCtx.getStart(), paramToTransformCtx.getStop(), String.format("inv_sqrt(robust_local_tau%3$s[%1$s])*(%2$s)", iMatch, paramToTransformCtx.getText(),newParamName));
+                    if (!priorAddedForParam.equals(newParamName)) {
+                        // robust_local_tau ~ gamma(robust_local_nu/2, robust_local_nu/2);
+                        antlrRewriter.insertBefore(startLastAssign, String.format("robust_local_tau%2$s[%1$s] = gamma(robust_local_nu%2$s/2, robust_local_nu%2$s/2)\n", iMatch, newParamName));
+                        // Add decl for robust_local_param
+                        antlrRewriter.insertAfter(lastDeclStop,
+                                String.format("\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n", "robust_local_tau"+newParamName, dimMatch, "<lower=0,upper=10>"));
+                        antlrRewriter.insertAfter(lastDeclStop,
+                                String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_local_nu"+newParamName, "<lower=0,upper=10>"));
+                        priorAddedForParam=(newParamName);
+                    }
 
-                    isPriorAdded = true;
                     transformed = true;
 
                 }

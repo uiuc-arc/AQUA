@@ -121,9 +121,14 @@ public class StanFileWriter {
                 System.out.println("========Localizing Param " + paramCount + "========");
                 transWriter.resetCode();
                 existNext = transWriter.transformLocalizer(paramCount);
+                System.out.println("==============================Exist Next: " + existNext );
                 transName = "robust_local" + (1 + paramCount);
                 transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
+                try {
+                    transWriter.addPredCode(transWriter.getCode(), transName);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 paramCount++;
             }
         } catch (Exception e) {

@@ -30,7 +30,7 @@ public class Localizer implements Template3Listener {
     private String dimMatch;
     private String iMatch;
     private Boolean inFor_loop = false;
-    private Boolean isPriorAdded = false;
+    private ArrayList<String> priorAdded = new ArrayList<>();
     private Token startLastAssign;
     private Boolean startTransformedparam=false;
 
@@ -173,23 +173,28 @@ public class Localizer implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (inFor_loop && ! isPriorAdded) {
+        if (inFor_loop) {
             ArrayList<AST.Expression> params = ctx.value.parameters;
-            if (params.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad")) {
+            if (params.size() > 1 && !ctx.ID.getText().equals("cov_exp_quad") && !ctx.ID.getText().equals("log_mix")) {
                 if (dataList.contains(params.get(0).toString().split("\\[")[0]) && ctx.e2 != null) {
                     ParserRuleContext paramToTransformCtx = ctx.expr(1 + paramToTransform);
                     String newParamName = "robust_local_" + paramToTransformCtx.getText().replaceAll("[^a-zA-Z0-9_]", "").replaceAll(iMatch,"");
-                    // Add robust_local_param prior normal(original_param, 0.25)
-                    antlrRewriter.insertBefore(startLastAssign, String.format("%1$s[%2$s] = normal(%3$s, 0.25)\n", newParamName,  iMatch, paramToTransformCtx.getText()));
                     // replace original_param
                     antlrRewriter.replace(paramToTransformCtx.getStart(), paramToTransformCtx.getStop(), String.format("%1$s[%2$s]", newParamName,  iMatch));
                     // Add decl for robust_local_param
                     String limits = findLimits(ctx.ID.getText().replace("_lpdf","").replace("_lpmf",""), paramToTransform);
-                    antlrRewriter.insertAfter(lastDeclStop, String.format("\n\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n\n", newParamName, dimMatch, limits));
+                    if (!priorAdded.contains(newParamName)) {
+                        // Add robust_local_param prior normal(original_param, 0.25)
+                        antlrRewriter.insertBefore(startLastAssign, String.format("%1$s[%2$s] = normal(%3$s, 0.25)\n", newParamName,  iMatch, paramToTransformCtx.getText()));
+                        antlrRewriter.insertAfter(lastDeclStop, String.format("\n\n@prior\n@limits %3$s\nfloat %1$s[%2$s]\n\n", newParamName, dimMatch, limits));
+                        priorAdded.add(newParamName);
+                    }
 
-                    isPriorAdded = true;
-                    if (ctx.expr().size() <= 2 + paramToTransform)
+                    if (ctx.expr().size() <= 2 + paramToTransform) {
                         existNext = false;
+                    }
+                    System.out.println("==============================Current: " + ctx.getText() );
+                    System.out.println("==============================Exist Next: " + existNext );
 
                 }
 

@@ -64,6 +64,7 @@ public class TransWriter {
     ParseTreeWalker walker = new ParseTreeWalker();
 
     public TransWriter(String stanfile, String standata) {
+        System.out.println("Stanfile" + stanfile);
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         tempFileName = stanfile.replace(".stan", "");
         code = stan2IRTranslator.getCode();

@@ -23,6 +23,7 @@ public class MixNormal implements Template3Listener {
     private String iMatch;
     private Boolean inFor_loop = false;
     private Boolean isPriorAdded = false;
+    private Boolean isMixture = false;
     private Token startLastAssign;
 
     public MixNormal(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
@@ -163,7 +164,9 @@ public class MixNormal implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (inFor_loop && ! isPriorAdded && ctx.ID.getText().contains("normal_lpdf")) {
+        if (ctx.getText().contains("log_mix"))
+            isMixture=true;
+        if (!isMixture && inFor_loop && ! isPriorAdded && ctx.ID.getText().contains("normal_lpdf")) {
             String newParamName = "robust_local_alpha";
             String orgSigma = ctx.getChild(6).getText();
             String orgDist = ctx.getText();
