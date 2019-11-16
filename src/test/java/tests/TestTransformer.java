@@ -460,7 +460,7 @@ public class TestTransformer {
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("gauss_mix_given_theta"))
+                if (!orgProgDir.getName().contains("gp-fit-ARD"))
 //                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;
                 try {
