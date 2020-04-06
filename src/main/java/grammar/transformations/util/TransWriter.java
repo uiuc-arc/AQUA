@@ -259,4 +259,16 @@ public class TransWriter {
         code = antlrRewriter.getText();
         return mixNormal.transformed;
     }
+
+    public Boolean transformNewNormal2T() throws IOException {
+        File file = File.createTempFile(tempFileName, suffix);
+        FileUtils.writeStringToFile(file, code);
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        NewNormal2T newNormal2T = new NewNormal2T(cfgBuilder, antlrRewriter);
+        cfgBuilder.parser.reset();
+        walker.walk(newNormal2T, cfgBuilder.parser.template());
+        code = antlrRewriter.getText();
+        return newNormal2T.transformed;
+    }
 }

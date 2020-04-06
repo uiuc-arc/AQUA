@@ -423,6 +423,18 @@ public class TestTransformer {
     }
 
     @Test
+    public void TestNewNormal2T() throws Exception {
+        TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
+                "src/test/resources/stan/radon.pooling.data.R");
+        transWriter.transformObserveToLoop();
+        transWriter.transformSampleToTarget();
+        Boolean transformed = transWriter.transformNewNormal2T();
+        System.out.println("Find Normal? " + transformed);
+        System.out.println(transWriter.getCode());
+        System.out.println(transWriter.getStanCode());
+    }
+
+    @Test
     public void TestConstToParam() throws Exception {
         TransWriter transWriter = new TransWriter("src/test/resources/stan/radon.pooling.stan",
                "src/test/resources/stan/radon.pooling.data.R");
@@ -451,16 +463,17 @@ public class TestTransformer {
 
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../templates/org/");
+        File folder = new File("../PPVM/templates/org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../autotemp/trans/";
+        String targetOrgDir = "../PPVM/autotemp/newtrans0403/";
+        //TODO: check sshfs mount; before run ./patch_vector.sh; after finish run ./patch_simplex.sh
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("gp-fit-ARD"))
+                if (!orgProgDir.getName().contains("normal_mixture"))
 //                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;
                 try {
@@ -472,9 +485,10 @@ public class TestTransformer {
                             FileUtils.copyFileToDirectory(orgProgDirFile.getAbsoluteFile(), newDir);
                         } else if (orgProgDirFile.getName().equals(orgProgDir.getName() + ".data.R")) {
                             FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
-                        } else if (orgProgDirFile.getName().equals("gen_data.R")) {
-                            FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
                         }
+                        // else if (orgProgDirFile.getName().equals("gen_data.R")) {
+                    //         FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
+                    //     }
                     stanFileWriter.tryAllTrans(newDir);
                 } catch (Exception e) {
                     restFiles.add(orgProgDir.getName());
@@ -482,7 +496,7 @@ public class TestTransformer {
                 }
             }
             i++;
-            // if (i>15)
+            // if (i>1)
             //     break;
         }
         System.out.println(restFiles);

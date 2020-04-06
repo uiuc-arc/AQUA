@@ -1,5 +1,4 @@
 package grammar.transformations;
-
 import grammar.AST;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
@@ -13,7 +12,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
 
-public class MixNormal implements Template3Listener {
+public class NewNormal2T implements Template3Listener {
     private final TokenStreamRewriter antlrRewriter;
     public ArrayList<Section> sections;
     public Boolean transformed=false;
@@ -23,10 +22,9 @@ public class MixNormal implements Template3Listener {
     private String iMatch;
     private Boolean inFor_loop = false;
     private Boolean isPriorAdded = false;
-    private Boolean isMixture = false;
     private Token startLastAssign;
 
-    public MixNormal(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
+    public NewNormal2T(CFGBuilder cfgBuilder, TokenStreamRewriter antlrRewriter) {
         this.antlrRewriter = antlrRewriter;
         this.sections = cfgBuilder.getSections();
     }
@@ -164,30 +162,18 @@ public class MixNormal implements Template3Listener {
 
     @Override
     public void enterFunction_call(Template3Parser.Function_callContext ctx) {
-        if (ctx.getText().contains("log_mix"))
-            isMixture=true;
-        if (!isMixture && inFor_loop && ! isPriorAdded && ctx.ID.getText().contains("normal_lpdf")) {
+        if (inFor_loop && (ctx.ID.getText().contains("normal_lpdf") || ctx.ID.getText().contains("normal_log"))) {
             String orgSigma = ctx.getChild(6).getText();
+            String orgMu = ctx.getChild(4).getText();
+            String orgY = ctx.getChild(2).getText();
             String orgDist = ctx.getText();
-            String outlierDist = orgDist.replace(orgSigma, "sqrt(exp(robust_outlier_log_var))");
             antlrRewriter.replace(ctx.getStart(),ctx.getStop(),
-                    String.format("log_mix(robust_prob_outlier, %1$s, %2$s)", outlierDist, orgDist));
-            antlrRewriter.insertBefore(startLastAssign, "robust_outlier_log_var=normal(robust_outlier_log_var_mu,robust_outlier_log_var_std)\n");
-            antlrRewriter.insertAfter(lastDeclStop,
-                    String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_prob_outlier", "<lower=0,upper=0.5>"));
-            if (orgSigma.contains("]")) {
+                    String.format("student_t_lpdf(%1$s, robust_t_nu, %2$s, %3$s)", orgY, orgMu,orgSigma));
+            if (! isPriorAdded) {
                 antlrRewriter.insertAfter(lastDeclStop,
-                        String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_outlier_log_var",
-                                "<lower=log(max(" + orgSigma.replaceAll("\\[.*]","") + ")^2)>"));
-            } else {
-                antlrRewriter.insertAfter(lastDeclStop,
-                        String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_outlier_log_var", "<lower=log((" + orgSigma + ")^2)>"));
+                        String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_t_nu", "<lower=0,upper=10>"));
+                isPriorAdded = true;
             }
-            antlrRewriter.insertAfter(lastDeclStop,
-                    String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_outlier_log_var_mu", ""));
-            antlrRewriter.insertAfter(lastDeclStop,
-                    String.format("\n@prior\n@limits %2$s\nfloat %1$s\n", "robust_outlier_log_var_std", "<lower=0>"));
-            isPriorAdded = true;
             transformed = true;
         }
     }

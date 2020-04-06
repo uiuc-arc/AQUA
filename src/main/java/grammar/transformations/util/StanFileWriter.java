@@ -63,11 +63,11 @@ public class StanFileWriter {
         }
 
 
-        try {
-            genStanCodeToDir(transWriter.getStanGenCode(), filePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     genStanCodeToDir(transWriter.getStanGenCode(), filePath);
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
         // if (true)
         //     return;
         try {
@@ -77,110 +77,124 @@ public class StanFileWriter {
         }
 
         transWriter.setReuseCode();
-        try {
-            transWriter.transformOrgPredCode();
-        } catch (Exception e){
-            e.printStackTrace();
+        // try {
+        //     transWriter.transformOrgPredCode();
+        // } catch (Exception e){
+        //     e.printStackTrace();
 
-        }
+        // }
         Boolean transformed=false;
 
         String transName;
         // ConstToParam
-        try {
-            System.out.println("========ConstToParam========");
-            transName = "robust_const";
-            transWriter.resetCode();
-            transformed = transWriter.transformConstToParam();
-            if (transformed) {
-                transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     System.out.println("========ConstToParam========");
+        //     transName = "robust_const";
+        //     transWriter.resetCode();
+        //     transformed = transWriter.transformConstToParam();
+        //     if (transformed) {
+        //         transCodeToDir(transWriter, transName, filePath);
+        //         transWriter.addPredCode(transWriter.getCode(), transName);
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
 
         // Reweighter
-        try {
-            System.out.println("========Reweighting========");
-            transName = "robust_reweight";
-            transWriter.resetCode();
-            transWriter.transformReweighter();
-            transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     System.out.println("========Reweighting========");
+        //     transName = "robust_reweight";
+        //     transWriter.resetCode();
+        //     transWriter.transformReweighter();
+        //     transCodeToDir(transWriter, transName, filePath);
+        //     transWriter.addPredCode(transWriter.getCode(), transName);
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
         // Localizer
-        Boolean existNext = true;
-        int paramCount = 0;
-        try {
-            while (existNext){
-                System.out.println("========Localizing Param " + paramCount + "========");
-                transWriter.resetCode();
-                existNext = transWriter.transformLocalizer(paramCount);
-                System.out.println("==============================Exist Next: " + existNext );
-                transName = "robust_local" + (1 + paramCount);
-                transCodeToDir(transWriter, transName, filePath);
-                try {
-                    transWriter.addPredCode(transWriter.getCode(), transName);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                paramCount++;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // Boolean existNext = true;
+        // int paramCount = 0;
+        // try {
+        //     while (existNext){
+        //         System.out.println("========Localizing Param " + paramCount + "========");
+        //         transWriter.resetCode();
+        //         existNext = transWriter.transformLocalizer(paramCount);
+        //         System.out.println("==============================Exist Next: " + existNext );
+        //         transName = "robust_local" + (1 + paramCount);
+        //         transCodeToDir(transWriter, transName, filePath);
+        //         try {
+        //             transWriter.addPredCode(transWriter.getCode(), transName);
+        //         } catch (Exception e) {
+        //             e.printStackTrace();
+        //         }
+        //         paramCount++;
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
         // Reparam, Normal2T
-        try {
-            System.out.println("========Reparam:Normal2T========");
-            transWriter.resetCode();
-            transformed = transWriter.transformReparamLocalizer();
-            if (transformed) {
-                transName = "robust_reparam";
-                transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     System.out.println("========Reparam:Normal2T========");
+        //     transWriter.resetCode();
+        //     transformed = transWriter.transformReparamLocalizer();
+        //     if (transformed) {
+        //         transName = "robust_reparam";
+        //         transCodeToDir(transWriter, transName, filePath);
+        //         transWriter.addPredCode(transWriter.getCode(), transName);
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
         // Logit
+        // try {
+        //     System.out.println("========Logit========");
+        //     transWriter.resetCode();
+        //     transformed = transWriter.transformLogit();
+        //     if (transformed) {
+        //         transName = "robust_logit";
+        //         transCodeToDir(transWriter, transName, filePath);
+        //         transWriter.addPredCode(transWriter.getCode(), transName);
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
+        // try {
+        //     // MixNormal
+        //     System.out.println("========MixNormal========");
+        //     transWriter.resetCode();
+        //     transformed = transWriter.transformMixNormal();
+        //     if (transformed) {
+        //         transName = "robust_mix";
+        //         transCodeToDir(transWriter, transName, filePath);
+        //         // transWriter.addPredCode(transWriter.getCode(), transName);
+        //     }
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+
         try {
-            System.out.println("========Logit========");
+            // NewNormal2T
+            System.out.println("========NewNormal2T========");
             transWriter.resetCode();
-            transformed = transWriter.transformLogit();
+            transformed = transWriter.transformNewNormal2T();
             if (transformed) {
-                transName = "robust_logit";
+                transName = "robust_student";
                 transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
+                // transWriter.addPredCode(transWriter.getCode(), transName);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        try {
-            // MixNormal
-            System.out.println("========MixNormal========");
-            transWriter.resetCode();
-            transformed = transWriter.transformMixNormal();
-            if (transformed) {
-                transName = "robust_mix";
-                transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        try {
-            predCodeToDir(transWriter, filePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     predCodeToDir(transWriter, filePath);
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
     }
 }
