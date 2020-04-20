@@ -77,6 +77,7 @@ public class StanFileWriter {
         }
 
         transWriter.setReuseCode();
+        writeStanCode(transWriter.getCode(), strFilePath + "/" + progName + ".template");
         // try {
         //     transWriter.transformOrgPredCode();
         // } catch (Exception e){

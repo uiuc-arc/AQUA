@@ -5,21 +5,38 @@ import grammar.cfg.*;
 import org.apache.commons.lang3.tuple.Pair;
 import utils.Utils;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
 
-public class PsiTranslator implements ITranslator{
+import static java.lang.Math.round;
+
+public class PsiMatheTranslator implements ITranslator{
 
     private String defaultIndent = "\t";
     private OutputStream out;
     private Set<BasicBlock> visited;
     private StringBuilder stringBuilder;
     private StringBuilder output;
+    private String pathDirString;
+    private Boolean nomean=true;
+    private Integer dataReduceRatio=10;
+    private String transformparamOut;
+    private String bodyString;
+    private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();
+    private final List<JsonObject> models= Utils.getDistributions(null);
 
     public void setOut(OutputStream o){
         out = o;
+    }
+
+    public void setPath(String s) {
+        pathDirString = s;
     }
 
     public void parseBlock(BasicBlock block){
@@ -60,11 +77,30 @@ public class PsiTranslator implements ITranslator{
                 dimsString += data.decl.dims.toString();
             }
 
-            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "");
+            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(".0,",",").replaceAll(".0$","");
             if (dimsString.length() == 0) {
-                stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
+                if(dataString.contains(".")) {
+                    stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
+                } else {
+                    stringWriter.write(String.format("%s := %s;\n", data.decl.id, String.valueOf((round(Integer.valueOf(dataString)/dataReduceRatio)))));
+                }
             } else if (dimsString.split(",").length == 1) {
-                stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
+                // stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
+                stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
+                String[] dataStringSplit = dataString.split(",");
+                Integer dataLength = dataStringSplit.length;
+                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
+                try {
+
+                    FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
+                    out.write(dataString.getBytes());
+                    out.write("\n".getBytes());
+                    out.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println(dataString);
+
 
             } else if (dimsString.split(",").length == 2) {
                 String[] splited = dimsString.split(",");
@@ -108,19 +144,97 @@ public class PsiTranslator implements ITranslator{
         for (Statement statement : bBlock.getStatements()) {
             if (statement.statement instanceof AST.AssignmentStatement) {
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
-                String assignStr = assignmentStatement.lhs + " = " + assignmentStatement.rhs;
-                for (AST.Annotation ann : statement.statement.annotations){
-                    if(ann.annotationType == AST.AnnotationType.Observe){
-                        assignStr = "observe(" + assignStr + ")";
+                String tempRhs = assignmentStatement.rhs.toString();
+                String newRhs;
+                AST.Decl lhsDecl = paramDeclStatement.get(assignmentStatement.lhs.toString());
+                if (lhsDecl != null && lhsDecl.annotations.size() > 0) {
+                    String dist = tempRhs.split("\\(")[0];
+                    String params = tempRhs.replace(dist,"").substring(1,tempRhs.length() - dist.length() - 1);
+                    String innerParams = "";
+                    for (JsonObject model : this.models) {
+                        if (dist.equals(model.getString("name"))) {
+                            JsonArray modelParams = model.getJsonArray("args");
+                            for (JsonValue iipp : modelParams) {
+                                String paramName = iipp.asJsonObject().getString("name");
+                                innerParams += "," + paramName;
+                            }
+                        }
                     }
+
+                    newRhs = String.format("sampleFrom(\"(x;%2$s) => PDF[%1$sDistribution[%2$s],x]\", %3$s)",
+                            dist.substring(0,1).toUpperCase() + dist.substring(1),
+                            innerParams.substring(1),
+                            params
+                            );
                 }
-                output += assignStr + ";\n";
+                else{
+                    newRhs = tempRhs;
+                }
+                String assignStr;
+                if (lhsDecl != null && (lhsDecl.dims != null || lhsDecl.dtype.dims != null)) {
+                    String loopDim;
+                    if (lhsDecl.dims != null) {
+                        loopDim = lhsDecl.dims.toString();
+                    }
+                    else {
+                        loopDim = lhsDecl.dtype.dims.toString();
+                    }
+                    assignStr = String.format("for ppjj in [1..%1$s+1) {\n",loopDim);
+                    assignStr += String.format("%1$s[ppjj] = %2$s;\n",assignmentStatement.lhs,newRhs);
+                    assignStr += "}\n";
+
+                } else {
+                    assignStr = assignmentStatement.lhs + " = " + newRhs + ";\n";
+                }
+                // for (AST.Annotation ann : statement.statement.annotations){
+                //     if(ann.annotationType == AST.AnnotationType.Observe){
+                //         assignStr = "observe(" + assignStr + ")";
+                //     }
+                // }
+                output += assignStr;
             } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;
                 output += "for " + loop.loopVar + " in [" + loop.range.start + ".." + loop.range.end + "+1) \n";
             } else if (statement.statement instanceof AST.Decl) {
                 AST.Decl declaration = (AST.Decl) statement.statement;
-                output += declaration.id + " := 0;\n";
+                paramDeclStatement.put(declaration.id.toString(),declaration);
+                if (declaration.annotations.size() > 0 &&
+                        (declaration.annotations.get(0).annotationType.toString().equals("Prior") ||
+                                declaration.annotations.get(0).annotationType.toString().equals("Limits")
+                        )){
+                    if (declaration.dtype.dims != null) {
+                        output += String.format(" %1$s := array(%2$s+1);\n",declaration.id,declaration.dtype.dims);
+                    } else if (declaration.dims != null){
+                        output += String.format(" %1$s := array(%2$s+1);\n",declaration.id,declaration.dims);
+                    } else {
+                        if (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") ) {
+                            output += declaration.id + " := 0;\n";
+                        } else {
+                            if (declaration.annotations.size() > 1) {
+                                for(AST.Annotation currAnno : declaration.annotations){
+                                    if(currAnno.annotationType.toString().equals("Limits")){
+                                        String lower = currAnno.annotationValue.toString().split("(<lower=|,|>)")[1];
+                                        if (lower.matches("[0-9]+"))
+                                            output += declaration.id + " := sampleFrom(\"(c) => [c>" + lower + "]\");\n";
+                                    }
+                                }
+                            } else {
+                                output += declaration.id + " := sampleFrom(\"(c) => [c=c]\");\n";
+                            }
+                        }
+
+                    }
+                }
+                else {
+                    if (declaration.dtype.dims != null) {
+                        output += String.format(" %1$s := array(%2$s+1,1);\n",declaration.id,declaration.dtype.dims);
+                    } else if (declaration.dims != null){
+                        output += String.format(" %1$s := array(%2$s+1,1);\n",declaration.id,declaration.dims);
+                    } else {
+                        output += declaration.id + " := 0;\n";
+
+                    }
+                }
             }
             else if(statement.statement instanceof AST.IfStmt){
                 AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
@@ -135,14 +249,23 @@ public class PsiTranslator implements ITranslator{
         visited = new HashSet<>();
         for (Section section : sections){
             if(section.sectionType == SectionType.DATA){
+                if(nomean) {
+                    dump("def main() {\n", "");
+                    nomean = false;
+                }
                 dump(dumpR(section.basicBlocks.get(0).getData()));
             } else if(section.sectionType == SectionType.FUNCTION){
 
                 if(section.sectionName == "main") {
-                    dump("def main() {\n", "");
+                    if(nomean) {
+                        dump("def main() {\n", "");
+                        nomean = false;
+                    }
                 }
                 if (section.sectionName.equals("main")) {
+                    bodyString = section.basicBlocks.toString().replaceAll("\\s+","");
                     for (BasicBlock basicBlock : section.basicBlocks) {
+
                         BasicBlock curBlock = basicBlock;
                         while (!visited.contains(curBlock)) {
                             visited.add(curBlock);
@@ -183,7 +306,12 @@ public class PsiTranslator implements ITranslator{
             } else {
                 System.out.println("Unsupport section (ignored): " + section.sectionName + " " + section.sectionType);
                 BasicBlock currBlock = section.basicBlocks.get(0);
-                dump(translate_block(currBlock));
+                if (section.sectionName.equals("transformedparam")) {
+                    transformparamOut = translate_block(currBlock);
+                }
+                else {
+                    dump(translate_block(currBlock));
+                }
             }
         }
 
@@ -269,7 +397,7 @@ public class PsiTranslator implements ITranslator{
         } else if (s instanceof AST.Decl){
             AST.Decl decl = (AST.Decl) s;
             if(decl.dtype.primitive == AST.Primitive.FLOAT){
-                sb.append(decl.id.toString() + " := 0.0;\n");
+                sb.append(decl.id.toString() + " := 1.0;\n");
             } else {
                 sb.append(decl.id.toString() + " := 0;\n");
             }
