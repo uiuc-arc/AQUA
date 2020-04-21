@@ -26,10 +26,13 @@ public class PsiMatheTranslator implements ITranslator{
     private String pathDirString;
     private Boolean nomean=true;
     private Integer dataReduceRatio=10;
-    private String transformparamOut;
+    private String transformparamOut = "";
     private String bodyString;
     private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();
+    private Set<String> paramPriorNotAdded = new HashSet<>();
     private final List<JsonObject> models= Utils.getDistributions(null);
+    private HashMap<String, Integer> constMap = new HashMap<>();
+
 
     public void setOut(OutputStream o){
         out = o;
@@ -83,13 +86,14 @@ public class PsiMatheTranslator implements ITranslator{
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
                 } else {
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, String.valueOf((round(Integer.valueOf(dataString)/dataReduceRatio)))));
+                    constMap.put(data.decl.id.id,(round(Integer.valueOf(dataString)/dataReduceRatio)));
                 }
             } else if (dimsString.split(",").length == 1) {
                 // stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
                 stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
                 String[] dataStringSplit = dataString.split(",");
                 Integer dataLength = dataStringSplit.length;
-                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
+                dataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
                 try {
 
                     FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
@@ -99,8 +103,6 @@ public class PsiMatheTranslator implements ITranslator{
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                System.out.println(dataString);
-
 
             } else if (dimsString.split(",").length == 2) {
                 String[] splited = dimsString.split(",");
@@ -148,6 +150,7 @@ public class PsiMatheTranslator implements ITranslator{
                 String newRhs;
                 AST.Decl lhsDecl = paramDeclStatement.get(assignmentStatement.lhs.toString());
                 if (lhsDecl != null && lhsDecl.annotations.size() > 0) {
+                    paramPriorNotAdded.remove(lhsDecl.id.toString());
                     String dist = tempRhs.split("\\(")[0];
                     String params = tempRhs.replace(dist,"").substring(1,tempRhs.length() - dist.length() - 1);
                     String innerParams = "";
@@ -184,7 +187,44 @@ public class PsiMatheTranslator implements ITranslator{
                     assignStr += "}\n";
 
                 } else {
-                    assignStr = assignmentStatement.lhs + " = " + newRhs + ";\n";
+                    // Deal with target +=
+                    if (assignmentStatement.lhs.toString().equals("target")) {
+                        String dist = tempRhs.split("_lpdf\\(")[0].split("target\\+")[1];
+                        System.out.println(dist);
+                        String[] paramsList = tempRhs.split("_lpdf\\(")[1].split(",");
+                        String firstParam = paramsList[0];
+                        String params = tempRhs.split("_lpdf\\(")[1].replace(")","").replace(firstParam+",","");
+                        String innerParams = "";
+                        for (JsonObject model : this.models) {
+                            if (dist.equals(model.getString("name"))) {
+                                JsonArray modelParams = model.getJsonArray("args");
+                                for (JsonValue iipp : modelParams) {
+                                    String paramName = iipp.asJsonObject().getString("name");
+                                    innerParams += "," + paramName;
+                                }
+                            }
+                        }
+                        newRhs = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                                dist.substring(0,1).toUpperCase() + dist.substring(1),
+                                innerParams.substring(1),
+                                params,
+                                firstParam //.replace("observe_i","observe_i-1")
+
+                        );
+                        assignStr = newRhs;
+                        assignStr += ";\n";
+                        // write observe alternative for transformations
+                        // original
+                        try {
+                            FileOutputStream out = new FileOutputStream(String.format("%1$s/orgObserve",pathDirString));
+                            out.write(newRhs.getBytes());
+                            out.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    else
+                        assignStr = assignmentStatement.lhs + " = " + newRhs + ";\n";
                 }
                 // for (AST.Annotation ann : statement.statement.annotations){
                 //     if(ann.annotationType == AST.AnnotationType.Observe){
@@ -192,6 +232,11 @@ public class PsiMatheTranslator implements ITranslator{
                 //     }
                 // }
                 output += assignStr;
+                System.out.println(paramPriorNotAdded);
+                if (paramPriorNotAdded.isEmpty()) {
+                    output += transformparamOut;
+                    transformparamOut = "";
+                }
             } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;
                 output += "for " + loop.loopVar + " in [" + loop.range.start + ".." + loop.range.end + "+1) \n";
@@ -202,14 +247,36 @@ public class PsiMatheTranslator implements ITranslator{
                         (declaration.annotations.get(0).annotationType.toString().equals("Prior") ||
                                 declaration.annotations.get(0).annotationType.toString().equals("Limits")
                         )){
-                    if (declaration.dtype.dims != null) {
-                        output += String.format(" %1$s := array(%2$s+1);\n",declaration.id,declaration.dtype.dims);
-                    } else if (declaration.dims != null){
-                        output += String.format(" %1$s := array(%2$s+1);\n",declaration.id,declaration.dims);
+                    paramPriorNotAdded.add(declaration.id.toString());
+                    if (declaration.dtype.dims != null || declaration.dims != null) {
+                        String loopDim;
+                        if (declaration.dtype.dims != null)
+                            loopDim = declaration.dtype.dims.toString();
+                        else
+                            loopDim = declaration.dims.toString();
+                        output += String.format(" %1$s := array(%2$s+1);\n", declaration.id, loopDim);
+                        if (! (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") )) {
+                            paramPriorNotAdded.remove(declaration.id.toString());
+                            output += String.format("for ppjj in [1..%1$s+1) {\n",loopDim);
+                            if (declaration.annotations.size() > 1) {
+                                for(AST.Annotation currAnno : declaration.annotations){
+                                    if(currAnno.annotationType.toString().equals("Limits")){
+                                        String lower = currAnno.annotationValue.toString().split("(<lower=|,|>)")[1];
+                                        if (lower.matches("[0-9]+"))
+                                            output += declaration.id + "[ppjj] = sampleFrom(\"(c) => [c>" + lower + "]\");\n";
+                                    }
+                                }
+                            } else {
+                                output += declaration.id + "[ppjj] = sampleFrom(\"(c) => [c=c]\");\n";
+                            }
+                            output += "}\n";
+
+                        }
                     } else {
                         if (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") ) {
                             output += declaration.id + " := 0;\n";
                         } else {
+                            paramPriorNotAdded.remove(declaration.id.toString());
                             if (declaration.annotations.size() > 1) {
                                 for(AST.Annotation currAnno : declaration.annotations){
                                     if(currAnno.annotationType.toString().equals("Limits")){
@@ -268,6 +335,7 @@ public class PsiMatheTranslator implements ITranslator{
 
                         BasicBlock curBlock = basicBlock;
                         while (!visited.contains(curBlock)) {
+                            System.out.println(curBlock.getParent().sectionName);
                             visited.add(curBlock);
                             String block_text = translate_block(curBlock);
                             if (curBlock.getIncomingEdges().containsKey("true")) {
@@ -276,7 +344,11 @@ public class PsiMatheTranslator implements ITranslator{
                             if (curBlock.getOutgoingEdges().containsKey("back")) {
                                 block_text = block_text + "}\n";
                             }
-                            stringBuilder.append(block_text);
+                            if (curBlock.getParent().sectionName.equals("transformedparam"))
+                                transformparamOut += block_text;
+                            else
+                                stringBuilder.append(block_text);
+                            System.out.println(block_text);
                             if (curBlock.getEdges().size() > 0) {
                                 BasicBlock prevBlock = curBlock;
                                 if (curBlock.getEdges().size() == 1) {
@@ -290,7 +362,10 @@ public class PsiMatheTranslator implements ITranslator{
                                     }
                                 }
                                 if (!visited.contains(curBlock) && curBlock.getIncomingEdges().containsKey("meet") && !isIfNode(prevBlock)) {
-                                    stringBuilder.append("}\n");
+                                    if (curBlock.getParent().sectionName.equals("transformedparam"))
+                                        transformparamOut += ("}\n");
+                                    else
+                                        stringBuilder.append("}\n");
                                 }
                             }
                         }
@@ -333,20 +408,39 @@ public class PsiMatheTranslator implements ITranslator{
 
 
     public void parseQueries(List<AST.Query> queries, String indent){
-        int size = queries.size();
-        dump("return ", indent);
-        if(size == 1){
-            dump(queries.get(0).id + ";");
-        } else {
-            dump("(");
-            for (int i = 0; i < size; ++i){
-                dump(queries.get(i).id);
-                if( i != size - 1){
-                    dump(", ");
+        StringBuilder retStr = new StringBuilder();
+        for (AST.Decl param_i:paramDeclStatement.values()){
+            if (param_i.annotations.size() > 0 &&
+                    (param_i.annotations.get(0).annotationType.toString().equals("Prior") ||
+                            param_i.annotations.get(0).annotationType.toString().equals("Limits")
+                    )) {
+                retStr.append(",");
+                if (param_i.dims == null && param_i.dtype.dims == null) {
+                    retStr.append(param_i.id.toString());
+                } else {
+                    Integer paramDims;
+                    if (param_i.dims != null) {
+                        if (param_i.dims.toString().matches("[1-9]+"))
+                            paramDims = Integer.valueOf(param_i.dims.toString());
+                        else {
+                            paramDims = constMap.get(param_i.dims.toString());
+                        }
+                    } else {
+                        if (param_i.dtype.dims.toString().matches("[1-9]+"))
+                            paramDims = Integer.valueOf(param_i.dtype.dims.toString());
+                        else
+                            paramDims = constMap.get(param_i.dtype.dims.toString());
+                    }
+                    for (Integer ii = 1; ii <= paramDims; ii++) {
+                        if (ii != 1)
+                            retStr.append(",");
+                        retStr.append(param_i.id.id + "[" + String.valueOf(ii) + "]");
+                    }
+
                 }
             }
-            dump(");");
         }
+        dump("return (" + retStr.substring(1) + ");");
     }
 
 
