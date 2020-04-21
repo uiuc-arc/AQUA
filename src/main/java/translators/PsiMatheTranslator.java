@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.lang.Math.round;
 
@@ -360,13 +362,34 @@ public class PsiMatheTranslator implements ITranslator{
                         }
                         else if (ll.contains("for")) {
                             String[] lls = ll.split("(for| in |\\[|\\.\\.|\\+1\\))");
-                            System.out.println("*************");
-                            System.out.println(String.join("  ",lls));
-                            System.out.println(ll);
-                            dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],lls[4]) + "\n");
+                            dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],lls[4]));
                         }
                         else {
-                            dumpMathe(ll.replace("{","").replace("}","]"));
+                            if (ll.contains("[")){
+                                String newll = ll;
+                                List<String> allMatches = new ArrayList<String>();
+                                Matcher m = Pattern.compile("\\w+\\[").matcher(ll);
+                                while (m.find()) {
+                                    allMatches.add(m.group());
+                                }
+                                for (String mm:allMatches) {
+                                    String paramKey = mm.replace("MMMM","_").replace("[","");
+                                    if (paramDeclStatement.containsKey(paramKey) ){
+                                        AST.Decl paramDecl = paramDeclStatement.get(paramKey);
+                                        if (paramDecl.annotations.size() >0 &&
+                                            (paramDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
+                                                    paramDecl.annotations.get(0).annotationType.toString().equals("Limits")
+                                            )
+                                            ) // is a param
+                                        newll = newll.replace(mm,"addrParam[" + mm.replace("[","") + ",");
+                                    }
+
+                                }
+                                // not always i
+                                newll = newll.replaceAll("\\[(\\w+)]","[[$1]]");
+                                dumpMathe(newll.replace("{","").replace("}","]"));
+                            } else if (! ll.matches("\\s+"))
+                                dumpMathe(ll.replace("{","").replace("}","]"));
                         }
 
                     }
