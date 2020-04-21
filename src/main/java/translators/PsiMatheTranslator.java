@@ -351,26 +351,22 @@ public class PsiMatheTranslator implements ITranslator{
                                 String[] lls = ll.split("(array\\(|\\+1,|\\))");
                                 if (constMap.containsKey(lls[1]))
                                     lls[1] = constMap.get(lls[1]).toString();
-                                dumpMathe(lls[0] + String.format(":= Table[%1$s, {i,1,%2$s}", lls[2], lls[1]) + "\n");
+                                dumpMathe(lls[0] + String.format("Table[%1$s, {i,1,%2$s}]", lls[2], lls[1]) + "\n");
 
                             } else {
                                 dumpMathe(ll + "\n");
                             }
 
                         }
-                        else if (ll.contains("=") && ! ll.contains(":=")) {
-                            if (ll.contains("for")) {
-                                String[] lls = ll.split("(for| in |\\[|\\.\\.|\\+1\\))");
-                                dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++ \n",lls[1],lls[3],lls[4]) + "\n");
-
-
-                            } else {
-                                dumpMathe(ll + "\n");
-                            }
-
+                        else if (ll.contains("for")) {
+                            String[] lls = ll.split("(for| in |\\[|\\.\\.|\\+1\\))");
+                            System.out.println("*************");
+                            System.out.println(String.join("  ",lls));
+                            System.out.println(ll);
+                            dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],lls[4]) + "\n");
                         }
                         else {
-                            dumpMathe(ll.replace("{","[").replace("}","]"));
+                            dumpMathe(ll.replace("{","").replace("}","]"));
                         }
 
                     }
