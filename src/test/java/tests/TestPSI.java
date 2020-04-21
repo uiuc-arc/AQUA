@@ -211,7 +211,7 @@ public class TestPSI {
     @Test
     public void testHiv() {
         String filePath = "../PPVM/autotemp/newtrans0418/hiv/hiv.template";
-        String outputFile = filePath.substring(0, filePath.length() - 9) + ".psi";
+        String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiMatheTranslator trans = new PsiMatheTranslator();
@@ -219,6 +219,9 @@ public class TestPSI {
         try {
             FileOutputStream out = new FileOutputStream(outputFile);
             trans.setOut(out);
+            String MatheOutputFile = filePath.substring(0, filePath.length() - 9) + "_analysis.m";
+            FileOutputStream MatheOut = new FileOutputStream(MatheOutputFile);
+            trans.setMatheOut(MatheOut);
             trans.translate(cfgBuilder.getSections());
             out.close();
         } catch (Exception e) {

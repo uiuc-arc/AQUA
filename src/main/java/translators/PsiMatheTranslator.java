@@ -20,12 +20,13 @@ public class PsiMatheTranslator implements ITranslator{
 
     private String defaultIndent = "\t";
     private OutputStream out;
+    private OutputStream Matheout;
     private Set<BasicBlock> visited;
     private StringBuilder stringBuilder;
     private StringBuilder output;
     private String pathDirString;
     private Boolean nomean=true;
-    private Integer dataReduceRatio=10;
+    private Integer dataReduceRatio=20;
     private String transformparamOut = "";
     private String bodyString;
     private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();
@@ -36,6 +37,10 @@ public class PsiMatheTranslator implements ITranslator{
 
     public void setOut(OutputStream o){
         out = o;
+    }
+    public void setMatheOut(OutputStream o){
+        Matheout = o;
+        dumpMathe("Get[\"/Users/zixin/Documents/uiuc/fall19/are/psense_poly/base0417.m\"];\n");
     }
 
     public void setPath(String s) {
@@ -85,24 +90,31 @@ public class PsiMatheTranslator implements ITranslator{
                 if(dataString.contains(".")) {
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
                 } else {
-                    stringWriter.write(String.format("%s := %s;\n", data.decl.id, String.valueOf((round(Integer.valueOf(dataString)/dataReduceRatio)))));
-                    constMap.put(data.decl.id.id,(round(Integer.valueOf(dataString)/dataReduceRatio)));
+                    dataString = String.valueOf((round(Integer.valueOf(dataString)/dataReduceRatio)));
+                    stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
+                    constMap.put(data.decl.id.id,(Integer.valueOf(dataString)));
                 }
+                // write to mathe
+                if (!data.decl.id.id.equals("N"))
+                    dumpMathe(data.decl.id.id + "= " + dataString + "\n");
             } else if (dimsString.split(",").length == 1) {
-                // stringWriter.write(String.format("%s := [%s];\n", data.decl.id, dataString));
+                // more data to file
                 stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
                 String[] dataStringSplit = dataString.split(",");
                 Integer dataLength = dataStringSplit.length;
-                dataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
+                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
+                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
                 try {
 
                     FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
-                    out.write(dataString.getBytes());
+                    out.write(addOneDataString.getBytes());
                     out.write("\n".getBytes());
                     out.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+                // write to mathe
+                dumpMathe(data.decl.id.id + "= {" + dataString + "}\n");
 
             } else if (dimsString.split(",").length == 2) {
                 String[] splited = dimsString.split(",");
@@ -126,6 +138,7 @@ public class PsiMatheTranslator implements ITranslator{
             } else {
 
             }
+
         }
         try {
             stringWriter.close();
@@ -172,6 +185,9 @@ public class PsiMatheTranslator implements ITranslator{
                 }
                 else{
                     newRhs = tempRhs;
+                    System.out.println("===================");
+                    System.out.println(assignmentStatement.lhs);
+                    System.out.println(newRhs);
                 }
                 String assignStr;
                 if (lhsDecl != null && (lhsDecl.dims != null || lhsDecl.dtype.dims != null)) {
@@ -190,7 +206,6 @@ public class PsiMatheTranslator implements ITranslator{
                     // Deal with target +=
                     if (assignmentStatement.lhs.toString().equals("target")) {
                         String dist = tempRhs.split("_lpdf\\(")[0].split("target\\+")[1];
-                        System.out.println(dist);
                         String[] paramsList = tempRhs.split("_lpdf\\(")[1].split(",");
                         String firstParam = paramsList[0];
                         String params = tempRhs.split("_lpdf\\(")[1].replace(")","").replace(firstParam+",","");
@@ -216,15 +231,108 @@ public class PsiMatheTranslator implements ITranslator{
                         // write observe alternative for transformations
                         // original
                         try {
-                            FileOutputStream out = new FileOutputStream(String.format("%1$s/orgObserve",pathDirString));
+                            FileOutputStream out = new FileOutputStream(String.format("%1$s/OrgObserve",pathDirString));
                             out.write(newRhs.getBytes());
                             out.close();
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
-                    }
-                    else
+                        // reparam
+                        if (dist.equals("normal")) {
+                            try {
+                                String newRhsTrans;
+                                newRhsTrans = String.format(
+                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[GammaDistribution[1/2,1/2],weight[i]]*PDF[NormalDistribution[mu,sigma*weight[i]^(-1/2)],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                        params,
+                                        firstParam);
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/ReparamTransObserve", pathDirString));
+                                out.write(newRhsTrans.getBytes());
+                                out.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            try {
+                                String newRhsTrans;
+                                newRhsTrans = String.format(
+                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[StudentTDistribution[mu,sigma,weight],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                        params,
+                                        firstParam);
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/StudentTransObserve", pathDirString));
+                                out.write(newRhsTrans.getBytes());
+                                out.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            // Mixture
+                            if ( ! assignmentStatement.rhs.toString().contains("log_mix"))
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = String.format(
+                                            "cobserve(sampleFrom(\"(x;mu,nu,i) => (1-weight0)*PDF[NormalDistribution[mu,nu],x+Delta[i]]+weight0*PDF[NormalDistribution[mu,weight1],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                            params,
+                                            firstParam);
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/MixtureTransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                        }
+                        // Reweight
+                        try {
+                            String newRhsTrans;
+                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]^(weight[i])\", %3$s,observe_i),%4$s)",
+                                    dist.substring(0,1).toUpperCase() + dist.substring(1),
+                                    innerParams.substring(1),
+                                    params,
+                                    firstParam
+                            );
+                            FileOutputStream out = new FileOutputStream(String.format("%1$s/ReweightTransObserve", pathDirString));
+                            out.write(newRhsTrans.getBytes());
+                            out.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        // Local1
+                        try {
+                            String newRhsTrans;
+                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                                    dist.substring(0,1).toUpperCase() + dist.substring(1),
+                                    innerParams.substring(1),
+                                    params,
+                                    firstParam,
+                                    innerParams.substring(1).replaceFirst(",","+(weight[i]),")
+                            );
+                            FileOutputStream out = new FileOutputStream(String.format("%1$s/Local1TransObserve", pathDirString));
+                            out.write(newRhsTrans.getBytes());
+                            out.close();
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        // Local2
+                        if (innerParams.substring(1).contains(",")) {
+                            try {
+                                String newRhsTrans;
+                                String[] innerParamsList = innerParams.substring(1).split(",");
+                                innerParamsList[1] = innerParamsList[1] + "+(weight[i])";
+                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                                        dist.substring(0, 1).toUpperCase() + dist.substring(1),
+                                        innerParams.substring(1),
+                                        params,
+                                        firstParam,
+                                        String.join(",", innerParamsList)
+                                );
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/Local2TransObserve", pathDirString));
+                                out.write(newRhsTrans.getBytes());
+                                out.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } // end dealing with target
+                    else {
                         assignStr = assignmentStatement.lhs + " = " + newRhs + ";\n";
+                    }
                 }
                 // for (AST.Annotation ann : statement.statement.annotations){
                 //     if(ann.annotationType == AST.AnnotationType.Observe){
@@ -235,6 +343,37 @@ public class PsiMatheTranslator implements ITranslator{
                 System.out.println(paramPriorNotAdded);
                 if (paramPriorNotAdded.isEmpty()) {
                     output += transformparamOut;
+                    // transformed param calc in mathe
+                    String[] allLines = transformparamOut.replace("_","MMMM").split("\n");
+                    for (String ll:allLines) {
+                        if (ll.contains(":=")) {
+                            if (ll.contains("array")) {
+                                String[] lls = ll.split("(array\\(|\\+1,|\\))");
+                                if (constMap.containsKey(lls[1]))
+                                    lls[1] = constMap.get(lls[1]).toString();
+                                dumpMathe(lls[0] + String.format(":= Table[%1$s, {i,1,%2$s}", lls[2], lls[1]) + "\n");
+
+                            } else {
+                                dumpMathe(ll + "\n");
+                            }
+
+                        }
+                        else if (ll.contains("=") && ! ll.contains(":=")) {
+                            if (ll.contains("for")) {
+                                String[] lls = ll.split("(for| in |\\[|\\.\\.|\\+1\\))");
+                                dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++ \n",lls[1],lls[3],lls[4]) + "\n");
+
+
+                            } else {
+                                dumpMathe(ll + "\n");
+                            }
+
+                        }
+                        else {
+                            dumpMathe(ll.replace("{","[").replace("}","]"));
+                        }
+
+                    }
                     transformparamOut = "";
                 }
             } else if (statement.statement instanceof AST.ForLoop) {
@@ -335,7 +474,6 @@ public class PsiMatheTranslator implements ITranslator{
 
                         BasicBlock curBlock = basicBlock;
                         while (!visited.contains(curBlock)) {
-                            System.out.println(curBlock.getParent().sectionName);
                             visited.add(curBlock);
                             String block_text = translate_block(curBlock);
                             if (curBlock.getIncomingEdges().containsKey("true")) {
@@ -344,11 +482,11 @@ public class PsiMatheTranslator implements ITranslator{
                             if (curBlock.getOutgoingEdges().containsKey("back")) {
                                 block_text = block_text + "}\n";
                             }
-                            if (curBlock.getParent().sectionName.equals("transformedparam"))
+                            if (curBlock.getParent().sectionName.equals("transformedparam")) {
                                 transformparamOut += block_text;
+                            }
                             else
                                 stringBuilder.append(block_text);
-                            System.out.println(block_text);
                             if (curBlock.getEdges().size() > 0) {
                                 BasicBlock prevBlock = curBlock;
                                 if (curBlock.getEdges().size() == 1) {
@@ -447,6 +585,14 @@ public class PsiMatheTranslator implements ITranslator{
     public void dump(String str){
         try {
            out.write(str.getBytes());
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+
+    }
+    public void dumpMathe(String str){
+        try {
+            Matheout.write(str.getBytes());
         } catch (Exception e){
             e.printStackTrace();
         }
