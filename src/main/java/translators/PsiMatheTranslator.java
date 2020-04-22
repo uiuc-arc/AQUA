@@ -165,9 +165,14 @@ public class PsiMatheTranslator implements ITranslator{
                 String tempRhs = assignmentStatement.rhs.toString();
                 String newRhs;
                 AST.Decl lhsDecl = paramDeclStatement.get(assignmentStatement.lhs.toString());
-                if (lhsDecl != null && lhsDecl.annotations.size() > 0) {
+                if (lhsDecl != null && lhsDecl.annotations.size() > 0 &&
+                                            (lhsDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
+                                                    lhsDecl.annotations.get(0).annotationType.toString().equals("Limits")
+                                            )) {
                     paramPriorNotAdded.remove(lhsDecl.id.toString());
                     String dist = tempRhs.split("\\(")[0];
+                    System.out.println("**************");
+                    System.out.println(tempRhs);
                     String params = tempRhs.replace(dist,"").substring(1,tempRhs.length() - dist.length() - 1);
                     String innerParams = "";
                     for (JsonObject model : this.models) {
@@ -187,7 +192,10 @@ public class PsiMatheTranslator implements ITranslator{
                             );
                 }
                 else{
-                    newRhs = tempRhs;
+                    //TODO: tempfix
+                    newRhs = tempRhs
+                            .replace("sigma_a1*eta1","sigma_a1*eta1[ppjj]")
+                            .replace("sigma_a2*eta2","sigma_a2*eta2[ppjj]"); //hiv_chr
                     System.out.println("===================");
                     System.out.println(assignmentStatement.lhs);
                     System.out.println(newRhs);
@@ -234,6 +242,12 @@ public class PsiMatheTranslator implements ITranslator{
                         // write getMSEfromMAP in mathe file
                         String meanString =  paramsList[1].replaceAll("\\[([0-9]+)]","$1").replace("[observe_i]",
                                 "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
+                        String stdString;
+                        if (paramsList.length >= 3)
+                            stdString = paramsList[2].replaceAll("\\[([0-9]+)]","$1").replace("[observe_i]",
+                                    "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
+                        else
+                            stdString = "sigma";
                         dumpMathe(String.format("getMSEfromMAP[mapVal_] := \n" +
                                 " Module[{}, \n" +
                                 "  1/Length[%1$s]*\n" +
@@ -248,7 +262,8 @@ public class PsiMatheTranslator implements ITranslator{
                                 "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
                                 "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
                                 "   betaRep -> ReleaseHold[(HoldForm[\n" +
-                                "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))]|>\n" +
+                                "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
+                                "   sigmaRep -> " + stdString.replace(")","gt") + "|>\n" +
                                 "  ]\n");
 
                         // write observe alternative for transformations
@@ -383,7 +398,10 @@ public class PsiMatheTranslator implements ITranslator{
                         }
                         else if (ll.contains("for")) {
                             String[] lls = ll.split("(for| in |\\[|\\.\\.|\\+1\\))");
-                            dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],lls[4]));
+                            String newLoopBound = lls[4];
+                            if (constMap.containsKey(lls[4].trim()))
+                                newLoopBound = String.valueOf(constMap.get(lls[4].trim()));
+                            dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],newLoopBound));
                         }
                         else {
                             if (ll.contains("[")){
@@ -435,6 +453,7 @@ public class PsiMatheTranslator implements ITranslator{
                         else
                             loopDim = declaration.dims.toString();
                         output += String.format(" %1$s := array(%2$s+1);\n", declaration.id, loopDim);
+                        // give a flat prior
                         if (! (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") )) {
                             paramPriorNotAdded.remove(declaration.id.toString());
                             output += String.format("for ppjj in [1..%1$s+1) {\n",loopDim);
@@ -610,6 +629,9 @@ public class PsiMatheTranslator implements ITranslator{
                         else
                             paramDims = constMap.get(param_i.dtype.dims.toString());
                     }
+                    System.out.println("/////////////////");
+                    System.out.println(paramDims);
+                    System.out.println(param_i.toString());
                     for (Integer ii = 1; ii <= paramDims; ii++) {
                         if (ii != 1)
                             retStr.append(",");

@@ -210,22 +210,29 @@ public class TestPSI {
 
     @Test
     public void testHiv() {
-        String filePath = "../PPVM/autotemp/newtrans0418/hiv/hiv.template";
-        String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
+        File folder = new File("../PPVM/autotemp/newtrans0418/");
+        File[] listOfFiles = folder.listFiles();
+        for (File orgProgDir : listOfFiles) {
+            if (!orgProgDir.isDirectory()) continue;
+            if (!orgProgDir.getName().contains("hiv_chr")) continue;
+            System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
+            String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
+            String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
 
-        CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
-        PsiMatheTranslator trans = new PsiMatheTranslator();
-        trans.setPath(filePath.replaceAll("/[a-zA-Z_0-9]+\\.template",""));
-        try {
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-            String MatheOutputFile = filePath.substring(0, filePath.length() - 9) + "_analysis.m";
-            FileOutputStream MatheOut = new FileOutputStream(MatheOutputFile);
-            trans.setMatheOut(MatheOut);
-            trans.translate(cfgBuilder.getSections());
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+            CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
+            PsiMatheTranslator trans = new PsiMatheTranslator();
+            trans.setPath(filePath.replaceAll("/[a-zA-Z_0-9\\.]+\\.template", ""));
+            try {
+                FileOutputStream out = new FileOutputStream(outputFile);
+                trans.setOut(out);
+                String MatheOutputFile = filePath.substring(0, filePath.length() - 9) + "_analysis.m";
+                FileOutputStream MatheOut = new FileOutputStream(MatheOutputFile);
+                trans.setMatheOut(MatheOut);
+                trans.translate(cfgBuilder.getSections());
+                out.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
