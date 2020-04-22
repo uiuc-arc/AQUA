@@ -214,7 +214,7 @@ public class TestPSI {
         File[] listOfFiles = folder.listFiles();
         for (File orgProgDir : listOfFiles) {
             if (!orgProgDir.isDirectory()) continue;
-            if (!orgProgDir.getName().contains("hiv_chr")) continue;
+            if (!orgProgDir.getName().contains("radon.pooling")) continue;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";

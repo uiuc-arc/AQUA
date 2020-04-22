@@ -219,7 +219,7 @@ public class PsiMatheTranslator implements ITranslator{
                         String dist = tempRhs.split("_lpdf\\(")[0].split("target\\+")[1];
                         String[] paramsList = tempRhs.split("_lpdf\\(")[1].split(",");
                         String firstParam = paramsList[0];
-                        String params = tempRhs.split("_lpdf\\(")[1].replace(")","").replace(firstParam+",","");
+                        String params = tempRhs.split("_lpdf\\(")[1].replaceAll("\\)$","").replace(firstParam+",","");
                         String innerParams = "";
                         for (JsonObject model : this.models) {
                             if (dist.equals(model.getString("name"))) {
