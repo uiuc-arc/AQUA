@@ -42,7 +42,8 @@ public class PsiMatheTranslator implements ITranslator{
     }
     public void setMatheOut(OutputStream o){
         Matheout = o;
-        dumpMathe("Get[\"/Users/zixin/Documents/uiuc/fall19/are/psense_poly/base0417.m\"];\n");
+        dumpMathe("#!/usr/bin/env wolframscript\n\n" +
+                "Get[\"/Users/zixin/Documents/uiuc/fall19/are/psense_poly/base0417.m\"];\n");
     }
 
     public void setPath(String s) {
@@ -104,8 +105,8 @@ public class PsiMatheTranslator implements ITranslator{
                 stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
                 String[] dataStringSplit = dataString.split(",");
                 Integer dataLength = dataStringSplit.length;
-                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
-                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/10)));
+                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/dataReduceRatio)));
+                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/dataReduceRatio)));
                 try {
 
                     FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
@@ -230,6 +231,26 @@ public class PsiMatheTranslator implements ITranslator{
                         );
                         assignStr = newRhs;
                         assignStr += ";\n";
+                        // write getMSEfromMAP in mathe file
+                        String meanString =  paramsList[1].replaceAll("\\[([0-9]+)]","$1").replace("[observe_i]",
+                                "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
+                        dumpMathe(String.format("getMSEfromMAP[mapVal_] := \n" +
+                                " Module[{}, \n" +
+                                "  1/Length[%1$s]*\n" +
+                                "   Sum[((%1$s[[msei]] - %2$s) /. mapVal[[2]])^2, {msei, 1, Length[%1$s]}]\n" +
+                                "  ]\n", firstParam.split("\\[")[0],meanString));
+                        dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
+                                " Module[{maxDataIdx}, \n" +
+                                "  maxDataIdx = \n" +
+                                "   StringDelete[\n" +
+                                "    SymbolName[Keys[TakeLargest[Association[deltaFullMap], 1]][[1]]], \n" +
+                                "    \"Delta\"];\n" +
+                                "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
+                                "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
+                                "   betaRep -> ReleaseHold[(HoldForm[\n" +
+                                "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))]|>\n" +
+                                "  ]\n");
+
                         // write observe alternative for transformations
                         // original
                         try {
@@ -353,7 +374,7 @@ public class PsiMatheTranslator implements ITranslator{
                                 String[] lls = ll.split("(array\\(|\\+1,|\\))");
                                 if (constMap.containsKey(lls[1]))
                                     lls[1] = constMap.get(lls[1]).toString();
-                                dumpMathe(lls[0] + String.format("Table[%1$s, {i,1,%2$s}]", lls[2], lls[1]) + "\n");
+                                dumpMathe(lls[0].replace(":=","=") + String.format("Table[%1$s, {i,1,%2$s}]", lls[2], lls[1]) + "\n");
 
                             } else {
                                 dumpMathe(ll + "\n");
@@ -393,6 +414,7 @@ public class PsiMatheTranslator implements ITranslator{
                         }
 
                     }
+                    dumpMathe("\n");
                     transformparamOut = "";
                 }
             } else if (statement.statement instanceof AST.ForLoop) {
