@@ -28,7 +28,7 @@ public class PsiMatheTranslator implements ITranslator{
     private StringBuilder output;
     private String pathDirString;
     private Boolean nomean=true;
-    private Integer dataReduceRatio=20;
+    private Integer dataReduceRatio=1;
     private String transformparamOut = "";
     private String bodyString;
     private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();
@@ -230,21 +230,45 @@ public class PsiMatheTranslator implements ITranslator{
                                 }
                             }
                         }
-                        newRhs = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                        String observeI = firstParam.split("(\\[|])",3)[1];
+                        newRhs = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]\", %3$s,%5$s),%4$s)",
                                 dist.substring(0,1).toUpperCase() + dist.substring(1),
                                 innerParams.substring(1),
                                 params,
-                                firstParam //.replace("observe_i","observe_i-1")
+                                firstParam,
+                                observeI//.replace("observe_i","observe_i-1")
 
                         );
                         assignStr = newRhs;
                         assignStr += ";\n";
                         // write getMSEfromMAP in mathe file
-                        String meanString =  paramsList[1].replaceAll("\\[([0-9]+)]","$1").replace("[observe_i]",
-                                "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
+                        String meanString =  paramsList[1].replaceAll("\\[([0-9]+)]","$1").replace("[" + observeI + "]",
+                                "[msei]").replace("_","MMMM");//.replace("[","[[").replace("]","]]");
+                        String newll = meanString;
+                        List<String> allMatches = new ArrayList<String>();
+                        Matcher m = Pattern.compile("\\w+\\[").matcher(meanString);
+                        while (m.find()) {
+                            allMatches.add(m.group());
+                        }
+                        System.out.println(allMatches);
+                        for (String mm:allMatches) {
+                            String paramKey = mm.replace("MMMM","_").replace("[","");
+                            if (paramDeclStatement.containsKey(paramKey) ){
+                                AST.Decl paramDecl = paramDeclStatement.get(paramKey);
+                                if (paramDecl.annotations.size() >0 &&
+                                        (paramDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
+                                                paramDecl.annotations.get(0).annotationType.toString().equals("Limits")
+                                        )
+                                        ) // is a param
+                                    newll = newll.replace(mm,"addrParam[" + mm.replace("[","") + ",");
+                            }
+                        }
+                        // not always i
+                        newll = newll.replaceAll("\\[(\\w+)]","[[$1]]");
+                        meanString = newll;
                         String stdString;
                         if (paramsList.length >= 3)
-                            stdString = paramsList[2].replaceAll("\\[([0-9]+)]","$1").replace("[observe_i]",
+                            stdString = paramsList[2].replaceAll("\\[([0-9]+)]","$1").replace("[" + observeI + "]",
                                     "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
                         else
                             stdString = "sigma";
@@ -263,7 +287,7 @@ public class PsiMatheTranslator implements ITranslator{
                                 "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
                                 "   betaRep -> ReleaseHold[(HoldForm[\n" +
                                 "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
-                                "   sigmaRep -> " + stdString.replace(")","gt") + "|>\n" +
+                                "   sigmaRep -> " + stdString.replace(")","") + "|>\n" +
                                 "  ]\n");
 
                         // write observe alternative for transformations
@@ -280,9 +304,10 @@ public class PsiMatheTranslator implements ITranslator{
                             try {
                                 String newRhsTrans;
                                 newRhsTrans = String.format(
-                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[GammaDistribution[1/2,1/2],weight[i]]*PDF[NormalDistribution[mu,sigma*weight[i]^(-1/2)],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[GammaDistribution[1/2,1/2],weight[i]]*PDF[NormalDistribution[mu,sigma*weight[i]^(-1/2)],x+Delta[i]]\", %1$s,%3$s),%2$s)",
                                         params,
-                                        firstParam);
+                                        firstParam,
+                                        observeI);
                                 FileOutputStream out = new FileOutputStream(String.format("%1$s/ReparamTransObserve", pathDirString));
                                 out.write(newRhsTrans.getBytes());
                                 out.close();
@@ -292,9 +317,10 @@ public class PsiMatheTranslator implements ITranslator{
                             try {
                                 String newRhsTrans;
                                 newRhsTrans = String.format(
-                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[StudentTDistribution[mu,sigma,weight],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[StudentTDistribution[mu,sigma,weight],x+Delta[i]]\", %1$s,%3$s),%2$s)",
                                         params,
-                                        firstParam);
+                                        firstParam,
+                                        observeI);
                                 FileOutputStream out = new FileOutputStream(String.format("%1$s/StudentTransObserve", pathDirString));
                                 out.write(newRhsTrans.getBytes());
                                 out.close();
@@ -306,9 +332,10 @@ public class PsiMatheTranslator implements ITranslator{
                                 try {
                                     String newRhsTrans;
                                     newRhsTrans = String.format(
-                                            "cobserve(sampleFrom(\"(x;mu,nu,i) => (1-weight0)*PDF[NormalDistribution[mu,nu],x+Delta[i]]+weight0*PDF[NormalDistribution[mu,weight1],x+Delta[i]]\", %1$s,observe_i),%2$s)",
+                                            "cobserve(sampleFrom(\"(x;mu,nu,i) => (1-weight0)*PDF[NormalDistribution[mu,nu],x+Delta[i]]+weight0*PDF[NormalDistribution[mu,weight1],x+Delta[i]]\", %1$s,%3$s),%2$s)",
                                             params,
-                                            firstParam);
+                                            firstParam,
+                                            observeI);
                                     FileOutputStream out = new FileOutputStream(String.format("%1$s/MixtureTransObserve", pathDirString));
                                     out.write(newRhsTrans.getBytes());
                                     out.close();
@@ -319,11 +346,12 @@ public class PsiMatheTranslator implements ITranslator{
                         // Reweight
                         try {
                             String newRhsTrans;
-                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]^(weight[i])\", %3$s,observe_i),%4$s)",
+                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]^(weight[i])\", %3$s,%5$s),%4$s)",
                                     dist.substring(0,1).toUpperCase() + dist.substring(1),
                                     innerParams.substring(1),
                                     params,
-                                    firstParam
+                                    firstParam,
+                                    observeI
                             );
                             FileOutputStream out = new FileOutputStream(String.format("%1$s/ReweightTransObserve", pathDirString));
                             out.write(newRhsTrans.getBytes());
@@ -334,12 +362,13 @@ public class PsiMatheTranslator implements ITranslator{
                         // Local1
                         try {
                             String newRhsTrans;
-                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
                                     dist.substring(0,1).toUpperCase() + dist.substring(1),
                                     innerParams.substring(1),
                                     params,
                                     firstParam,
-                                    innerParams.substring(1).replaceFirst(",","+(weight[i]),")
+                                    innerParams.substring(1).replaceFirst(",","+(weight[i]),"),
+                                    observeI
                             );
                             FileOutputStream out = new FileOutputStream(String.format("%1$s/Local1TransObserve", pathDirString));
                             out.write(newRhsTrans.getBytes());
@@ -353,12 +382,13 @@ public class PsiMatheTranslator implements ITranslator{
                                 String newRhsTrans;
                                 String[] innerParamsList = innerParams.substring(1).split(",");
                                 innerParamsList[1] = innerParamsList[1] + "+(weight[i])";
-                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,observe_i),%4$s)",
+                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
                                         dist.substring(0, 1).toUpperCase() + dist.substring(1),
                                         innerParams.substring(1),
                                         params,
                                         firstParam,
-                                        String.join(",", innerParamsList)
+                                        String.join(",", innerParamsList),
+                                        observeI
                                 );
                                 FileOutputStream out = new FileOutputStream(String.format("%1$s/Local2TransObserve", pathDirString));
                                 out.write(newRhsTrans.getBytes());
@@ -404,6 +434,7 @@ public class PsiMatheTranslator implements ITranslator{
                             dumpMathe(String.format("For[%1$s=%2$s,%1$s<=%3$s,%1$s++,\n",lls[1],lls[3],newLoopBound));
                         }
                         else {
+                            System.out.println(ll);
                             if (ll.contains("[")){
                                 String newll = ll;
                                 List<String> allMatches = new ArrayList<String>();
@@ -411,6 +442,7 @@ public class PsiMatheTranslator implements ITranslator{
                                 while (m.find()) {
                                     allMatches.add(m.group());
                                 }
+                                System.out.println(allMatches);
                                 for (String mm:allMatches) {
                                     String paramKey = mm.replace("MMMM","_").replace("[","");
                                     if (paramDeclStatement.containsKey(paramKey) ){
