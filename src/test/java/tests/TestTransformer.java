@@ -473,7 +473,7 @@ public class TestTransformer {
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("radon") || orgProgDir.getName().contains("robust"))
+                if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr"))) || orgProgDir.getName().contains("radon") ||orgProgDir.getName().contains("robust"))
 //                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;
                 try {

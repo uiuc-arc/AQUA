@@ -9,6 +9,7 @@ import translators.PsiTranslator;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 public class TestPSI {
     @Test
@@ -212,9 +213,16 @@ public class TestPSI {
     public void testHiv() {
         File folder = new File("../PPVM/autotemp/newtrans0418/");
         File[] listOfFiles = folder.listFiles();
+        ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (!orgProgDir.isDirectory()) continue;
-            if (!orgProgDir.getName().contains("lightspeed")) continue;
+            if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr")))
+                    || orgProgDir.getName().contains("radon")
+                    || orgProgDir.getName().contains("electric")
+                    || orgProgDir.getName().contains("flight_simulator_17.3"))
+                continue;
+            if (!orgProgDir.getName().contains("gauss_mix_asym_prior"))
+                continue;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
@@ -231,8 +239,10 @@ public class TestPSI {
                 trans.translate(cfgBuilder.getSections());
                 out.close();
             } catch (Exception e) {
+                restFiles.add(orgProgDir.getName());
                 e.printStackTrace();
             }
         }
+        System.out.println(restFiles);
     }
 }

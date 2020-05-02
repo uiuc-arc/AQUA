@@ -16,6 +16,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Math.ceil;
 import static java.lang.Math.round;
 
 public class PsiMatheTranslator implements ITranslator{
@@ -28,7 +29,7 @@ public class PsiMatheTranslator implements ITranslator{
     private StringBuilder output;
     private String pathDirString;
     private Boolean nomean=true;
-    private Integer dataReduceRatio=1;
+    public Integer dataReduceRatio=8;
     private String transformparamOut = "";
     private String bodyString;
     private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();
@@ -42,8 +43,7 @@ public class PsiMatheTranslator implements ITranslator{
     }
     public void setMatheOut(OutputStream o){
         Matheout = o;
-        dumpMathe("#!/usr/bin/env wolframscript\n\n" +
-                "Get[\"/Users/zixin/Documents/uiuc/fall19/are/psense_poly/base0417.m\"];\n");
+            dumpMathe( "Get[polyPath <> \"base0417.m\"];\n"); //"#!/usr/bin/env wolframscript\n\n" +
     }
 
     public void setPath(String s) {
@@ -88,25 +88,35 @@ public class PsiMatheTranslator implements ITranslator{
                 dimsString += data.decl.dims.toString();
             }
 
-            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll(".0,",",").replaceAll(".0$","");
+            dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\.0,",",").replaceAll("\\.0$","");
             if (dimsString.length() == 0) {
                 if(dataString.contains(".")) {
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
                 } else {
-                    dataString = String.valueOf((round(Integer.valueOf(dataString)/dataReduceRatio)));
+                    if (Integer.valueOf(dataString) > 500 && dataReduceRatio == 8)
+                        dataReduceRatio = 16;
+                    // temp fix for flight
+                    if ( ! (Integer.valueOf(dataString)/dataReduceRatio < 5))
+                        // temp fix for electric
+                        if (data.decl.id.id.equals("n_pair"))
+                            dataString = String.valueOf((int) (round(Float.valueOf(dataString) * 2 /dataReduceRatio)));
+                        else
+                            dataString = String.valueOf((int) (round(Float.valueOf(dataString)/dataReduceRatio)));
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
+                    System.out.println(data.decl.id.id + "========================");
+                    System.out.println(dataString + "========================");
                     constMap.put(data.decl.id.id,(Integer.valueOf(dataString)));
                 }
                 // write to mathe
                 if (!data.decl.id.id.equals("N"))
-                    dumpMathe(data.decl.id.id + "= " + dataString + "\n");
+                    dumpMathe(data.decl.id.id.replace("_","MMMM") + "= " + dataString + "\n");
             } else if (dimsString.split(",").length == 1) {
                 // more data to file
                 stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
                 String[] dataStringSplit = dataString.split(",");
                 Integer dataLength = dataStringSplit.length;
-                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/dataReduceRatio)));
-                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,round(dataLength/dataReduceRatio)));
+                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,(int) round((Float.valueOf(dataLength)/dataReduceRatio))));
+                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,(int) round(Float.valueOf(dataLength)/dataReduceRatio)));
                 try {
 
                     FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
@@ -117,7 +127,7 @@ public class PsiMatheTranslator implements ITranslator{
                     e.printStackTrace();
                 }
                 // write to mathe
-                dumpMathe(data.decl.id.id + "= {" + dataString + "}\n");
+                dumpMathe(data.decl.id.id.replace("_","MMMM") + "= {" + dataString + "}\n");
 
             } else if (dimsString.split(",").length == 2) {
                 String[] splited = dimsString.split(",");
@@ -164,15 +174,13 @@ public class PsiMatheTranslator implements ITranslator{
                 AST.AssignmentStatement assignmentStatement = (AST.AssignmentStatement) statement.statement;
                 String tempRhs = assignmentStatement.rhs.toString();
                 String newRhs;
-                AST.Decl lhsDecl = paramDeclStatement.get(assignmentStatement.lhs.toString());
+                AST.Decl lhsDecl = paramDeclStatement.get(assignmentStatement.lhs.toString().split("\\[")[0]);
                 if (lhsDecl != null && lhsDecl.annotations.size() > 0 &&
                                             (lhsDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
                                                     lhsDecl.annotations.get(0).annotationType.toString().equals("Limits")
                                             )) {
                     paramPriorNotAdded.remove(lhsDecl.id.toString());
                     String dist = tempRhs.split("\\(")[0];
-                    System.out.println("**************");
-                    System.out.println(tempRhs);
                     String params = tempRhs.replace(dist,"").substring(1,tempRhs.length() - dist.length() - 1);
                     String innerParams = "";
                     for (JsonObject model : this.models) {
@@ -184,24 +192,30 @@ public class PsiMatheTranslator implements ITranslator{
                             }
                         }
                     }
+                    String innerParams2 = innerParams.substring(1);
+                    if(dist.equals("normal"))
+                        innerParams2 = innerParams2.replace("sigma","Sqrt[sigma]");
 
-                    newRhs = String.format("sampleFrom(\"(x;%2$s) => PDF[%1$sDistribution[%2$s],x]\", %3$s)",
+                    newRhs = String.format("sampleFrom(\"(x;%2$s) => PDF[%1$sDistribution[%4$s],x]\", %3$s)",
                             dist.substring(0,1).toUpperCase() + dist.substring(1),
                             innerParams.substring(1),
-                            params
+                            params,
+                            innerParams2
                             );
                 }
                 else{
-                    //TODO: tempfix
+                    //TODO: temp fix
                     newRhs = tempRhs
                             .replace("sigma_a1*eta1","sigma_a1*eta1[ppjj]")
-                            .replace("sigma_a2*eta2","sigma_a2*eta2[ppjj]"); //hiv_chr
+                            .replace("sigma_a2*eta2","sigma_a2*eta2[ppjj]") //hiv_chr
+                            .replace("sigma_a*eta","sigma_a*eta[ppjj]") // anova_chr
+                                ;
                     System.out.println("===================");
                     System.out.println(assignmentStatement.lhs);
                     System.out.println(newRhs);
                 }
                 String assignStr;
-                if (lhsDecl != null && (lhsDecl.dims != null || lhsDecl.dtype.dims != null)) {
+                if (lhsDecl != null && (lhsDecl.dims != null || lhsDecl.dtype.dims != null) && !assignmentStatement.lhs.toString().contains("[")) {
                     String loopDim;
                     if (lhsDecl.dims != null) {
                         loopDim = lhsDecl.dims.toString();
@@ -230,172 +244,271 @@ public class PsiMatheTranslator implements ITranslator{
                                 }
                             }
                         }
-                        String observeI = firstParam.split("(\\[|])",3)[1];
-                        newRhs = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]\", %3$s,%5$s),%4$s)",
-                                dist.substring(0,1).toUpperCase() + dist.substring(1),
-                                innerParams.substring(1),
-                                params,
-                                firstParam,
-                                observeI//.replace("observe_i","observe_i-1")
-
-                        );
-                        assignStr = newRhs;
-                        assignStr += ";\n";
-                        // write getMSEfromMAP in mathe file
-                        String meanString =  paramsList[1].replaceAll("\\[([0-9]+)]","$1").replace("[" + observeI + "]",
-                                "[msei]").replace("_","MMMM");//.replace("[","[[").replace("]","]]");
-                        String newll = meanString;
-                        List<String> allMatches = new ArrayList<String>();
-                        Matcher m = Pattern.compile("\\w+\\[").matcher(meanString);
-                        while (m.find()) {
-                            allMatches.add(m.group());
-                        }
-                        System.out.println(allMatches);
-                        for (String mm:allMatches) {
-                            String paramKey = mm.replace("MMMM","_").replace("[","");
-                            if (paramDeclStatement.containsKey(paramKey) ){
-                                AST.Decl paramDecl = paramDeclStatement.get(paramKey);
-                                if (paramDecl.annotations.size() >0 &&
-                                        (paramDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
-                                                paramDecl.annotations.get(0).annotationType.toString().equals("Limits")
-                                        )
-                                        ) // is a param
-                                    newll = newll.replace(mm,"addrParam[" + mm.replace("[","") + ",");
+                        if (innerParams.contains(",")) { // not log mix or sum_log_exp
+                            String innerParams2 = innerParams.substring(1);
+                            if (dist.equals("normal"))
+                                innerParams2 = innerParams2.replace("sigma", "Sqrt[sigma]");
+                            String observeI = firstParam.split("(\\[|])", 3)[1];
+                            newRhs = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%6$s],x+Delta[i]]\", %3$s,%5$s),%4$s)",
+                                    dist.substring(0, 1).toUpperCase() + dist.substring(1),
+                                    innerParams.substring(1),
+                                    params,
+                                    firstParam,
+                                    observeI,//.replace("observe_i","observe_i-1")
+                                    innerParams2
+                            );
+                            assignStr = newRhs;
+                            assignStr += ";\n";
+                            // write getMSEfromMAP in mathe file
+                            String meanString = paramsList[1].replaceAll("\\[([0-9]+)]", "$1").replace("[" + observeI + "]",
+                                    "[msei]").replace("_", "MMMM");//.replace("[","[[").replace("]","]]");
+                            String newll = meanString;
+                            List<String> allMatches = new ArrayList<String>();
+                            Matcher m = Pattern.compile("\\w+\\[").matcher(meanString);
+                            while (m.find()) {
+                                allMatches.add(m.group());
                             }
-                        }
-                        // not always i
-                        newll = newll.replaceAll("\\[(\\w+)]","[[$1]]");
-                        meanString = newll;
-                        String stdString;
-                        if (paramsList.length >= 3)
-                            stdString = paramsList[2].replaceAll("\\[([0-9]+)]","$1").replace("[" + observeI + "]",
-                                    "[msei]").replace("_","MMMM").replace("[","[[").replace("]","]]");
-                        else
-                            stdString = "sigma";
-                        dumpMathe(String.format("getMSEfromMAP[mapVal_] := \n" +
-                                " Module[{}, \n" +
-                                "  1/Length[%1$s]*\n" +
-                                "   Sum[((%1$s[[msei]] - %2$s) /. mapVal[[2]])^2, {msei, 1, Length[%1$s]}]\n" +
-                                "  ]\n", firstParam.split("\\[")[0],meanString));
-                        dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
-                                " Module[{maxDataIdx}, \n" +
-                                "  maxDataIdx = \n" +
-                                "   StringDelete[\n" +
-                                "    SymbolName[Keys[TakeLargest[Association[deltaFullMap], 1]][[1]]], \n" +
-                                "    \"Delta\"];\n" +
-                                "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
-                                "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
-                                "   betaRep -> ReleaseHold[(HoldForm[\n" +
-                                "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
-                                "   sigmaRep -> " + stdString.replace(")","") + "|>\n" +
-                                "  ]\n");
+                            System.out.println(allMatches);
+                            for (String mm : allMatches) {
+                                String paramKey = mm.replace("MMMM", "_").replace("[", "");
+                                if (paramDeclStatement.containsKey(paramKey)) {
+                                    AST.Decl paramDecl = paramDeclStatement.get(paramKey);
+                                    if (paramDecl.annotations.size() > 0 &&
+                                            (paramDecl.annotations.get(0).annotationType.toString().equals("Prior") ||
+                                                    paramDecl.annotations.get(0).annotationType.toString().equals("Limits")
+                                            )
+                                            ) // is a param
+                                        newll = newll.replaceAll("\\b" + mm.replace("[", "") + "\\b\\[", "addrParam[" + mm.replace("[", "") + ",");
+                                }
+                            }
+                            // not always i
+                            newll = newll.replaceAll("\\[(\\w+)]", "[[$1]]");
+                            meanString = newll;
+                            String stdString;
+                            if (paramsList.length >= 3)
+                                stdString = paramsList[2].replaceAll("\\[([0-9]+)]", "$1").replace("[" + observeI + "]",
+                                        "[msei]").replace("_", "MMMM").replace("[", "[[").replace("]", "]]");
+                            else
+                                stdString = "sigma";
+                            dumpMathe(String.format("getMSEfromMAP[mapVal_] := \n" +
+                                    " Module[{}, \n" +
+                                    "  1/Length[%1$s]*\n" +
+                                    "   Sum[((%1$s[[msei]] - %2$s) /. mapVal[[2]])^2, {msei, 1, Length[%1$s]}]\n" +
+                                    "  ]\n", firstParam.split("\\[")[0], meanString));
+                            dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
+                                    " Module[{maxDataIdx}, \n" +
+                                    "  maxDataIdx = \n" +
+                                    "   StringDelete[\n" +
+                                    "    SymbolName[Keys[TakeLargest[Association[deltaFullMap], 1]][[1]]], \n" +
+                                    "    \"Delta\"];\n" +
+                                    "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
+                                    "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
+                                    "   betaRep -> ReleaseHold[(HoldForm[\n" +
+                                    "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
+                                    "   sigmaRep -> " + stdString.replace(")", "") + "|>\n" +
+                                    "  ]\n");
 
-                        // write observe alternative for transformations
-                        // original
-                        try {
-                            FileOutputStream out = new FileOutputStream(String.format("%1$s/OrgObserve",pathDirString));
-                            out.write(newRhs.getBytes());
-                            out.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        // reparam
-                        if (dist.equals("normal")) {
+                            // write observe alternative for transformations
+                            // original
                             try {
-                                String newRhsTrans;
-                                newRhsTrans = String.format(
-                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[GammaDistribution[1/2,1/2],weight[i]]*PDF[NormalDistribution[mu,sigma*weight[i]^(-1/2)],x+Delta[i]]\", %1$s,%3$s),%2$s)",
-                                        params,
-                                        firstParam,
-                                        observeI);
-                                FileOutputStream out = new FileOutputStream(String.format("%1$s/ReparamTransObserve", pathDirString));
-                                out.write(newRhsTrans.getBytes());
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/OrgObserve", pathDirString));
+                                out.write(newRhs.getBytes());
                                 out.close();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
-                            try {
-                                String newRhsTrans;
-                                newRhsTrans = String.format(
-                                        "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[StudentTDistribution[mu,sigma,weight],x+Delta[i]]\", %1$s,%3$s),%2$s)",
-                                        params,
-                                        firstParam,
-                                        observeI);
-                                FileOutputStream out = new FileOutputStream(String.format("%1$s/StudentTransObserve", pathDirString));
-                                out.write(newRhsTrans.getBytes());
-                                out.close();
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            // Mixture
-                            if ( ! assignmentStatement.rhs.toString().contains("log_mix"))
+                            // reparam
+                            if (dist.equals("normal")) {
                                 try {
                                     String newRhsTrans;
                                     newRhsTrans = String.format(
-                                            "cobserve(sampleFrom(\"(x;mu,nu,i) => (1-weight0)*PDF[NormalDistribution[mu,nu],x+Delta[i]]+weight0*PDF[NormalDistribution[mu,weight1],x+Delta[i]]\", %1$s,%3$s),%2$s)",
+                                            "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[GammaDistribution[1/2,1/2],weight[i]]*PDF[NormalDistribution[mu,Sqrt[sigma]*weight[i]^(-1/2)],x+Delta[i]]\", %1$s,%3$s),%2$s)",
                                             params,
                                             firstParam,
                                             observeI);
-                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/MixtureTransObserve", pathDirString));
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/ReparamTransObserve", pathDirString));
                                     out.write(newRhsTrans.getBytes());
                                     out.close();
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
-                        }
-                        // Reweight
-                        try {
-                            String newRhsTrans;
-                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%2$s],x+Delta[i]]^(weight[i])\", %3$s,%5$s),%4$s)",
-                                    dist.substring(0,1).toUpperCase() + dist.substring(1),
-                                    innerParams.substring(1),
-                                    params,
-                                    firstParam,
-                                    observeI
-                            );
-                            FileOutputStream out = new FileOutputStream(String.format("%1$s/ReweightTransObserve", pathDirString));
-                            out.write(newRhsTrans.getBytes());
-                            out.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        // Local1
-                        try {
-                            String newRhsTrans;
-                            newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
-                                    dist.substring(0,1).toUpperCase() + dist.substring(1),
-                                    innerParams.substring(1),
-                                    params,
-                                    firstParam,
-                                    innerParams.substring(1).replaceFirst(",","+(weight[i]),"),
-                                    observeI
-                            );
-                            FileOutputStream out = new FileOutputStream(String.format("%1$s/Local1TransObserve", pathDirString));
-                            out.write(newRhsTrans.getBytes());
-                            out.close();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                        // Local2
-                        if (innerParams.substring(1).contains(",")) {
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = String.format(
+                                            "cobserve(sampleFrom(\"(x;mu,sigma,i) => PDF[StudentTDistribution[mu,Sqrt[sigma],weight],x+Delta[i]]\", %1$s,%3$s),%2$s)",
+                                            params,
+                                            firstParam,
+                                            observeI);
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/StudentTransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Mixture
+                                if (!assignmentStatement.rhs.toString().contains("log_mix"))
+                                    try {
+                                        String newRhsTrans;
+                                        newRhsTrans = String.format(
+                                                "cobserve(sampleFrom(\"(x;mu,sigma,i) => (1-weight0)*PDF[NormalDistribution[mu,Sqrt[sigma]],x+Delta[i]]+weight0*PDF[NormalDistribution[mu,Sqrt[weight1]],x+Delta[i]]\", %1$s,%3$s),%2$s)",
+                                                params,
+                                                firstParam,
+                                                observeI);
+                                        FileOutputStream out = new FileOutputStream(String.format("%1$s/MixtureTransObserve", pathDirString));
+                                        out.write(newRhsTrans.getBytes());
+                                        out.close();
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                    }
+                            }
+                            // Reweight
                             try {
                                 String newRhsTrans;
-                                String[] innerParamsList = innerParams.substring(1).split(",");
-                                innerParamsList[1] = innerParamsList[1] + "+(weight[i])";
-                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
+                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[%1$sDistribution[%6$s],x+Delta[i]]^(weight[i])\", %3$s,%5$s),%4$s)",
                                         dist.substring(0, 1).toUpperCase() + dist.substring(1),
                                         innerParams.substring(1),
                                         params,
                                         firstParam,
-                                        String.join(",", innerParamsList),
-                                        observeI
+                                        observeI,
+                                        innerParams2
                                 );
-                                FileOutputStream out = new FileOutputStream(String.format("%1$s/Local2TransObserve", pathDirString));
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/ReweightTransObserve", pathDirString));
                                 out.write(newRhsTrans.getBytes());
                                 out.close();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
+                            // Local1
+                            try {
+                                String newRhsTrans;
+                                newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
+                                        dist.substring(0, 1).toUpperCase() + dist.substring(1),
+                                        innerParams.substring(1),
+                                        params,
+                                        firstParam,
+                                        innerParams2.replaceFirst(",", "+(weight[i]),"),
+                                        observeI
+                                );
+                                FileOutputStream out = new FileOutputStream(String.format("%1$s/Local1TransObserve", pathDirString));
+                                out.write(newRhsTrans.getBytes());
+                                out.close();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            // Local2
+                            if (innerParams.substring(1).contains(",")) {
+                                try {
+                                    String newRhsTrans;
+                                    String[] innerParamsList = innerParams2.split(",");
+                                    innerParamsList[1] = innerParamsList[1] + "+(weight[i])";
+                                    newRhsTrans = String.format("cobserve(sampleFrom(\"(x;%2$s,i) => PDF[NormalDistribution[0,0.25],weight[i]]*PDF[%1$sDistribution[%5$s],x+Delta[i]]\", %3$s,%6$s),%4$s)",
+                                            dist.substring(0, 1).toUpperCase() + dist.substring(1),
+                                            innerParams.substring(1),
+                                            params,
+                                            firstParam,
+                                            String.join(",", innerParamsList),
+                                            observeI
+                                    );
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/Local2TransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        } else { // mixture
+                            // TODO: temp fix for gauss_mix
+                            if (tempRhs.equals("target+log_mix(theta,normal_lpdf(y[n],mu[1],sigma[1]),normal_lpdf(y[n],mu[2],sigma[2]))")) {
+                                System.out.println("gauss_mix");
+                                System.out.println(firstParam);
+                                String observeI = firstParam.split("(\\[|])", 3)[1];
+                                newRhs = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) => thetamix*PDF[NormalDistribution[mu,Sqrt[sigma]],x + Delta[i]] + (1-thetamix)*PDF[NormalDistribution[mumix,Sqrt[sigmamix]],x + Delta[i]]\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                assignStr = newRhs;
+                                assignStr += ";\n";
+                                // write getMSEfromMAP in mathe file
+                                dumpMathe("getMSEfromMAP[mapVal_] := \n" +
+                                        " Module[{}, \n" +
+                                        " ((mu1-2.75)^2 + (mu2+2.75)^2 + (sigma1-1)^2 +(sigma2-1)^2 + (theta-0.4)^2) /. mapVal[[2]]" +
+                                        "  ]\n");
+                                dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
+                                        " Module[{maxDataIdx}, \n" +
+                                        "  maxDataIdx = \n" +
+                                        "   StringDelete[\n" +
+                                        "    SymbolName[Keys[TakeLargest[Association[deltaFullMap], 1]][[1]]], \n" +
+                                        "    \"Delta\"];\n" +
+                                        "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
+                                        "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
+                                        "   betaRep -> ReleaseHold[(HoldForm[\n" +
+                                        "       " + "-0.55" + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
+                                        "   sigmaRep -> " + "1" + "|>\n" +
+                                        "  ]\n");
+
+                                // write observe alternative for transformations
+                                // original
+                                try {
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/OrgObserve", pathDirString));
+                                    out.write(newRhs.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // reparam
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) =>  PDF[GammaDistribution[1/2,1/2],weight[i]]*(thetamix*PDF[NormalDistribution[mu,Sqrt[sigma]*weight[i]^(-1/2)],x + Delta[i]] + (1-thetamix)*PDF[NormalDistribution[mumix,Sqrt[sigmamix]*weight[i]^(-1/2)],x + Delta[i]])\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/ReparamTransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Student-T
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) =>  thetamix*PDF[StudentTDistribution[mu,Sqrt[sigma],weight],x + Delta[i]] + (1-thetamix)*PDF[StudentTDistribution[mumix,Sqrt[sigmamix],weight],x + Delta[i]]\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/StudentTransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Mixture
+                                if (!assignmentStatement.rhs.toString().contains("log_mix"))
+                                    System.out.println("no mixture implemented");
+                                // Reweight
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) =>  (thetamix*PDF[NormalDistribution[mu,Sqrt[sigma]],x + Delta[i]]^weight[i] + (1-thetamix)*PDF[NormalDistribution[mumix,Sqrt[sigmamix]],x + Delta[i]]^weight[i])\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/ReweightTransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Local1
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) =>  PDF[NormalDistribution[0,0.25],weight[i]]*(thetamix*PDF[NormalDistribution[mu+weight[i],Sqrt[sigma]],x + Delta[i]] + (1-thetamix)*PDF[NormalDistribution[mumix+weight[i],Sqrt[sigmamix]],x + Delta[i]])\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/Local1TransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                                // Local2
+                                try {
+                                    String newRhsTrans;
+                                    newRhsTrans = "cobserve(sampleFrom(\"(x;thetamix,mu,sigma,mumix,sigmamix,i) =>  PDF[NormalDistribution[0,0.25],weight[i]]*(thetamix*PDF[NormalDistribution[mu,Sqrt[sigma]+weight[i]],x + Delta[i]] + (1-thetamix)*PDF[NormalDistribution[mumix,Sqrt[sigmamix]+weight[i]],x + Delta[i]])\", theta,mu[1],sigma[1],mu[2],sigma[2],n), y[n])";
+                                    FileOutputStream out = new FileOutputStream(String.format("%1$s/Local2TransObserve", pathDirString));
+                                    out.write(newRhsTrans.getBytes());
+                                    out.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            } else {
+                                assignStr = tempRhs;
+                            }
+
                         }
                     } // end dealing with target
                     else {
@@ -452,15 +565,16 @@ public class PsiMatheTranslator implements ITranslator{
                                                     paramDecl.annotations.get(0).annotationType.toString().equals("Limits")
                                             )
                                             ) // is a param
-                                        newll = newll.replace(mm,"addrParam[" + mm.replace("[","") + ",");
+                                            newll = newll.replaceAll("\\b"+mm.replace("[","") +"\\b\\[","addrParam[" + mm.replace("[","") + ",");
                                     }
 
                                 }
                                 // not always i
                                 newll = newll.replaceAll("\\[(\\w+)]","[[$1]]");
+                                newll = newll.replaceAll("\\[(\\w+\\[\\[\\w+]])]","[[$1]]");
                                 dumpMathe(newll.replace("{","").replace("}","]"));
                             } else if (! ll.matches("\\s+"))
-                                dumpMathe(ll.replace("{","").replace("}","]"));
+                                dumpMathe(ll.replace("{","").replace("}","]\n"));
                         }
 
                     }
@@ -486,7 +600,12 @@ public class PsiMatheTranslator implements ITranslator{
                             loopDim = declaration.dims.toString();
                         output += String.format(" %1$s := array(%2$s+1);\n", declaration.id, loopDim);
                         // give a flat prior
-                        if (! (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") )) {
+                        if (! (bodyString.contains(declaration.id + "=normal")
+                                || bodyString.contains(declaration.id + "[1]=normal")
+                                ||bodyString.contains(declaration.id + "=gamma")
+                                ||bodyString.contains(declaration.id + "=beta")
+                                || bodyString.contains(declaration.id + "=inv_gamma")
+                                || bodyString.contains(declaration.id + "=uniform"))) {
                             paramPriorNotAdded.remove(declaration.id.toString());
                             output += String.format("for ppjj in [1..%1$s+1) {\n",loopDim);
                             if (declaration.annotations.size() > 1) {
@@ -504,7 +623,12 @@ public class PsiMatheTranslator implements ITranslator{
 
                         }
                     } else {
-                        if (bodyString.contains(declaration.id + "=normal") ||bodyString.contains(declaration.id + "=gamma") || bodyString.contains(declaration.id + "=inv_gamma") ) {
+                        if (bodyString.contains(declaration.id + "=normal")
+                                || bodyString.contains(declaration.id + "[1]=normal")
+                                ||bodyString.contains(declaration.id + "=gamma")
+                                ||bodyString.contains(declaration.id + "=beta")
+                                || bodyString.contains(declaration.id + "=inv_gamma")
+                                || bodyString.contains(declaration.id + "=uniform") ) {
                             output += declaration.id + " := 0;\n";
                         } else {
                             paramPriorNotAdded.remove(declaration.id.toString());
@@ -571,6 +695,12 @@ public class PsiMatheTranslator implements ITranslator{
                             if (curBlock.getIncomingEdges().containsKey("true")) {
                                 block_text = "{\n" + block_text;
                             }
+                            // if (curBlock.getIncomingEdges().containsKey("false")) {
+                            //     System.out.println("dddddddddddddfffffffffffffff");
+                            //     System.out.println(block_text);
+                            //     if (block_text.contains("cobserve"))
+                            //         block_text = "else{\n" + block_text + "}\n";
+                            // }
                             if (curBlock.getOutgoingEdges().containsKey("back")) {
                                 block_text = block_text + "}\n";
                             }
@@ -656,12 +786,14 @@ public class PsiMatheTranslator implements ITranslator{
                             paramDims = constMap.get(param_i.dims.toString());
                         }
                     } else {
+                        System.out.println("/////////////////");
+                        System.out.println(param_i.dtype.dims.toString());
                         if (param_i.dtype.dims.toString().matches("[1-9]+"))
                             paramDims = Integer.valueOf(param_i.dtype.dims.toString());
                         else
                             paramDims = constMap.get(param_i.dtype.dims.toString());
+                        System.out.println(constMap);
                     }
-                    System.out.println("/////////////////");
                     System.out.println(paramDims);
                     System.out.println(param_i.toString());
                     for (Integer ii = 1; ii <= paramDims; ii++) {
