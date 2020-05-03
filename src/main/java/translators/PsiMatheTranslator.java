@@ -193,7 +193,7 @@ public class PsiMatheTranslator implements ITranslator{
                         }
                     }
                     String innerParams2 = innerParams.substring(1);
-                    if(dist.equals("normal"))
+                    if(dist.equals("normal") && !params.split(",")[1].matches("\\d*\\.?\\d*"))
                         innerParams2 = innerParams2.replace("sigma","Sqrt[sigma]");
 
                     newRhs = String.format("sampleFrom(\"(x;%2$s) => PDF[%1$sDistribution[%4$s],x]\", %3$s)",
@@ -202,6 +202,10 @@ public class PsiMatheTranslator implements ITranslator{
                             params,
                             innerParams2
                             );
+                    if(dist.contains("normal") && tempRhs.contains("(0,2)")) {
+                        newRhs = "sampleFrom(\"(x;theta) => PDF[HalfNormalDistribution[theta],x]\", 0.6266570687)";
+
+                    }
                 }
                 else{
                     //TODO: temp fix
@@ -426,9 +430,12 @@ public class PsiMatheTranslator implements ITranslator{
                                 assignStr = newRhs;
                                 assignStr += ";\n";
                                 // write getMSEfromMAP in mathe file
+                                String mseVar = "((mu1-2.75)^2 + (mu2+2.75)^2 + (sigma1-1)^2 +(sigma2-1)^2 + (theta-0.4)^2)";
+                                if (! paramDeclStatement.keySet().contains("theta"))
+                                    mseVar = mseVar.replace("(theta-0.4)^2)","0");
                                 dumpMathe("getMSEfromMAP[mapVal_] := \n" +
-                                        " Module[{}, \n" +
-                                        " ((mu1-2.75)^2 + (mu2+2.75)^2 + (sigma1-1)^2 +(sigma2-1)^2 + (theta-0.4)^2) /. mapVal[[2]]" +
+                                        " Module[{}, \n" +  mseVar +
+                                        " /. mapVal[[2]]" +
                                         "  ]\n");
                                 dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
                                         " Module[{maxDataIdx}, \n" +

@@ -221,7 +221,7 @@ public class TestPSI {
                     || orgProgDir.getName().contains("electric")
                     || orgProgDir.getName().contains("flight_simulator_17.3"))
                 continue;
-            if (!orgProgDir.getName().contains("gauss_mix_asym_prior"))
+            if (!orgProgDir.getName().contains("gauss_mix"))
                 continue;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
