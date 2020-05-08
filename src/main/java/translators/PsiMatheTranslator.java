@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static java.lang.Math.ceil;
+import static java.lang.Math.min;
 import static java.lang.Math.round;
 
 public class PsiMatheTranslator implements ITranslator{
@@ -36,6 +37,7 @@ public class PsiMatheTranslator implements ITranslator{
     private Set<String> paramPriorNotAdded = new HashSet<>();
     private final List<JsonObject> models= Utils.getDistributions(null);
     private HashMap<String, Integer> constMap = new HashMap<>();
+    private boolean ratioChanged=false;
 
 
     public void setOut(OutputStream o){
@@ -93,13 +95,29 @@ public class PsiMatheTranslator implements ITranslator{
                 if(dataString.contains(".")) {
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
                 } else {
-                    if (Integer.valueOf(dataString) > 500 && dataReduceRatio == 8)
-                        dataReduceRatio = 16;
+                    if (data.decl.id.id.length() == 1 && !ratioChanged) {
+                        ratioChanged = true;
+                        if (Integer.valueOf(dataString) < 100 && dataReduceRatio == 8)
+                            dataReduceRatio = 2; //2
+                        else if (Integer.valueOf(dataString) < 300 && Integer.valueOf(dataString) >= 100 && dataReduceRatio == 8)
+                            dataReduceRatio = 4; //4
+                        else if (Integer.valueOf(dataString) < 1000 && Integer.valueOf(dataString) >= 300 && dataReduceRatio == 8)
+                            dataReduceRatio = 16;
+                        else if (Integer.valueOf(dataString) >= 1000 && dataReduceRatio == 8)
+                            dataReduceRatio = 32;
+                        // if (pathDirString.contains("skew") || pathDirString.contains("twomode") || pathDirString.contains("gp-fit"))
+                        if (pathDirString.contains("gp-fit"))
+                            dataReduceRatio = dataReduceRatio*4;
+                    }
                     // temp fix for flight
-                    if ( ! (Integer.valueOf(dataString)/dataReduceRatio < 5))
+                    if ( ! (Integer.valueOf(dataString)/dataReduceRatio < 1))
                         // temp fix for electric
                         if (data.decl.id.id.equals("n_pair"))
                             dataString = String.valueOf((int) (round(Float.valueOf(dataString) * 2 /dataReduceRatio)));
+                        else if (data.decl.id.id.equals("n_scenarios"))
+                            dataString = String.valueOf(min((int) (round(Float.valueOf(dataString) * 5/dataReduceRatio)),8));
+                        else if (data.decl.id.id.equals("J"))
+                            dataString = String.valueOf((int) (round(Float.valueOf(dataString) /dataReduceRatio)) + 1);
                         else
                             dataString = String.valueOf((int) (round(Float.valueOf(dataString)/dataReduceRatio)));
                     stringWriter.write(String.format("%s := %s;\n", data.decl.id, dataString));
@@ -115,8 +133,9 @@ public class PsiMatheTranslator implements ITranslator{
                 stringWriter.write(String.format("%1$s := readCSV(\"%1$s_data_csv\");\n", data.decl.id));
                 String[] dataStringSplit = dataString.split(",");
                 Integer dataLength = dataStringSplit.length;
-                dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,(int) round((Float.valueOf(dataLength)/dataReduceRatio))));
-                String addOneDataString = "1," + String.join(",",Arrays.copyOfRange(dataStringSplit,0,(int) round(Float.valueOf(dataLength)/dataReduceRatio)));
+                if (dataLength/dataReduceRatio >= 1)
+                    dataString = String.join(",",Arrays.copyOfRange(dataStringSplit,0,(int) round((Float.valueOf(dataLength)/dataReduceRatio))));
+                String addOneDataString = "1," + dataString;
                 try {
 
                     FileOutputStream out = new FileOutputStream(String.format("%1$s/%2$s_data_csv",pathDirString,data.decl.id));
@@ -181,10 +200,11 @@ public class PsiMatheTranslator implements ITranslator{
                                             )) {
                     paramPriorNotAdded.remove(lhsDecl.id.toString());
                     String dist = tempRhs.split("\\(")[0];
+                    System.out.println(dist);
                     String params = tempRhs.replace(dist,"").substring(1,tempRhs.length() - dist.length() - 1);
                     String innerParams = "";
                     for (JsonObject model : this.models) {
-                        if (dist.equals(model.getString("name"))) {
+                        if (dist.equals(model.getString("stan"))) {
                             JsonArray modelParams = model.getJsonArray("args");
                             for (JsonValue iipp : modelParams) {
                                 String paramName = iipp.asJsonObject().getString("name");
@@ -193,8 +213,13 @@ public class PsiMatheTranslator implements ITranslator{
                         }
                     }
                     String innerParams2 = innerParams.substring(1);
+                    if (dist.equals("inv_gamma"))
+                        dist = "InverseGamma";
                     if(dist.equals("normal") && !params.split(",")[1].matches("\\d*\\.?\\d*"))
                         innerParams2 = innerParams2.replace("sigma","Sqrt[sigma]");
+                    // if(dist.equals("normal_cholesky")) {
+                    //     dist = "normal";
+                    // }
 
                     newRhs = String.format("sampleFrom(\"(x;%2$s) => PDF[%1$sDistribution[%4$s],x]\", %3$s)",
                             dist.substring(0,1).toUpperCase() + dist.substring(1),
@@ -248,7 +273,10 @@ public class PsiMatheTranslator implements ITranslator{
                                 }
                             }
                         }
-                        if (innerParams.contains(",")) { // not log mix or sum_log_exp
+                        // if (dist.equals("normal_cholesky")) {
+                        //
+                        // }
+                        if (innerParams.length()>1) { // not log mix or sum_log_exp
                             String innerParams2 = innerParams.substring(1);
                             if (dist.equals("normal"))
                                 innerParams2 = innerParams2.replace("sigma", "Sqrt[sigma]");
@@ -311,6 +339,14 @@ public class PsiMatheTranslator implements ITranslator{
                                     "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
                                     "   sigmaRep -> " + stdString.replace(")", "") + "|>\n" +
                                     "  ]\n");
+                            dumpMathe("maxDataIdxMap[deltaFullMap_,maxDataIdx_] := \n" +
+                                    " Module[{}, \n" +
+                                    "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
+                                    "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
+                                    "   betaRep -> ReleaseHold[(HoldForm[\n" +
+                                    "       " + meanString + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
+                                    "   sigmaRep -> " + stdString.replace(")", "") + "|>\n" +
+                                    "  ]");
 
                             // write observe alternative for transformations
                             // original
@@ -431,8 +467,8 @@ public class PsiMatheTranslator implements ITranslator{
                                 assignStr += ";\n";
                                 // write getMSEfromMAP in mathe file
                                 String mseVar = "((mu1-2.75)^2 + (mu2+2.75)^2 + (sigma1-1)^2 +(sigma2-1)^2 + (theta-0.4)^2)";
-                                if (! paramDeclStatement.keySet().contains("theta"))
-                                    mseVar = mseVar.replace("(theta-0.4)^2)","0");
+//                                if (! paramDeclStatement.keySet().contains("theta"))
+//                                    mseVar = mseVar.replace("(theta-0.4)^2)","0");
                                 dumpMathe("getMSEfromMAP[mapVal_] := \n" +
                                         " Module[{}, \n" +  mseVar +
                                         " /. mapVal[[2]]" +
@@ -449,6 +485,14 @@ public class PsiMatheTranslator implements ITranslator{
                                         "       " + "-0.55" + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
                                         "   sigmaRep -> " + "1" + "|>\n" +
                                         "  ]\n");
+                                dumpMathe("maxDataIdxMap[deltaFullMap_,maxDataIdx_] := \n" +
+                                        " Module[{}, \n" +
+                                        "  <|dweight1 -> Symbol[\"dweight\" <> maxDataIdx], \n" +
+                                        "   Delta1Rep -> Symbol[\"Delta\" <> maxDataIdx],\n" +
+                                        "   betaRep -> ReleaseHold[(HoldForm[\n" +
+                                        "       " + "-0.55" + "] /. (msei -> ToExpression[maxDataIdx]))],\n" +
+                                        "   sigmaRep -> " + "1" + "|>\n" +
+                                        "  ]");
 
                                 // write observe alternative for transformations
                                 // original
@@ -609,7 +653,9 @@ public class PsiMatheTranslator implements ITranslator{
                         // give a flat prior
                         if (! (bodyString.contains(declaration.id + "=normal")
                                 || bodyString.contains(declaration.id + "[1]=normal")
+                                || bodyString.contains(declaration.id + "[k]=normal")
                                 ||bodyString.contains(declaration.id + "=gamma")
+                                ||bodyString.contains(declaration.id + "=cauchy")
                                 ||bodyString.contains(declaration.id + "=beta")
                                 || bodyString.contains(declaration.id + "=inv_gamma")
                                 || bodyString.contains(declaration.id + "=uniform"))) {
@@ -632,7 +678,9 @@ public class PsiMatheTranslator implements ITranslator{
                     } else {
                         if (bodyString.contains(declaration.id + "=normal")
                                 || bodyString.contains(declaration.id + "[1]=normal")
+                                || bodyString.contains(declaration.id + "[k]=normal")
                                 ||bodyString.contains(declaration.id + "=gamma")
+                                ||bodyString.contains(declaration.id + "=cauchy")
                                 ||bodyString.contains(declaration.id + "=beta")
                                 || bodyString.contains(declaration.id + "=inv_gamma")
                                 || bodyString.contains(declaration.id + "=uniform") ) {

@@ -137,18 +137,18 @@ public class StanFileWriter {
         // }
 
         // Reparam, Normal2T
-        // try {
-        //     System.out.println("========Reparam:Normal2T========");
-        //     transWriter.resetCode();
-        //     transformed = transWriter.transformReparamLocalizer();
-        //     if (transformed) {
-        //         transName = "robust_reparam";
-        //         transCodeToDir(transWriter, transName, filePath);
-        //         transWriter.addPredCode(transWriter.getCode(), transName);
-        //     }
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // }
+        try {
+            System.out.println("========Reparam:Normal2T========");
+            transWriter.resetCode();
+            transformed = transWriter.transformReparamLocalizer();
+            if (transformed) {
+                transName = "robust_reparam";
+                transCodeToDir(transWriter, transName, filePath);
+                transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Logit
         // try {
@@ -164,19 +164,19 @@ public class StanFileWriter {
         //     e.printStackTrace();
         // }
 
-        // try {
-        //     // MixNormal
-        //     System.out.println("========MixNormal========");
-        //     transWriter.resetCode();
-        //     transformed = transWriter.transformMixNormal();
-        //     if (transformed) {
-        //         transName = "robust_mix";
-        //         transCodeToDir(transWriter, transName, filePath);
-        //         // transWriter.addPredCode(transWriter.getCode(), transName);
-        //     }
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // }
+        try {
+            // MixNormal
+            System.out.println("========MixNormal========");
+            transWriter.resetCode();
+            transformed = transWriter.transformMixNormal();
+            if (transformed) {
+                transName = "robust_mix";
+                transCodeToDir(transWriter, transName, filePath);
+                // transWriter.addPredCode(transWriter.getCode(), transName);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         try {
             // NewNormal2T

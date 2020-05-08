@@ -211,25 +211,27 @@ public class TestPSI {
 
     @Test
     public void testHiv() {
-        File folder = new File("../PPVM/autotemp/newtrans0418/");
+        File folder = new File("../PPVM/autotemp/newtrans0418twomode/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
-            if (!orgProgDir.isDirectory()) continue;
-            if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr")))
-                    || orgProgDir.getName().contains("radon")
-                    || orgProgDir.getName().contains("electric")
-                    || orgProgDir.getName().contains("flight_simulator_17.3"))
+            if (!orgProgDir.isDirectory())
                 continue;
-            if (!orgProgDir.getName().contains("gauss_mix"))
-                continue;
+            // if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr")))
+            //         || orgProgDir.getName().contains("radon")
+            //         || orgProgDir.getName().contains("electric")
+            //         || orgProgDir.getName().contains("flight_simulator_17.3")
+            //         || orgProgDir.getName().contains("mix"))
+            //     continue;
+            //  if (!orgProgDir.getName().equals("gp-fit-pois")) // radon_vary_si_chr anova_radon_nopred_chr radon.pooling radon_no_po// ol radon_no// _po?? ol_chr radon_vary_inter_slope_17.1 radon_vary_si
+            //  continue;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
 
             CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
             PsiMatheTranslator trans = new PsiMatheTranslator();
-            trans.setPath(filePath.replaceAll("/[a-zA-Z_0-9\\.]+\\.template", ""));
+            trans.setPath(filePath.replaceAll("/[a-zA-Z_0-9\\.\\-]+\\.template", ""));
             try {
                 FileOutputStream out = new FileOutputStream(outputFile);
                 trans.setOut(out);
