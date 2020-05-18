@@ -45,7 +45,7 @@ public class PsiMatheTranslator implements ITranslator{
     }
     public void setMatheOut(OutputStream o){
         Matheout = o;
-            dumpMathe( "Get[polyPath <> \"base0417.m\"];\n"); //"#!/usr/bin/env wolframscript\n\n" +
+            dumpMathe( "Get[polyPath <> \"base0417.m\"];   \n"); //"#!/usr/bin/env wolframscript\n\n" +
     }
 
     public void setPath(String s) {
@@ -98,16 +98,18 @@ public class PsiMatheTranslator implements ITranslator{
                     if (data.decl.id.id.length() == 1 && !ratioChanged) {
                         ratioChanged = true;
                         if (Integer.valueOf(dataString) < 100 && dataReduceRatio == 8)
-                            dataReduceRatio = 2; //2
+                            dataReduceRatio = 1; //2
                         else if (Integer.valueOf(dataString) < 300 && Integer.valueOf(dataString) >= 100 && dataReduceRatio == 8)
                             dataReduceRatio = 4; //4
                         else if (Integer.valueOf(dataString) < 1000 && Integer.valueOf(dataString) >= 300 && dataReduceRatio == 8)
                             dataReduceRatio = 16;
                         else if (Integer.valueOf(dataString) >= 1000 && dataReduceRatio == 8)
                             dataReduceRatio = 32;
-                        // if (pathDirString.contains("skew") || pathDirString.contains("twomode") || pathDirString.contains("gp-fit"))
                         if (pathDirString.contains("gp-fit"))
                             dataReduceRatio = dataReduceRatio*4;
+                        else if (pathDirString.contains("twomode") && dataReduceRatio>1)
+                            //dataReduceRatio = dataReduceRatio*5;
+                            dataReduceRatio/=2;
                     }
                     // temp fix for flight
                     if ( ! (Integer.valueOf(dataString)/dataReduceRatio < 1))
@@ -326,7 +328,7 @@ public class PsiMatheTranslator implements ITranslator{
                                     " Module[{}, \n" +
                                     "  1/Length[%1$s]*\n" +
                                     "   Sum[((%1$s[[msei]] - %2$s) /. mapVal[[2]])^2, {msei, 1, Length[%1$s]}]\n" +
-                                    "  ]\n", firstParam.split("\\[")[0], meanString));
+                                    "  ]\n", firstParam.split("\\[")[0].replace("_","MMMM"), meanString));
                             dumpMathe("maxDataIdxMap[deltaFullMap_] := \n" +
                                     " Module[{maxDataIdx}, \n" +
                                     "  maxDataIdx = \n" +

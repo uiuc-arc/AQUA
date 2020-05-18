@@ -223,8 +223,8 @@ public class TestPSI {
             //         || orgProgDir.getName().contains("flight_simulator_17.3")
             //         || orgProgDir.getName().contains("mix"))
             //     continue;
-            //  if (!orgProgDir.getName().equals("gp-fit-pois")) // radon_vary_si_chr anova_radon_nopred_chr radon.pooling radon_no_po// ol radon_no// _po?? ol_chr radon_vary_inter_slope_17.1 radon_vary_si
-            //  continue;
+            // if (!orgProgDir.getName().contains("gp-fit"))
+            //    continue;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
