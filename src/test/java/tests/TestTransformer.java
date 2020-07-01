@@ -117,6 +117,8 @@ public class TestTransformer {
             FileUtils.writeStringToFile(file, code);
             System.out.println(code);
             CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
+            System.out.println("////////////////////");
+            System.out.println(cfgBuilder.parser.template().toString());
 
             TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
             ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
