@@ -321,15 +321,15 @@ public class TestTransformer {
             System.out.println("========ConstToParam========");
             transWriter.resetCode();
             transformed = transWriter.transformConstToParam();
-            if (transformed)
-                transWriter.addPredCode(transWriter.getCode(), "robust_const");
+            // if (transformed)
+            //     transWriter.addPredCode(transWriter.getCode(), "robust_const");
 
 
             // Reweighter
             System.out.println("========Reweighting========");
             transWriter.resetCode();
             transWriter.transformReweighter();
-            transWriter.addPredCode(transWriter.getCode(), "robust_reweight");
+            // transWriter.addPredCode(transWriter.getCode(), "robust_reweight");
 
             // Localizer
             Boolean existNext = true;
@@ -338,7 +338,7 @@ public class TestTransformer {
                 System.out.println("========Localizing Param " + paramCount + "========");
                 transWriter.resetCode();
                 existNext = transWriter.transformLocalizer(paramCount);
-                transWriter.addPredCode(transWriter.getCode(), "robust_local" + (1 + paramCount));
+                // transWriter.addPredCode(transWriter.getCode(), "robust_local" + (1 + paramCount));
                 paramCount++;
             }
 
@@ -346,15 +346,15 @@ public class TestTransformer {
             System.out.println("========Reparam:Normal2T========");
             transWriter.resetCode();
             transformed = transWriter.transformReparamLocalizer();
-            if (transformed)
-                transWriter.addPredCode(transWriter.getCode(), "robust_reparam");
+            // if (transformed)
+            //     transWriter.addPredCode(transWriter.getCode(), "robust_reparam");
 
             // Logit
             System.out.println("========Logit========");
             transWriter.resetCode();
             transformed = transWriter.transformLogit();
-            if (transformed)
-                transWriter.addPredCode(transWriter.getCode(), "robust_logit");
+            // if (transformed)
+            //     transWriter.addPredCode(transWriter.getCode(), "robust_logit");
 
             // MixNormal
             System.out.println("========MixNormal========");
@@ -465,17 +465,19 @@ public class TestTransformer {
 
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../PPVM/templates/org/");
+        File folder = new File("../aura_package/autotemp/org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../PPVM/autotemp/trans/";
+        String targetOrgDir = "../aura_package/autotemp/trans/";
         //TODO: check sshfs mount; before run ./patch_vector.sh; after finish run ./patch_simplex.sh
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("gp-fit-ARD"))
+                // if (!orgProgDir.getName().contains("radon.pooling"))
+                //         continue;
+                if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
                 // if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr"))) || orgProgDir.getName().contains("radon") ||orgProgDir.getName().contains("robust"))
 //                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;

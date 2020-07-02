@@ -81,7 +81,13 @@
                     <exclude>cmdstan-2.19.1/**</exclude>
                     <exclude>cmdstan-2.16.0/**</exclude>
                 </excludes>
-            </resource>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>**/*.properties</include>
+				</includes>
+			</resource>
         </resources>
         <testResources>
             <testResource>
@@ -160,6 +166,20 @@
 
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+
+                    <archive>
+                        <index>true</index>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>grammar.transformations.TransformerRunner</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
 

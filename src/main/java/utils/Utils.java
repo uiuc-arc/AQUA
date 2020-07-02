@@ -26,6 +26,9 @@ import javax.json.JsonReader;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 
 import java.util.List;
@@ -44,9 +47,12 @@ public class Utils {
     static {
     Properties properties = new Properties();
     try{
-        FileInputStream fileInputStream = new FileInputStream(CONFIGURATIONFILE);
+        String[] configFileNameSplit = CONFIGURATIONFILE.split("/");
+        String configFileName = configFileNameSplit[configFileNameSplit.length - 1];
+        Path temp = Files.createTempFile(configFileName.split("\\.")[0],"." + configFileName.split("\\.")[1]);
+        Files.copy(Utils.class.getClassLoader().getResourceAsStream(configFileName), temp, StandardCopyOption.REPLACE_EXISTING);
+        FileInputStream fileInputStream = new FileInputStream(temp.toFile());
         properties.load(fileInputStream);
-
         STANRUNNER = properties.getProperty("stan.script");
         PSIRUNNER = properties.getProperty("psi.script");
         EDWARD2RUNNER = properties.getProperty("edward2.script");
@@ -196,7 +202,14 @@ public class Utils {
         FileInputStream fis;
         List<JsonObject> models = null;
         try {
-            fis = new FileInputStream(DISTRIBUTIONSFILE);
+            String[] configFileNameSplit = DISTRIBUTIONSFILE.split("/");
+            String configFileName = configFileNameSplit[configFileNameSplit.length - 1];
+            // System.out.println(configFileName);
+            // Path temp = Files.createTempFile(configFileName.split("\\.")[0],"." + // configFileName.split("\\.")[1]);
+            // System.out.println(Utils.class.getClassLoader().getResourceAsStream(configFileName));
+            // Files.copy(Utils.class.getClassLoader().getResourceAsStream(configFileName), temp, StandardCopyOption.REPLACE_EXISTING);
+            // fis = new FileInputStream(temp.toFile());
+            fis = new FileInputStream(configFileName);
             JsonReader jsonReader = Json.createReader(fis);
             JsonObject jsonObject = jsonReader.readObject();
             models = new ArrayList<>();
@@ -213,6 +226,8 @@ public class Utils {
             }
 
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

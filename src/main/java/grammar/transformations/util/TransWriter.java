@@ -10,6 +10,7 @@ import translators.StanTranslator;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -124,6 +125,9 @@ public class TransWriter {
         FileUtils.writeStringToFile(file, orgGenCode.genCode);
         StanTranslator stanTranslator = new StanTranslator();
         stanTranslator.translate((new CFGBuilder(file.getAbsolutePath(), null, false)).getSections());
+        PrintWriter out = new PrintWriter(tempFileName + ".npl");
+        out.println(orgGenCode.nplCode);
+        out.close();
         return stanTranslator.getCode();
     }
 

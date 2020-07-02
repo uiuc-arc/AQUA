@@ -63,11 +63,11 @@ public class StanFileWriter {
         }
 
 
-        // try {
-        //     genStanCodeToDir(transWriter.getStanGenCode(), filePath);
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // }
+        try {
+            genStanCodeToDir(transWriter.getStanGenCode(), filePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // if (true)
         //     return;
         try {
@@ -109,7 +109,7 @@ public class StanFileWriter {
             transWriter.resetCode();
             transWriter.transformReweighter();
             transCodeToDir(transWriter, transName, filePath);
-            transWriter.addPredCode(transWriter.getCode(), transName);
+            // transWriter.addPredCode(transWriter.getCode(), transName);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -126,7 +126,7 @@ public class StanFileWriter {
                 transName = "robust_local" + (1 + paramCount);
                 transCodeToDir(transWriter, transName, filePath);
                 try {
-                    transWriter.addPredCode(transWriter.getCode(), transName);
+                    // transWriter.addPredCode(transWriter.getCode(), transName);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -144,7 +144,7 @@ public class StanFileWriter {
             if (transformed) {
                 transName = "robust_reparam";
                 transCodeToDir(transWriter, transName, filePath);
-                transWriter.addPredCode(transWriter.getCode(), transName);
+                // transWriter.addPredCode(transWriter.getCode(), transName);
             }
         } catch (Exception e) {
             e.printStackTrace();

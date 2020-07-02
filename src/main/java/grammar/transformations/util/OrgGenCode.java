@@ -10,7 +10,10 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.commons.io.FileUtils;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 public class OrgGenCode implements Template3Listener {
@@ -21,6 +24,7 @@ public class OrgGenCode implements Template3Listener {
     private Boolean inFor_loop=false;
     private String dataName;
     public String genCode;
+    public String nplCode;
     private String samplingStr;
 
     public OrgGenCode(CFGBuilder cfgBuilder) {
@@ -275,6 +279,7 @@ public class OrgGenCode implements Template3Listener {
                         + samplingStr.replaceAll("\\b" + dataName + "\\b", dataName + "_test")
                         + "\n}\n";
 
+        nplCode = dataName + "_corrupted\n";
     }
 
     @Override
