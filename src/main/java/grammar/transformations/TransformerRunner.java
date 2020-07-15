@@ -62,8 +62,8 @@ public class TransformerRunner {
 
             }
             i++;
-            if (i>1)
-                break;
+            // if (i>1)
+            //     break;
         }
         System.out.println("=====================");
         System.out.println("Successfully Transformed " + i + " Files:" + transFiles);

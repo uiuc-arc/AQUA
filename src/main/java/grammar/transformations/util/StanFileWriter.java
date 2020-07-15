@@ -228,9 +228,7 @@ public class StanFileWriter {
         // } catch (Exception e) {
         //     e.printStackTrace();
         // }
-        if (!orderedOrgList.isEmpty()){
-            File stancopy = new File(strFilePath + "/" + progName + "_copy.stan");
-            boolean success = stancopy.delete();
-        }
+        File stancopy = new File(strFilePath + "/" + progName + "_copy.stan");
+        boolean success = stancopy.delete();
     }
 }
