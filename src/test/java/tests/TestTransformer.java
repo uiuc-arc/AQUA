@@ -465,21 +465,19 @@ public class TestTransformer {
 
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../aura_package/autotemp/org/");
+        File folder = new File("../aura_package/autotemp/timeseries_org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../aura_package/autotemp/trans/";
+        String targetOrgDir = "../aura_package/autotemp/custom_trans/";
         //TODO: check sshfs mount; before run ./patch_vector.sh; after finish run ./patch_simplex.sh
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                // if (!orgProgDir.getName().contains("radon.pooling"))
-                //         continue;
+                if (!orgProgDir.getName().contains("03_01"))
+                        continue;
                 if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
-                // if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr"))) || orgProgDir.getName().contains("radon") ||orgProgDir.getName().contains("robust"))
-//                if (orgProgDir.getName().contains("normal_mix") || orgProgDir.getName().contains("M0") ) // (!orgProgDir.getName().contains("koyck") )
                     continue;
                 try {
                     File newDir = new File(targetOrgDir + orgProgDir.getName());

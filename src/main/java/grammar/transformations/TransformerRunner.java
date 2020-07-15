@@ -8,17 +8,22 @@ import java.util.ArrayList;
 
 public class TransformerRunner {
     public static void main(String[] args) throws IOException {
-        BufferedReader in = new BufferedReader(new FileReader("autotemp.config"));
-        String ll;
+        // BufferedReader in = new BufferedReader(new FileReader("autotemp.config"));
+        // String ll;
         String inputOrgDir = null;
         String inputTransDir = null;
-        while ((ll = in.readLine()) != null) {
-            if (ll.contains("input_org_dir"))
-                inputOrgDir = ll.split("=")[1];
-            else if (ll.contains("input_trans_dir"))
-                inputTransDir = ll.split("=")[1];
-        }
-        in.close();
+        // while ((ll = in.readLine()) != null) {
+        //     if (ll.contains("input_org_dir"))
+        //         inputOrgDir = ll.split("=")[1].split(" ")[0];
+        //     else if (ll.contains("input_trans_dir"))
+        //         inputTransDir = ll.split("=")[1].split(" ")[0];
+        // }
+        // in.close();
+        inputOrgDir = "~/Documents/are/aura_package/autotemp/timeseries_org";
+        inputTransDir = "~/Documents/are/aura_package/autotemp/custom_trans";
+
+        System.out.println(inputOrgDir);
+        System.out.println(inputTransDir);
 
         File folder = new File(inputOrgDir + "/");
         File[] listOfFiles = folder.listFiles();
@@ -32,8 +37,8 @@ public class TransformerRunner {
             if (orgProgDir.isDirectory()) {
                 // if (!orgProgDir.getName().contains("radon.pooling"))
                 //         continue;
-                if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
-                    continue;
+                // if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
+                //    continue;
                 try {
                     File newDir = new File(targetOrgDir + orgProgDir.getName());
                     newDir.mkdir();
@@ -54,8 +59,8 @@ public class TransformerRunner {
                 }
             }
             i++;
-            // if (i>1)
-            //     break;
+            if (i>1)
+                break;
         }
         System.out.println(restFiles);
 

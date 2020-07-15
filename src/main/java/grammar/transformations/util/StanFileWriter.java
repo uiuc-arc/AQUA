@@ -4,10 +4,17 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLOutput;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StanFileWriter {
+    List<String> orderedOrgList;
 
     public void writeStanCode(String stanCode, String newFilePath) {
         System.out.println("====================Writing" + newFilePath);
@@ -29,7 +36,14 @@ public class StanFileWriter {
         String strFilePath = oldFilePath.getAbsolutePath();
         String progName = oldFilePath.getName();
         createStanDir(strFilePath + "_" + transName);
-        writeStanCode(transWriter.getStanCode(), strFilePath + "_" + transName + "/" + progName + "_" + transName + ".stan");
+        String stancode = transWriter.getStanCode();
+        if(!orderedOrgList.isEmpty()){
+            System.out.println(orderedOrgList);
+            for (String ll:orderedOrgList)
+                stancode = stancode.replace(ll.replaceAll("\\s*[a-zA-Z0-9_]*ordered","vector"), ll);
+
+        }
+        writeStanCode(stancode, strFilePath + "_" + transName + "/" + progName + "_" + transName + ".stan");
         writeStanCode(transWriter.getCode(), strFilePath + "_" + transName + "/" + progName + "_" + transName + ".template");
     }
 
@@ -52,9 +66,25 @@ public class StanFileWriter {
 
         String strFilePath = filePath.getAbsolutePath();
         String progName = filePath.getName();
+        List<String> contents = Files.readAllLines(Paths.get(strFilePath+ "/" + progName + ".stan"), StandardCharsets.US_ASCII);
+        orderedOrgList = new ArrayList<>();
+        FileWriter newCopyOrg = new FileWriter(strFilePath + "/" + progName + "_copy.stan");
+        for (String ll:contents) {
+            if (ll.contains("ordered")) {
+                orderedOrgList.add(ll);
+            }
+            newCopyOrg.write(ll.replaceAll("\\b[a-zA-Z0-9_]*ordered","vector") + "\n");
+        }
+        newCopyOrg.close();
 
-        TransWriter transWriter = new TransWriter(strFilePath+ "/" + progName + ".stan",
+        TransWriter transWriter;
+        if (orderedOrgList.isEmpty())
+            transWriter = new TransWriter(strFilePath+ "/" + progName + ".stan",
                 strFilePath + "/" + progName + ".data.R");
+        else {
+            transWriter = new TransWriter(strFilePath + "/" + progName + "_copy.stan",
+                    strFilePath + "/" + progName + ".data.R");
+        }
 
         try {
             transWriter.transformObserveToLoop();
@@ -119,6 +149,8 @@ public class StanFileWriter {
         int paramCount = 0;
         try {
             while (existNext){
+                if (paramCount > 2)
+                    break;
                 System.out.println("========Localizing Param " + paramCount + "========");
                 transWriter.resetCode();
                 existNext = transWriter.transformLocalizer(paramCount);
