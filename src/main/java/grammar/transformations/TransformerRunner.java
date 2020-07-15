@@ -19,8 +19,8 @@ public class TransformerRunner {
         //         inputTransDir = ll.split("=")[1].split(" ")[0];
         // }
         // in.close();
-        inputOrgDir = "~/Documents/are/aura_package/autotemp/timeseries_org";
-        inputTransDir = "~/Documents/are/aura_package/autotemp/custom_trans";
+        inputOrgDir = "/home/zixin/Documents/are/aura_package/autotemp/timeseries_org";
+        inputTransDir = "/home/zixin/Documents/are/aura_package/autotemp/custom_trans";
 
         System.out.println(inputOrgDir);
         System.out.println(inputTransDir);
