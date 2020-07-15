@@ -33,6 +33,7 @@ public class TransformerRunner {
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
+        ArrayList<String> transFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
                 // if (!orgProgDir.getName().contains("radon.pooling"))
@@ -53,18 +54,20 @@ public class TransformerRunner {
                     //         FileUtils.copyFileToDirectory(orgProgDirFile, newDir);
                     //     }
                     stanFileWriter.tryAllTrans(newDir);
+                    transFiles.add(orgProgDir.getName());
                 } catch (Exception e) {
                     restFiles.add(orgProgDir.getName());
                     e.printStackTrace();
                 }
+
             }
             i++;
             if (i>1)
                 break;
         }
         System.out.println("=====================");
-        System.out.println("Successfully Transformed " + i + " Files!");
-        System.out.println("Files Failed: " + restFiles);
+        System.out.println("Successfully Transformed " + i + " Files:" + transFiles);
+        System.out.println("Translation Failed for: " + restFiles);
         System.out.println("=====================");
 
     }
