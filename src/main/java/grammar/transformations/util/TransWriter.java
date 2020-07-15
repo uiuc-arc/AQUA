@@ -115,7 +115,7 @@ public class TransWriter {
         return functionPrefix + stanTranslator.getCode();
     }
 
-    public String getStanGenCode () throws Exception {
+    public String getStanGenCode (String progpath) throws Exception {
         File file = File.createTempFile(tempFileName, suffix);
         FileUtils.writeStringToFile(file, code);
         CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null, false);
@@ -125,7 +125,7 @@ public class TransWriter {
         FileUtils.writeStringToFile(file, orgGenCode.genCode);
         StanTranslator stanTranslator = new StanTranslator();
         stanTranslator.translate((new CFGBuilder(file.getAbsolutePath(), null, false)).getSections());
-        PrintWriter out = new PrintWriter(tempFileName + ".npl");
+        PrintWriter out = new PrintWriter(progpath + ".npl");
         out.println(orgGenCode.nplCode);
         out.close();
         return stanTranslator.getCode();

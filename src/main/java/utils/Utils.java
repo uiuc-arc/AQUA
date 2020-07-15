@@ -204,12 +204,10 @@ public class Utils {
         try {
             String[] configFileNameSplit = DISTRIBUTIONSFILE.split("/");
             String configFileName = configFileNameSplit[configFileNameSplit.length - 1];
-            // System.out.println(configFileName);
-            // Path temp = Files.createTempFile(configFileName.split("\\.")[0],"." + // configFileName.split("\\.")[1]);
-            // System.out.println(Utils.class.getClassLoader().getResourceAsStream(configFileName));
-            // Files.copy(Utils.class.getClassLoader().getResourceAsStream(configFileName), temp, StandardCopyOption.REPLACE_EXISTING);
-            // fis = new FileInputStream(temp.toFile());
-            fis = new FileInputStream(configFileName);
+            Path temp = Files.createTempFile(configFileName.split("\\.")[0],"." +  configFileName.split("\\.")[1]);
+            Files.copy(Utils.class.getClassLoader().getResourceAsStream(configFileName), temp, StandardCopyOption.REPLACE_EXISTING);
+            fis = new FileInputStream(temp.toFile());
+            // fis = new FileInputStream(configFileName);
             JsonReader jsonReader = Json.createReader(fis);
             JsonObject jsonObject = jsonReader.readObject();
             models = new ArrayList<>();

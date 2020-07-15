@@ -62,7 +62,10 @@ public class TransformerRunner {
             if (i>1)
                 break;
         }
-        System.out.println(restFiles);
+        System.out.println("=====================");
+        System.out.println("Successfully Transformed " + i + " Files!");
+        System.out.println("Files Failed: " + restFiles);
+        System.out.println("=====================");
 
     }
 }
