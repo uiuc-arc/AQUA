@@ -39,7 +39,7 @@ public class StanFileWriter {
         String stancode = transWriter.getStanCode();
         if(!orderedOrgList.isEmpty()){
             for (String ll:orderedOrgList)
-                stancode = stancode.replace(ll.replaceAll("\\s*[a-zA-Z0-9_]*ordered","vector"), ll);
+                stancode = stancode.replace(ll.replaceAll("\\s*[a-zA-Z0-9_]*ordered|\\s*[a-zA-Z0-9_]*simplex","vector"), ll);
 
         }
         writeStanCode(stancode, strFilePath + "_" + transName + "/" + progName + "_" + transName + ".stan");
@@ -72,7 +72,7 @@ public class StanFileWriter {
             if (ll.contains("ordered")) {
                 orderedOrgList.add(ll);
             }
-            newCopyOrg.write(ll.replaceAll("\\b[a-zA-Z0-9_]*ordered","vector") + "\n");
+            newCopyOrg.write(ll.replaceAll("\\b[a-zA-Z0-9_]*ordered|\\s*[a-zA-Z0-9_]*simplex","vector") + "\n");
         }
         newCopyOrg.close();
 
