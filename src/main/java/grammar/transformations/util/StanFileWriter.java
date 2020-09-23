@@ -69,7 +69,7 @@ public class StanFileWriter {
         orderedOrgList = new ArrayList<>();
         FileWriter newCopyOrg = new FileWriter(strFilePath + "/" + progName + "_copy.stan");
         for (String ll:contents) {
-            if (ll.contains("ordered")) {
+            if (ll.contains("ordered") || ll.contains("simplex")) {
                 orderedOrgList.add(ll);
             }
             newCopyOrg.write(ll.replaceAll("\\b[a-zA-Z0-9_]*ordered|\\s*[a-zA-Z0-9_]*simplex","vector") + "\n");
