@@ -223,6 +223,8 @@ public class CFGBuilder{
                 //addEdge(loopbody, newblock, null);
                 addEdge(loop_condition_block, newblock, "false");
                 addEdge(loopbody, loop_condition_block, "back");
+                forLoop.BBloopBody = loopbody;
+                forLoop.BBloopCond = loop_condition_block;
 
                 loop_condition_block.getSymbolTable().fork(newblock);
 

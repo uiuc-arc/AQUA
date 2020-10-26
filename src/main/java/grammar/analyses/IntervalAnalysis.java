@@ -1,0 +1,414 @@
+package grammar.analyses;
+
+import grammar.AST;
+import grammar.cfg.*;
+import grammar.cfg.BasicBlock;
+import grammar.cfg.Edge;
+import org.apache.commons.math.MathException;
+import org.apache.commons.math.distribution.*;
+import org.apache.commons.math3.analysis.function.Add;
+import org.apache.commons.math3.analysis.function.Log;
+import org.jgrapht.Graph;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.cpu.nativecpu.NDArray;
+import org.nd4j.linalg.factory.Broadcast;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.string.NDArrayStrings;
+import org.tensorflow.framework.TensorShapeProto;
+import sun.security.util.Length;
+import utils.Utils;
+
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import static java.lang.Math.log;
+import static org.nd4j.linalg.ops.transforms.Transforms.exp;
+
+
+public class IntervalAnalysis {
+    private Map<String, Pair<Double[], ArrayList<Integer>>> paramMap = new HashMap<>();
+    private Map<String, Pair<AST.Data, String>> dataList = new HashMap<>();
+    private Map<String, Double> scalarParam = new HashMap<>();
+    private int piCounts = 10-2;
+    private double pi = 0.1;
+
+
+    public void forwardAnalysis(ArrayList<Section> cfgSections) {
+
+        for (Section section : cfgSections) {
+            System.out.println(section.sectionType);
+            if (section.sectionType == SectionType.DATA) {
+                ArrayList<AST.Data> dataSets = section.basicBlocks.get(0).getData();
+                for (AST.Data dd: dataSets) {
+                    String dataString = Utils.parseData(dd, 'f');
+                    dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\.0,",",").replaceAll("\\.0$","");
+                    dataList.put(dd.decl.id.id, new Pair(dd, dataString));
+                }
+
+            } else if(section.sectionType == SectionType.FUNCTION) {
+                System.out.println(section.sectionName);
+                if (section.sectionName.equals("main"))
+                    for (BasicBlock basicBlock: section.basicBlocks) {
+                        BlockAnalysis(basicBlock);
+                    }
+
+            } else if(section.sectionType == SectionType.QUERIES) {
+                for (BasicBlock basicBlock: section.basicBlocks)
+                    for (Statement statement : basicBlock.getStatements())
+                        System.out.println(statement.statement.toString());
+
+            }
+
+        }
+    }
+
+    private void BlockAnalysis(BasicBlock basicBlock) {
+        IntervalState intervalState = new IntervalState();
+        for (Statement statement : basicBlock.getStatements()) {
+            if (statement.statement instanceof AST.Decl) {
+                System.out.println("Decl: " + statement.statement.toString());
+                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
+                addParams(statement);
+                System.out.println(statement.statement.toString());
+                // if (annotations != null && !annotations.isEmpty() &&
+                //         (annotations.get(0).annotationType == AST.AnnotationType.Prior ||
+                //                 annotations.get(0).annotationType == AST.AnnotationType.Limits)
+                //         ) {
+                //     addParams(statement);
+                //     System.out.println(statement.statement.toString());
+                // }
+                // else {
+                //
+                // }
+            } else if (statement.statement instanceof AST.AssignmentStatement) {
+                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
+                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                if (annotations != null && !annotations.isEmpty() &&
+                        annotations.get(0).annotationType == AST.AnnotationType.Observe) {
+                    System.out.println("Observe (assign): " + statement.statement.toString());
+                    String dataYID = assignment.lhs.toString();
+                    if (!dataYID.contains("[")) {
+                        Pair<AST.Data, String> yDataPair = dataList.get(dataYID);
+                        String yValue = yDataPair.getValue();
+                        double[] yArray = Arrays.stream(yValue.split(",")).mapToDouble(Double::parseDouble).toArray();
+                        ObsDistr(yArray, assignment, intervalState);
+                    }
+                } else {
+                    System.out.println("Assignment: " + statement.statement.toString());
+                    String paramID = assignment.lhs.toString().split("\\[")[0];
+                    if (!paramMap.containsKey(paramID)) {
+                        addParams(statement);
+                    }
+                    Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
+                    Double[] paramLimits = paramInfo.getKey();
+                    ArrayList<Integer> paramDims = paramInfo.getValue();
+                    if (isIndependent(assignment.rhs)) {
+                        System.out.println("Independent param");
+                        INDArray[] distrArray = IndDistr(assignment.rhs, paramLimits);
+                        // System.out.println(new NDArrayStrings(15).format(distrArray[0]));
+                        // System.out.println(new NDArrayStrings(15).format(distrArray[1]));
+                        // System.out.println(new NDArrayStrings(15).format(distrArray[2]));
+                        // System.out.println(distrArray[1]);
+                        // System.out.println(distrArray[2]);
+                        if (paramDims.size() == 1) {
+                            for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
+                                intervalState.addIndParam(String.format("%s[%s]", paramID, jj),
+                                        distrArray[0], distrArray[1], distrArray[2]);
+                            }
+                        } else if (paramDims.size() == 2) {
+                            for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
+                                for (Integer kk = 1; kk <= paramDims.get(1); kk++)
+                                    intervalState.addIndParam(String.format("%s[%s,%s]", paramID, jj, kk),
+                                            distrArray[0], distrArray[1], distrArray[2]);
+                            }
+                        } else if (paramDims.size() == 0)
+                            intervalState.addIndParam(paramID,
+                                    distrArray[0], distrArray[1], distrArray[2]);
+                        intervalState.printAbsState();
+                    }
+                    // TODO: dependent 
+                }
+            } else if (statement.statement instanceof AST.FunctionCallStatement) {
+                System.out.println("FunctionCall: " + statement.statement.toString());
+
+            } else if (statement.statement instanceof AST.IfStmt) {
+                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+                // BlockAnalysis(ifStmt.BBtrueBlock);
+                // BlockAnalysis(ifStmt.BBelseBlock);
+            } else if (statement.statement instanceof AST.ForLoop) {
+                AST.ForLoop forLoop = (AST.ForLoop) statement.statement;
+                System.out.println("ForLoop: "+ statement.statement);
+                // BlockAnalysis(forLoop.BBloopBody);
+            }
+        }
+        basicBlock.dataflowFacts = intervalState;
+    }
+
+    private void ObsDistr(double[] yArray, AST.AssignmentStatement assignment, IntervalState intervalState) {
+        int yLength = yArray.length;
+        long traceLength = intervalState.intervalProbPairs.shape()[0];
+        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+        INDArray[] params = new NDArray[distrExpr.parameters.size()];
+        int parami = 0;
+        for (AST.Expression pp: distrExpr.parameters) {
+            if (pp instanceof AST.Integer) {
+                params[parami] = Nd4j.create(new int[]{((AST.Integer) pp).value});
+
+            }
+            else if (pp instanceof AST.Double) {
+                params[parami] = Nd4j.create(new double[]{((AST.Double) pp).value});
+            }
+            else {
+                params[parami] = Distr(pp, intervalState);
+                System.out.println(String.format("param %s: %s,%s,%s",pp.toString(), params[parami].shape()[0],params[parami].shape()[1],params[parami].shape()[2]));
+            }
+            parami++;
+        }
+        if (distrExpr.id.id.equals("normal")) {
+            double[][] obsProb = new double[4][(int) traceLength];
+            for (int yi=0; yi < yLength; yi++) {
+                for (int ti=0; ti < traceLength; ti++) {
+
+                    INDArray mu = params[0];
+                    INDArray sigma = params[1];
+                    NormalDistributionImpl normal0 = new NormalDistributionImpl(mu.getDouble(ti,yi,0), sigma.getDouble(ti,0,0) + 0.0001);
+                    NormalDistributionImpl normal1 = new NormalDistributionImpl(mu.getDouble(ti,yi,0), sigma.getDouble(ti,0,1) + 0.0001);
+                    NormalDistributionImpl normal2 = new NormalDistributionImpl(mu.getDouble(ti,yi,1), sigma.getDouble(ti,0,0) + 0.0001);
+                    NormalDistributionImpl normal3 = new NormalDistributionImpl(mu.getDouble(ti,yi,1), sigma.getDouble(ti,0,1) + 0.0001);
+                    obsProb[0][ti] += log(normal0.density(yArray[yi]));
+                    obsProb[1][ti] += log(normal1.density(yArray[yi]));
+                    obsProb[2][ti] += log(normal2.density(yArray[yi]));
+                    obsProb[3][ti] += log(normal3.density(yArray[yi]));
+                }
+            }
+            INDArray newProb = exp(Nd4j.create(obsProb)).transpose();
+            INDArray NormNewProb = newProb.diviRowVector(newProb.sum(0));
+            newProb = null;
+            params = null;
+            obsProb = null;
+            System.gc();
+            System.out.println(NormNewProb);
+            System.out.println(intervalState.intervalProbPairs.shape()[1]);
+            System.out.println(NormNewProb.shape()[1]);
+            intervalState.intervalProbPairs = Nd4j.concat(1, intervalState.intervalProbPairs, NormNewProb);
+            Nd4j.writeTxt(intervalState.intervalProbPairs, "./analysis_out.txt");
+        }
+    }
+
+    private INDArray Distr(AST.Expression pp, IntervalState intervalState) {
+        if (pp instanceof AST.Id) {
+            return Distr((AST.Id) pp, intervalState);
+        }
+        else if (pp instanceof AST.AddOp) {
+            return Distr((AST.AddOp) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.MulOp) {
+            return Distr((AST.MulOp) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.Braces) {
+            return Distr((AST.Braces) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.ArrayAccess) {
+            return Distr((AST.ArrayAccess) pp, intervalState);
+        }
+        return null;
+    }
+
+    private INDArray Distr(AST.Id pp, IntervalState intervalState) {
+        System.out.println("Distr ID=================");
+        System.out.println(Runtime.getRuntime().totalMemory());
+
+        if (dataList.containsKey(pp.id)) {
+            Pair<AST.Data, String> xDataPair = dataList.get(pp.id);
+            String xValue = xDataPair.getValue();
+            double[] xArray = Arrays.stream(xValue.split(",")).mapToDouble(Double::parseDouble).toArray();
+            System.gc();
+            return Nd4j.create(xArray).reshape(1,-1);
+
+        }
+        else if (scalarParam.containsKey(pp.id)) {
+            return Nd4j.create(new double[]{scalarParam.get(pp.id)});
+        }
+        else {
+            int ididx = intervalState.paramMap.get(pp.id);
+            return intervalState.intervalProbPairs.getColumns(ididx, ididx + 1).reshape(-1,1,2);
+        }
+    }
+
+    private INDArray Distr(AST.ArrayAccess pp, IntervalState intervalState) {
+        System.out.println("Distr ArrayAccess==================");
+        // if (dataList.containsKey(pp.id)) {
+
+        // }
+        // else {
+        int ididx = intervalState.paramMap.get(pp.toString());
+        return intervalState.intervalProbPairs.getColumns(ididx, ididx + 1).reshape(-1,1,2);
+        // }
+    }
+
+    private INDArray Distr(AST.Braces pp, IntervalState intervalState) {
+        System.out.println("Distr Brace==================");
+        return Distr(pp.expression, intervalState);
+    }
+
+    private INDArray Distr(AST.AddOp pp, IntervalState intervalState) {
+        System.out.println("Distr Add==================");
+        INDArray op1Array = Distr(pp.op1, intervalState);
+        INDArray op2Array = Distr(pp.op2, intervalState);
+        System.gc();
+        INDArray retArray = null;
+        if (op1Array.shape().length > 1 && op1Array.shape()[1] == 1) {
+            retArray = Nd4j.stack(2, op2Array.slice(0, 2).addColumnVector(op1Array.slice(0, 2)), op2Array.slice(1, 2).addColumnVector(op1Array.slice(1, 2)));
+        }
+        else if (op2Array.shape().length > 1 && op2Array.shape()[1] == 1)
+            retArray = Nd4j.stack(2, op1Array.slice(0, 2).addColumnVector(op2Array.slice(0, 2)), op1Array.slice(1, 2).addColumnVector(op2Array.slice(1, 2)));
+        else
+            retArray = Nd4j.stack(2, op1Array.slice(0, 2).add(op2Array.slice(0, 2)), op1Array.slice(1, 2).add(op2Array.slice(1, 2)));
+        op1Array = null;
+        op2Array = null;
+        System.gc();
+        return retArray;
+    }
+
+    private INDArray Distr(AST.MulOp pp, IntervalState intervalState) {
+        System.out.println("Distr Mul==================");
+        INDArray op1Array = Distr(pp.op1, intervalState);
+        INDArray op2Array = Distr(pp.op2, intervalState);
+        String op1Id = pp.op1.toString().split("\\[")[0].replace("(","");
+        String op2Id = pp.op2.toString().split("\\[")[0].replace("(","");
+        INDArray retArray;
+        if ((dataList.containsKey(op1Id) && paramMap.containsKey(op2Id))){
+            retArray = Nd4j.stack(2, op2Array.slice(0,2).mmul(op1Array), op2Array.slice(1,2).mmul(op1Array));
+        }
+        else if (dataList.containsKey(op2Id) && paramMap.containsKey(op1Id)) {
+            retArray = Nd4j.stack(2, op1Array.slice(0, 2).mmul(op2Array), op1Array.slice(1, 2).mmul(op2Array));
+            // System.out.println(op1Id + " " + op2Id);
+            // System.out.println(String.format("%s,%s, %s", retArray.shape()[0], retArray.shape()[1], retArray.shape()[2]));
+            // System.out.println(String.format("%s,%s", op1Array.shape()[0], op1Array.shape()[1]));
+            // System.out.println(String.format("%s,%s", op2Array.shape()[0], op2Array.shape()[1]));
+            // System.out.println(String.format("%s,%s", retArray.slice(1, 2).shape()[0], retArray.slice(1,2).shape()[1]));
+            // System.out.println(Nd4j.hstack(Nd4j.arange(4).reshape(4,1).mmul(Nd4j.arange(3).reshape(1,3)),
+            // Nd4j.arange(4,8).reshape(4,1).mmul(Nd4j.arange(3).reshape(1,3))));
+        }
+        else {
+            retArray = Nd4j.stack(2, op1Array.slice(0, 2).mul(op2Array.slice(0, 2)), op1Array.getColumn(1, true).mul(op2Array.slice(1, 2)));
+        }
+        op1Array = null;
+        op2Array = null;
+        System.gc();
+        return retArray;
+    }
+
+    private boolean isIndependent(AST.Expression rhs) {
+        if (rhs instanceof AST.FunctionCall) {
+            AST.FunctionCall distrExpr = (AST.FunctionCall) rhs;
+            for (AST.Expression pp: distrExpr.parameters){
+                if(!(pp instanceof AST.Integer || pp instanceof AST.Double)){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // private INDArray[] Distr(AST.Expression expr) {
+    //     Double[] paramLimits = {null,null};
+    //     return Distr(expr, paramLimits);
+
+    // }
+
+    // private INDArray sameTraceExprs(ArrayList<AST.Expression> parameters) {
+    //     return retArray;
+    // }
+
+
+    private INDArray[] IndDistr(AST.Expression expr, Double[] paramLimits) {
+        // if (rhs instanceof AST.F)
+        double[] lower = new double[piCounts];
+        double[] upper = new double[piCounts];
+        if (expr instanceof AST.FunctionCall) {
+            AST.FunctionCall distrExpr = (AST.FunctionCall) expr;
+            ArrayList<Double> funcParams = new ArrayList<>();
+            for (AST.Expression pp: distrExpr.parameters){
+                if (pp instanceof AST.Integer)
+                    funcParams.add((double) ((AST.Integer) pp).value);
+                else
+                    funcParams.add(((AST.Double) pp).value);
+            }
+            String distrName = distrExpr.id.id;
+            if (distrName.equals("normal")) {
+                NormalDistribution normal = new NormalDistributionImpl(funcParams.get(0), funcParams.get(1));
+                getDiscretePriors(lower, upper, normal);
+            }
+            else if (distrName.equals("gamma")) {
+                GammaDistribution gamma = new GammaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                getDiscretePriors(lower, upper, gamma);
+            }
+        }
+        // retArray[0]: prob, [1] lower, [2] upper
+        return new INDArray[]{Nd4j.zeros(DataType.DOUBLE,piCounts).addi(pi), Nd4j.create(lower), Nd4j.create(upper)};
+
+
+    }
+
+    private void getDiscretePriors(double[] lower, double[] upper, ContinuousDistribution normal) {
+        int ii = 0;
+        for(double pp=pi; pp <= 1-2*pi; pp += pi) {
+            try {
+                lower[ii] = normal.inverseCumulativeProbability(pp);
+                upper[ii] = normal.inverseCumulativeProbability(pp+pi);
+            } catch (MathException e) {
+                e.printStackTrace();
+            }
+            ii++;
+        }
+    }
+
+    private void addParams(Statement statement) {
+        if (statement.statement instanceof AST.Decl) {
+            AST.Decl declStatement = (AST.Decl) statement.statement;
+            Double[] limits = {null, null};
+            for(AST.Annotation aa : declStatement.annotations) {
+                if (aa.annotationType == AST.AnnotationType.Limits){
+                    if (aa.annotationValue instanceof AST.Limits) {
+                        AST.Limits aaLimits = (AST.Limits) aa.annotationValue;
+                        if(aaLimits.lower != null)
+                            limits[0] = Double.valueOf(aaLimits.lower.toString());
+                        if(aaLimits.upper != null)
+                            limits[1] = Double.valueOf(aaLimits.upper.toString());
+                    }
+                }
+            }
+            ArrayList<Integer> dimArray = new ArrayList<>();
+            if (declStatement.dtype.dims != null) {
+                for (AST.Expression dd: declStatement.dtype.dims.dims) {
+                    getConstN(dimArray, dd);
+                }
+            }
+            if (declStatement.dims != null) {
+                for (AST.Expression dd : declStatement.dims.dims) {
+                    getConstN(dimArray, dd);
+                }
+            }
+            paramMap.put(declStatement.id.id, new Pair(limits, dimArray));
+        }
+    }
+
+    private void getConstN(ArrayList<Integer> dimArray, AST.Expression dd) {
+        if (dd.toString().matches("\\d+"))
+            dimArray.add(Integer.valueOf(dd.toString()));
+        else {
+            Pair<AST.Data, String> dataPair = dataList.get(dd.toString());
+            AST.Data data = dataPair.getKey();
+            assert (data.decl.dtype.primitive == AST.Primitive.INTEGER);
+            dimArray.add(Integer.valueOf(data.expression.toString()));
+        }
+    }
+}

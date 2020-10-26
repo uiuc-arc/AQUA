@@ -1,5 +1,6 @@
 package grammar;
 
+import grammar.cfg.BasicBlock;
 import utils.Utils;
 
 import javax.json.JsonObject;
@@ -80,6 +81,8 @@ public class AST {
         public Id loopVar;
         public Range range;
         public Block block;
+        public BasicBlock BBloopBody;
+        public BasicBlock BBloopCond;
 
         public ForLoop(Id loopVar, Range range, Block block) {
             this.loopVar = loopVar;
@@ -112,6 +115,8 @@ public class AST {
         public Expression condition;
         public Block trueBlock;
         public Block elseBlock;
+        public BasicBlock BBtrueBlock;
+        public BasicBlock BBelseBlock;
 
         public IfStmt() {
 
