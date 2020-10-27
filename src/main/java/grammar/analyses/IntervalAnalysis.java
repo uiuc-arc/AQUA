@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.lang.Math.log;
+import static java.lang.Math.pow;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 
@@ -33,8 +34,8 @@ public class IntervalAnalysis {
     private Map<String, Pair<Double[], ArrayList<Integer>>> paramMap = new HashMap<>();
     private Map<String, Pair<AST.Data, String>> dataList = new HashMap<>();
     private Map<String, Double> scalarParam = new HashMap<>();
-    private int piCounts = 10-2;
-    private double pi = 0.1;
+    private int piCounts = 100;
+    private double pi = 0.01;
 
 
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
@@ -194,8 +195,39 @@ public class IntervalAnalysis {
             System.out.println(NormNewProb);
             System.out.println(intervalState.intervalProbPairs.shape()[1]);
             System.out.println(NormNewProb.shape()[1]);
-            intervalState.intervalProbPairs = Nd4j.concat(1, intervalState.intervalProbPairs, NormNewProb);
-            Nd4j.writeTxt(intervalState.intervalProbPairs, "./analysis_out.txt");
+            outputResults(intervalState, NormNewProb);
+        }
+    }
+
+    private void outputResults(IntervalState intervalState, INDArray normNewProb) {
+        int numParams = intervalState.paramMap.keySet().size();
+        int[] shapeArray = new int[numParams];
+        for (int i = 0; i < numParams; i++)
+            shapeArray[i] = piCounts;
+        int parami = 0;
+        for (String param: intervalState.paramMap.keySet()) {
+            INDArray outputTable = new NDArray(piCounts, 2 + normNewProb.shape()[1]);
+            INDArray[] paramLU = intervalState.getParam(param);
+            int paramInd = intervalState.getParamIdx(param);
+            int[] paramIndArray = new int[numParams - 1];
+            for (int i = 0; i < paramInd; i++)
+                paramIndArray[i] = i;
+            for (int i = paramInd; i < numParams - 1; i++)
+                paramIndArray[i] = i + 1;
+            INDArray lowerCube = paramLU[0].reshape(shapeArray);
+            INDArray upperCube = paramLU[1].reshape(shapeArray);
+            System.out.println("==========" + param);
+            System.out.println(Arrays.toString(paramIndArray));
+            outputTable.putColumn(0, lowerCube.vectorAlongDimension(0,paramInd));
+            outputTable.putColumn(1, upperCube.vectorAlongDimension(0,paramInd));
+
+            for (int probi = 0; probi < normNewProb.shape()[1]; probi++) {
+                INDArray probCol = normNewProb.getColumn(probi);
+                INDArray probCube = probCol.reshape(shapeArray);
+                outputTable.putColumn(2 + probi, probCube.sum(paramIndArray));
+            }
+            // System.out.println(outputTable);
+            Nd4j.writeTxt(outputTable, "./analysis_"+ param + ".txt");
         }
     }
 
@@ -360,7 +392,8 @@ public class IntervalAnalysis {
 
     private void getDiscretePriors(double[] lower, double[] upper, ContinuousDistribution normal) {
         int ii = 0;
-        for(double pp=pi; pp <= 1-2*pi; pp += pi) {
+        //for(double pp=pi; pp <= 1-2*pi; pp += pi) {
+        for(double pp=0; pp <= 1-1*pi; pp += pi) {
             try {
                 lower[ii] = normal.inverseCumulativeProbability(pp);
                 upper[ii] = normal.inverseCumulativeProbability(pp+pi);
@@ -369,6 +402,14 @@ public class IntervalAnalysis {
             }
             ii++;
         }
+        if (lower[0] == Double.NEGATIVE_INFINITY)
+            lower[0] = Double.MIN_VALUE;
+        if (upper[0] == Double.NEGATIVE_INFINITY)
+            upper[0] = Double.MIN_VALUE;
+        if (lower[1] == Double.POSITIVE_INFINITY)
+            lower[1] = Double.MAX_VALUE;
+        if (upper[1] == Double.POSITIVE_INFINITY)
+            upper[1] = Double.MAX_VALUE;
     }
 
     private void addParams(Statement statement) {

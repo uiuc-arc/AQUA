@@ -42,6 +42,10 @@ public class IntervalState extends AbstractState{
         return new INDArray[]{intervalProbPairs.getColumn(paramIdx), intervalProbPairs.getColumn(paramIdx + 1)};
     }
 
+    public int getParamIdx(String paramName) {
+        return (paramMap.get(paramName) - 1)/2;
+    }
+
     @Override
     public void printAbsState() {
         // for (Pair intervalProbPair: IntervalProbPairs) {
