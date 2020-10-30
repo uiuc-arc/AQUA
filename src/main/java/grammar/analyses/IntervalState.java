@@ -1,18 +1,64 @@
 package grammar.analyses;
 
+import com.google.common.primitives.Ints;
+import grammar.AST;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 
 public class IntervalState extends AbstractState{
     public Map<String, Integer> paramMap = new HashMap<>();// idx for lower, upper idx is lower + 1
     public INDArray intervalProbPairs = null; // each row has prob, param1_l, param1_u, param2...
+    public List<Integer> dimSize = new ArrayList<>(); // length of each dim, shape of probCube
+    public List<INDArray> probCube = new ArrayList<>();
+    public Map<String, Pair<Integer, INDArray>> paramValues = new HashMap<>(); // dim idx and values of params
 
+    public void addParamCube(String paramName, INDArray splits, INDArray probLower, INDArray probUpper) {
+        int currDim = dimSize.size();
+        paramValues.put(paramName, new Pair<>(currDim, splits));
+        int newSplitLen = (int) splits.shape()[0];
+        if (currDim == 0) {
+            dimSize.add(newSplitLen);
+            probCube.add(probLower);
+            probCube.add(probUpper);
+        }
+        else {
+            INDArray oldProbLower = probCube.get(0);
+            INDArray oldProbUpper = probCube.get(1);
+            dimSize.add(1);
+            int[] singleDim = new int[dimSize.size()];
+            Arrays.fill(singleDim, 1);
+            singleDim[dimSize.size() - 1] = newSplitLen;
+            // dimSize: 2,3,4,1  singleDim: 1,1,1,5
+            int[] oldDimSize = Ints.toArray(dimSize);
+            dimSize.set(dimSize.size() - 1, newSplitLen);
+            INDArray outComeDimSize = Nd4j.create(dimSize);
+            probCube.add(oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).mul(probLower.reshape(singleDim)).broadcast(outComeDimSize));
+            probCube.add(oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).mul(probUpper.reshape(singleDim)).broadcast(outComeDimSize));
+        }
+    }
+
+    public INDArray getParamCube(String paramName) {
+        Pair<Integer, INDArray> paramValuePair = paramValues.get(paramName);
+        int[] singleDim = new int[dimSize.size()];
+        Arrays.fill(singleDim, 1);
+        int paramDim = paramValuePair.getKey();
+        singleDim[paramDim] = dimSize.get(paramDim);
+        return paramValuePair.getValue().reshape(singleDim);
+    }
+
+    public int[] getDim4Data(int dataLength) {
+        int[] singleDim = new int[dimSize.size() + 1];
+        Arrays.fill(singleDim, 1);
+        singleDim[dimSize.size()] = dataLength;
+        return singleDim;
+    }
+
+    // deprecated
     public void addIndParam(String paramName, INDArray prob, INDArray lower, INDArray upper) {
         if (intervalProbPairs != null) {
             Integer paramIdx = (int) intervalProbPairs.shape()[1]; // idx for lower

@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
+import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
 import translators.Stan2IRTranslator;
 
@@ -68,15 +69,14 @@ public class TestIntervalAnalysis {
     @Test
     public void TestNd4j() {
         INDArray indArray = Nd4j.arange(6);
+        INDArray indArray2 = Nd4j.arange(4);
         double [][] new_array = {{0.3,0.8,44},{0.4,0.5,55}};
         INDArray nnn = Nd4j.create(new_array);
-        indArray = Nd4j.toFlattened(Nd4j.repeat(indArray, (int) nnn.shape()[0]));
-        nnn = nnn.repeat(0,6);
-        nnn.getColumn(0).assign(nnn.getColumn(0).mul(indArray));
-        System.out.println(nnn);
-        System.out.println(Nd4j.hstack(indArray.reshape(12,1),indArray.reshape(12,1)));
-        System.out.println(Nd4j.hstack( nnn, indArray.reshape(12,1), indArray.reshape(12,1)));
-        System.out.println(indArray);
+        System.out.println(indArray.reshape(6,1).repeat(1,4));
+        System.out.println(indArray2.reshape(1,4).repeat(0,6));
+        System.out.println(indArray.reshape(6,1).repeat(1,4).mul(indArray2.reshape(1,4).repeat(0,6)));
+        INDArray z = Nd4j.createUninitialized(6,4);
+        System.out.println(nnn.reshape(2,3,1).broadcast(2,3,4).mul(indArray2.reshape(1,1,4).broadcast(2,3,4)));
 
     }
 

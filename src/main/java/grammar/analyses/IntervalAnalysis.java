@@ -8,9 +8,12 @@ import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.analysis.function.Add;
 import org.apache.commons.math3.analysis.function.Log;
+import org.apache.commons.math3.distribution.AbstractRealDistribution;
+import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.jgrapht.Graph;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.random.impl.UniformDistribution;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
@@ -54,7 +57,7 @@ public class IntervalAnalysis {
                 System.out.println(section.sectionName);
                 if (section.sectionName.equals("main"))
                     for (BasicBlock basicBlock: section.basicBlocks) {
-                        BlockAnalysis(basicBlock);
+                        BlockAnalysisCube(basicBlock);
                     }
 
             } else if(section.sectionType == SectionType.QUERIES) {
@@ -66,6 +69,202 @@ public class IntervalAnalysis {
 
         }
     }
+
+    private void BlockAnalysisCube(BasicBlock basicBlock) {
+        IntervalState intervalState = new IntervalState();
+        for (Statement statement : basicBlock.getStatements()) {
+            if (statement.statement instanceof AST.Decl) {
+                System.out.println("Decl: " + statement.statement.toString());
+                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
+                addParams(statement);
+                System.out.println(statement.statement.toString());
+
+            } else if (statement.statement instanceof AST.AssignmentStatement) {
+                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
+                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                if (annotations != null && !annotations.isEmpty() &&
+                        annotations.get(0).annotationType == AST.AnnotationType.Observe) {
+                    System.out.println("Observe (assign): " + statement.statement.toString());
+                    String dataYID = assignment.lhs.toString();
+                    assert(dataYID.contains("["));
+                    Pair<AST.Data, String> yDataPair = dataList.get(dataYID);
+                    String yValue = yDataPair.getValue();
+                    double[] yArray = Arrays.stream(yValue.split(",")).mapToDouble(Double::parseDouble).toArray();
+                    ObsDistrCube(yArray, assignment, intervalState);
+                } else {
+                    System.out.println("Assignment: " + statement.statement.toString());
+                    String paramID = assignment.lhs.toString().split("\\[")[0];
+                    if (!paramMap.containsKey(paramID)) {
+                        // TODO
+                    }
+                }
+            } else if (statement.statement instanceof AST.FunctionCallStatement) {
+                System.out.println("FunctionCall: " + statement.statement.toString());
+
+            } else if (statement.statement instanceof AST.IfStmt) {
+                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+                // BlockAnalysis(ifStmt.BBtrueBlock);
+                // BlockAnalysis(ifStmt.BBelseBlock);
+            } else if (statement.statement instanceof AST.ForLoop) {
+                AST.ForLoop forLoop = (AST.ForLoop) statement.statement;
+                System.out.println("ForLoop: "+ statement.statement);
+                // BlockAnalysis(forLoop.BBloopBody);
+            }
+            basicBlock.dataflowFacts = intervalState;
+        }
+    }
+
+    private void ObsDistrCube(double[] yArray, AST.AssignmentStatement assignment, IntervalState intervalState) {
+        int yLength = yArray.length;
+        long traceLength = intervalState.intervalProbPairs.shape()[0];
+        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+        INDArray[] params = new NDArray[distrExpr.parameters.size()];
+        int parami = 0;
+        for (AST.Expression pp: distrExpr.parameters) {
+            if (pp instanceof AST.Integer) {
+                params[parami] = Nd4j.create(new int[]{((AST.Integer) pp).value});
+
+            }
+            else if (pp instanceof AST.Double) {
+                params[parami] = Nd4j.create(new double[]{((AST.Double) pp).value});
+            }
+            else {
+                params[parami] = DistrCube(pp, intervalState);
+                System.out.println(String.format("param %s: %s,%s,%s",pp.toString(), params[parami].shape()[0],params[parami].shape()[1],params[parami].shape()[2]));
+            }
+            parami++;
+        }
+    }
+
+    private INDArray DistrCube(AST.Expression pp, IntervalState intervalState) {
+        if (pp instanceof AST.Id) {
+            return DistrCube((AST.Id) pp, intervalState);
+        }
+        else if (pp instanceof AST.AddOp) {
+            return DistrCube((AST.AddOp) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.MulOp) {
+            return DistrCube((AST.MulOp) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.Braces) {
+            return DistrCube((AST.Braces) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.ArrayAccess) {
+            return DistrCube((AST.ArrayAccess) pp, intervalState);
+        }
+        return null;
+    }
+
+
+    private INDArray DistrCube(AST.Id pp, IntervalState intervalState) {
+        System.out.println("Distr ID=================");
+
+        if (dataList.containsKey(pp.id)) {
+            Pair<AST.Data, String> xDataPair = dataList.get(pp.id);
+            String xValue = xDataPair.getValue();
+            double[] xArray = Arrays.stream(xValue.split(",")).mapToDouble(Double::parseDouble).toArray();
+            return Nd4j.create(xArray).reshape(intervalState.getDim4Data(xArray.length));
+        }
+        else if (intervalState.paramValues.containsKey(pp.id)){
+            return intervalState.getParamCube(pp.id);
+        }
+        else {// uninitialized param on RHS,
+            String paramName = pp.toString();
+            addUninitParam(intervalState, paramName);
+            return intervalState.getParamCube(paramName);
+        }
+    }
+
+
+    private INDArray DistrCube(AST.ArrayAccess pp, IntervalState intervalState) {
+        System.out.println("Distr ArrayAccess==================");
+        // if (dataList.containsKey(pp.id)) {
+
+        // }
+        // else {
+        if (intervalState.paramValues.containsKey(pp.toString()))
+            return intervalState.getParamCube(pp.toString());
+        else if (dataList.containsKey(pp.id.id)) {
+            ArrayList<Integer> dims = new ArrayList<>();
+            for (AST.Expression dd : pp.dims.dims)
+                getConstN(dims, dd);
+            Pair<AST.Data, String> xDataPair = dataList.get(pp.id);
+            String xValue = xDataPair.getValue();
+            double[] xArray = Arrays.stream(xValue.split(",")).mapToDouble(Double::parseDouble).toArray();
+            double dataElement = xArray[dims.get(0)];
+            return Nd4j.create(new double[]{dataElement}, intervalState.getDim4Data(1));
+        }
+        else { // uninitialized param on RHS,
+            String paramName = pp.toString();
+            addUninitParam(intervalState, paramName);
+            return intervalState.getParamCube(paramName);
+        }
+    }
+
+    private void addUninitParam(IntervalState intervalState, String paramName) {
+        Pair<Double[], ArrayList<Integer>> LimitsDim = paramMap.get(paramName);
+        Double[] limits = LimitsDim.getKey();
+        double[] probLower = new double[piCounts];
+        double[] probUpper = new double[piCounts];
+        double[] single = new double[piCounts];
+        if (limits[0] != null && limits[1] != null) {
+            UniformRealDistribution unif = new UniformRealDistribution(limits[0], limits[1]);
+            getDiscretePriorsSingleUnif(single, probLower, probUpper, unif);
+        }
+        else if (limits[0] != null) {
+            if (limits[0] == 0) {
+                GammaDistribution gamma = new GammaDistributionImpl(1, 1);
+                getDiscretePriorsSingle(single, probLower, probUpper, gamma);
+            }
+            else{
+                UniformRealDistribution unif = new UniformRealDistribution(limits[0], limits[0] + 5);
+                getDiscretePriorsSingleUnif(single, probLower, probUpper, unif);
+            }
+        }
+        else if (limits[2] != null) {
+            NormalDistribution normal = new NormalDistributionImpl(limits[2], 1);
+            getDiscretePriorsSingle(single, probLower, probUpper, normal);
+        }
+        else { // all are null
+            NormalDistribution normal = new NormalDistributionImpl(0, 1);
+            getDiscretePriorsSingle(single, probLower, probUpper, normal);
+        }
+        intervalState.addParamCube(paramName, Nd4j.create(single), Nd4j.create(probLower), Nd4j.create(probUpper));
+    }
+
+    private INDArray DistrCube(AST.Braces pp, IntervalState intervalState) {
+        System.out.println("Distr Brace==================");
+        return DistrCube(pp.expression, intervalState);
+    }
+
+    private INDArray DistrCube(AST.AddOp pp, IntervalState intervalState) {
+        System.out.println("Distr Add==================");
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        long[] outShape = op1Array.shape().clone();
+        for (int i=0; i < outShape.length; i++) {
+            long op2Dimi = op2Array.shape()[i];
+            if (op2Array.shape()[i] > outShape[i])
+                outShape[i] = op2Dimi;
+        }
+        return op1Array.broadcast(outShape).add(op2Array.broadcast(outShape));
+    }
+
+    private INDArray DistrCube(AST.MulOp pp, IntervalState intervalState) {
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        long[] outShape = op1Array.shape().clone();
+        for (int i=0; i < outShape.length; i++) {
+            long op2Dimi = op2Array.shape()[i];
+            if (op2Array.shape()[i] > outShape[i])
+                outShape[i] = op2Dimi;
+        }
+        return op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
+    }
+
 
     private void BlockAnalysis(BasicBlock basicBlock) {
         IntervalState intervalState = new IntervalState();
@@ -110,11 +309,6 @@ public class IntervalAnalysis {
                     if (isIndependent(assignment.rhs)) {
                         System.out.println("Independent param");
                         INDArray[] distrArray = IndDistr(assignment.rhs, paramLimits);
-                        // System.out.println(new NDArrayStrings(15).format(distrArray[0]));
-                        // System.out.println(new NDArrayStrings(15).format(distrArray[1]));
-                        // System.out.println(new NDArrayStrings(15).format(distrArray[2]));
-                        // System.out.println(distrArray[1]);
-                        // System.out.println(distrArray[2]);
                         if (paramDims.size() == 1) {
                             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                                 intervalState.addIndParam(String.format("%s[%s]", paramID, jj),
@@ -255,7 +449,6 @@ public class IntervalAnalysis {
 
     private INDArray Distr(AST.Id pp, IntervalState intervalState) {
         System.out.println("Distr ID=================");
-        System.out.println(Runtime.getRuntime().totalMemory());
 
         if (dataList.containsKey(pp.id)) {
             Pair<AST.Data, String> xDataPair = dataList.get(pp.id);
@@ -412,10 +605,92 @@ public class IntervalAnalysis {
             upper[1] = Double.MAX_VALUE;
     }
 
+    private void getDiscretePriorsSingle(double[] single, double[] prob1, double[] prob2, ContinuousDistribution normal) {
+        HasDensity<Double> castHasDensity = (HasDensity<Double>) normal;
+        //for(double pp=pi; pp <= 1-2*pi; pp += pi) {
+        try {
+            single[0] = normal.inverseCumulativeProbability(0);
+            single[single.length - 1] = normal.inverseCumulativeProbability(1);
+        } catch (MathException e) {
+            e.printStackTrace();
+        }
+        if (single[0] == Double.NEGATIVE_INFINITY)
+            single[0] = Double.MIN_VALUE;
+        if (single[single.length - 1] == Double.POSITIVE_INFINITY)
+            single[single.length - 1] = Double.MAX_VALUE;
+        prob1[0] = 0;
+        prob1[prob1.length - 1] = 0;
+        prob2[0] = 0;
+        prob2[prob2.length - 1] = 0;
+        prob2[prob2.length - 2] = 0;
+        int ii = 1;
+        for(double pp=pi; pp <= 1 - pi; pp += pi, ii++) {
+            try {
+                single[ii] = normal.inverseCumulativeProbability(pp);
+                prob1[ii] = (castHasDensity.density(single[ii]));
+                prob2[ii - 1] = prob1[ii];
+            } catch (MathException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void getDiscretePriorsSingleUnif(double[] single, double[] prob1, double[] prob2, AbstractRealDistribution normal) {
+        AbstractRealDistribution castHasDensity = (AbstractRealDistribution) normal;
+        //for(double pp=pi; pp <= 1-2*pi; pp += pi) {
+        single[0] = normal.inverseCumulativeProbability(0);
+        single[single.length - 1] = normal.inverseCumulativeProbability(1);
+        if (single[0] == Double.NEGATIVE_INFINITY)
+            single[0] = Double.MIN_VALUE;
+        if (single[single.length - 1] == Double.POSITIVE_INFINITY)
+            single[single.length - 1] = Double.MAX_VALUE;
+        prob1[0] = 0;
+        prob1[prob1.length - 1] = 0;
+        prob2[0] = 0;
+        prob2[prob2.length - 1] = 0;
+        prob2[prob2.length - 2] = 0;
+        int ii = 1;
+        for(double pp=pi; pp <= 1 - pi; pp += pi, ii++) {
+            single[ii] = normal.inverseCumulativeProbability(pp);
+            prob1[ii] = (castHasDensity.density(single[ii]));
+            prob2[ii - 1] = prob1[ii];
+        }
+    }
+
+
+    private INDArray[] IndDistrSingle(AST.Expression expr, Double[] paramLimits) {
+        // if (rhs instanceof AST.F)
+        double[] single = new double[piCounts];
+        double[] prob1 = new double[piCounts];
+        double[] prob2 = new double[piCounts];
+        if (expr instanceof AST.FunctionCall) {
+            AST.FunctionCall distrExpr = (AST.FunctionCall) expr;
+            ArrayList<Double> funcParams = new ArrayList<>();
+            for (AST.Expression pp: distrExpr.parameters){
+                if (pp instanceof AST.Integer)
+                    funcParams.add((double) ((AST.Integer) pp).value);
+                else
+                    funcParams.add(((AST.Double) pp).value);
+            }
+            String distrName = distrExpr.id.id;
+            if (distrName.equals("normal")) {
+                NormalDistribution normal = new NormalDistributionImpl(funcParams.get(0), funcParams.get(1));
+                getDiscretePriorsSingle(single, prob1, prob2, normal);
+            }
+            else if (distrName.equals("gamma")) {
+                GammaDistribution gamma = new GammaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                getDiscretePriorsSingle(single, prob1, prob2, gamma);
+            }
+        }
+        // retArray[0]: prob, [1] lower, [2] upper
+        return new INDArray[]{Nd4j.zeros(DataType.DOUBLE,piCounts).addi(pi), Nd4j.create(single)};
+    }
+
     private void addParams(Statement statement) {
         if (statement.statement instanceof AST.Decl) {
             AST.Decl declStatement = (AST.Decl) statement.statement;
-            Double[] limits = {null, null};
+            Double[] limits = {null, null, null};
             for(AST.Annotation aa : declStatement.annotations) {
                 if (aa.annotationType == AST.AnnotationType.Limits){
                     if (aa.annotationValue instanceof AST.Limits) {
@@ -438,7 +713,23 @@ public class IntervalAnalysis {
                     getConstN(dimArray, dd);
                 }
             }
-            paramMap.put(declStatement.id.id, new Pair(limits, dimArray));
+            String arrayId = declStatement.id.id;
+            if (dimArray.size() == 1) {
+                for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
+                    String eleId = String.format("%s[%s]", arrayId, jj);
+                    paramMap.put(eleId, new Pair(limits, dimArray));
+                }
+            } else if (dimArray.size() == 2) {
+                for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
+                    for (Integer kk = 1; kk <= dimArray.get(1); kk++) {
+                        String eleId = String.format("%s[%s,%s]", arrayId, jj, kk);
+                        paramMap.put(eleId, new Pair(limits, dimArray));
+                    }
+                }
+            } else if (dimArray.size() == 0) {
+                String eleId = arrayId;
+                paramMap.put(eleId, new Pair(limits, dimArray));
+            }
         }
     }
 
