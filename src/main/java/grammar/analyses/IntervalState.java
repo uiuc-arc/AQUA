@@ -11,16 +11,23 @@ import java.util.*;
 
 
 public class IntervalState extends AbstractState{
+    // deprecated
     public Map<String, Integer> paramMap = new HashMap<>();// idx for lower, upper idx is lower + 1
     public INDArray intervalProbPairs = null; // each row has prob, param1_l, param1_u, param2...
+
+    // in use
     public List<Integer> dimSize = new ArrayList<>(); // length of each dim, shape of probCube
     public List<INDArray> probCube = new ArrayList<>();
     public Map<String, Pair<Integer, INDArray>> paramValues = new HashMap<>(); // dim idx and values of params
 
+    public void addDepParamCube(String paramName, INDArray splits) {
+        paramValues.put(paramName, new Pair<>(null,splits));
+    }
+
     public void addParamCube(String paramName, INDArray splits, INDArray probLower, INDArray probUpper) {
         int currDim = dimSize.size();
         paramValues.put(paramName, new Pair<>(currDim, splits));
-        int newSplitLen = (int) splits.shape()[0];
+        int newSplitLen = (int) splits.shape()[splits.shape().length - 1];
         if (currDim == 0) {
             dimSize.add(newSplitLen);
             probCube.add(probLower);
@@ -30,10 +37,12 @@ public class IntervalState extends AbstractState{
             INDArray oldProbLower = probCube.get(0);
             INDArray oldProbUpper = probCube.get(1);
             dimSize.add(1);
-            int[] singleDim = new int[dimSize.size()];
+            long[] singleDim = new long[dimSize.size()];
             Arrays.fill(singleDim, 1);
+            long[] realShapes = splits.shape();
+            System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
             singleDim[dimSize.size() - 1] = newSplitLen;
-            // dimSize: 2,3,4,1  singleDim: 1,1,1,5
+            // dimSize: 2,3,4,1  singleDim: 1,3,1,5
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
             INDArray outComeDimSize = Nd4j.create(dimSize);
@@ -44,15 +53,15 @@ public class IntervalState extends AbstractState{
 
     public INDArray getParamCube(String paramName) {
         Pair<Integer, INDArray> paramValuePair = paramValues.get(paramName);
-        int[] singleDim = new int[dimSize.size()];
+        long[] singleDim = new long[dimSize.size()];
         Arrays.fill(singleDim, 1);
-        int paramDim = paramValuePair.getKey();
-        singleDim[paramDim] = dimSize.get(paramDim);
+        long[] realShapes = paramValuePair.getValue().shape();
+        System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
         return paramValuePair.getValue().reshape(singleDim);
     }
 
-    public int[] getDim4Data(int dataLength) {
-        int[] singleDim = new int[dimSize.size() + 1];
+    public long[] getDim4Data(long dataLength) {
+        long[] singleDim = new long[dimSize.size() + 1];
         Arrays.fill(singleDim, 1);
         singleDim[dimSize.size()] = dataLength;
         return singleDim;
@@ -97,7 +106,7 @@ public class IntervalState extends AbstractState{
         // for (Pair intervalProbPair: IntervalProbPairs) {
         //     intervalProbPair.getKey()
         // }
-        System.out.println(paramMap);
+        System.out.println(paramValues);
         // System.out.println(intervalProbPairs.toString());
         // System.out.println(String.format("%d,%d",intervalProbPairs.shape()[0], intervalProbPairs.shape()[1]));
     }

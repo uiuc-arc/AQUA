@@ -18,6 +18,7 @@ import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.string.NDArrayStrings;
+import org.nd4j.linalg.util.ArrayUtil;
 import org.tensorflow.framework.TensorShapeProto;
 import sun.security.util.Length;
 import utils.Utils;
@@ -28,9 +29,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.lang.Math.log;
-import static java.lang.Math.pow;
+import static java.lang.Math.*;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
+import static org.nd4j.linalg.ops.transforms.Transforms.sigmoid;
 
 
 public class IntervalAnalysis {
@@ -94,8 +95,40 @@ public class IntervalAnalysis {
                 } else {
                     System.out.println("Assignment: " + statement.statement.toString());
                     String paramID = assignment.lhs.toString().split("\\[")[0];
-                    if (!paramMap.containsKey(paramID)) {
-                        // TODO
+                    if (!paramMap.containsKey(paramID)) { // if param is not defined, which may not happen in Stan
+                        Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
+                        Double[] paramLimits = paramInfo.getKey();
+                        ArrayList<Integer> paramDims = paramInfo.getValue();
+                        if (isFuncConst(assignment.rhs)) { // completely independent new param
+                            System.out.println("Const param");
+                            INDArray rhs[] = IndDistrSingle(assignment.rhs, paramLimits); // split, probLower, probUpper
+                            for (int ii=0; ii < rhs.length; ii++) {
+                                rhs[ii] = rhs[ii].reshape(intervalState.getDim4Data(rhs[ii].shape()[0]));
+                            }
+                            // TODO: fix dim if rhs contains data
+                            if (paramDims.size() == 1) {
+                                for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
+                                    intervalState.addParamCube(String.format("%s[%s]", paramID, jj), rhs[0], rhs[1], rhs[2]);
+                                }
+                            } else if (paramDims.size() == 2) {
+                                for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
+                                    for (Integer kk = 1; kk <= paramDims.get(1); kk++)
+                                        intervalState.addParamCube(String.format("%s[%s,%s]", paramID, jj, kk), rhs[0], rhs[1], rhs[2]);
+                                }
+                            } else if (paramDims.size() == 0)
+                                intervalState.addParamCube(paramID, rhs[0], rhs[1], rhs[2]);
+                            intervalState.printAbsState();
+                        }
+                        else { // transformed parameters, completely dependent on other params
+                            if (!(assignment.rhs instanceof AST.FunctionCall)) {
+                                INDArray rhs = DistrCube(assignment.rhs, intervalState);
+                                intervalState.addDepParamCube(assignment.lhs.toString(), rhs); // with dim null
+                            }
+                            else {
+                                // add hierarchical param
+                                HierDistrCube(assignment, intervalState);
+                            }
+                        }
                     }
                 }
             } else if (statement.statement instanceof AST.FunctionCallStatement) {
@@ -114,6 +147,74 @@ public class IntervalAnalysis {
         }
     }
 
+    private void HierDistrCube(AST.AssignmentStatement assignment, IntervalState intervalState) {
+        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+        INDArray[] params = new NDArray[distrExpr.parameters.size()];
+        int parami = 0;
+        for (AST.Expression pp: distrExpr.parameters) {
+            if (pp instanceof AST.Integer) {
+                params[parami] = Nd4j.create(new int[]{((AST.Integer) pp).value});
+
+            }
+            else if (pp instanceof AST.Double) {
+                params[parami] = Nd4j.create(new double[]{((AST.Double) pp).value});
+            }
+            else {
+                params[parami] = DistrCube(pp, intervalState);
+            }
+            parami++;
+        }
+        if (params.length == 1) {
+            assert(!(params[0].shape().length == 1 && params[0].shape()[0] == 1)); // o.w const distr
+            long[] retshape = new long[params[0].shape().length + 1];
+            System.arraycopy(params[0].shape(), 0, retshape, 0, params[0].shape().length);
+            retshape[params[0].shape().length] = piCounts;
+            // TODO:
+        }
+        else if (params.length == 2) {
+            INDArray[] singleprob = expand1D(params[0], params[1], "normal");
+            intervalState.addParamCube(assignment.lhs.toString(), singleprob[0], singleprob[1], singleprob[2]);
+            // TODO: support other dists
+        }
+    }
+
+    private INDArray[] expand1D(INDArray input1, INDArray input2, String distr) {
+        long[] shape1 = input1.shape();
+        long[] shape2 = input2.shape();
+        int maxDimCount = max(shape1.length,shape2.length);
+        long[] shape1b = new long[maxDimCount + 1];
+        long[] shape2b = new long[maxDimCount + 1];
+        Arrays.fill(shape1b, 1);
+        Arrays.fill(shape2b, 1);
+        System.arraycopy(shape1, 0, shape1b, 0, shape1b.length);
+        System.arraycopy(shape2, 0, shape2b, 0, shape2b.length);
+        long[] broadcastDims = new long[maxDimCount + 1];
+        for (int i=0; i < maxDimCount + 1; i++) {
+            broadcastDims[i] = max(shape1[i], shape2[i]);
+        }
+        broadcastDims[maxDimCount] = piCounts;
+        INDArray input1b = input1.broadcast(shape1b);
+        INDArray input2b = input2.broadcast(shape2b);
+        INDArray single = Nd4j.createUninitialized(broadcastDims);
+        INDArray prob1 = Nd4j.createUninitialized(broadcastDims);
+        INDArray prob2 = Nd4j.createUninitialized(broadcastDims);
+        for (int i=0; i < input1b.length(); i++) {
+            double mean = input1b.getDouble(i);
+            double sd = input2b.getDouble(i);
+            // if (distrName.equals("normal")) {
+            double[] singlej = new double[piCounts];
+            double[] prob1j = new double[piCounts];
+            double[] prob2j = new double[piCounts];
+            NormalDistribution normal = new NormalDistributionImpl(mean, sd);
+            getDiscretePriorsSingle(singlej, prob1j, prob2j, normal);
+            // }
+            prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.create(prob1j));
+            prob2.tensorAlongDimension(i, maxDimCount).assign(Nd4j.create(prob2j));
+            single.tensorAlongDimension(i, maxDimCount).assign(Nd4j.create(singlej));
+        }
+        return new INDArray[]{single, prob1, prob2};
+    }
+
     private void ObsDistrCube(double[] yArray, AST.AssignmentStatement assignment, IntervalState intervalState) {
         int yLength = yArray.length;
         long traceLength = intervalState.intervalProbPairs.shape()[0];
@@ -130,7 +231,6 @@ public class IntervalAnalysis {
             }
             else {
                 params[parami] = DistrCube(pp, intervalState);
-                System.out.println(String.format("param %s: %s,%s,%s",pp.toString(), params[parami].shape()[0],params[parami].shape()[1],params[parami].shape()[2]));
             }
             parami++;
         }
@@ -155,9 +255,23 @@ public class IntervalAnalysis {
         else if (pp instanceof AST.ArrayAccess) {
             return DistrCube((AST.ArrayAccess) pp, intervalState);
         }
+        else if (pp instanceof AST.Integer) {
+            return DistrCube((AST.Integer) pp, intervalState);
+        }
+        else if (pp instanceof AST.Double) {
+            return DistrCube((AST.Double) pp, intervalState);
+        }
         return null;
     }
 
+
+    private INDArray DistrCube(AST.Integer pp, IntervalState intervalState) {
+        return Nd4j.create(new int[]{pp.value});
+    }
+
+    private INDArray DistrCube(AST.Double pp, IntervalState intervalState) {
+        return Nd4j.create(new double[]{pp.value});
+    }
 
     private INDArray DistrCube(AST.Id pp, IntervalState intervalState) {
         System.out.println("Distr ID=================");
@@ -190,7 +304,7 @@ public class IntervalAnalysis {
         else if (dataList.containsKey(pp.id.id)) {
             ArrayList<Integer> dims = new ArrayList<>();
             for (AST.Expression dd : pp.dims.dims)
-                getConstN(dims, dd);
+                getConstN(dims, dd); // TODO: support expr dim
             Pair<AST.Data, String> xDataPair = dataList.get(pp.id);
             String xValue = xDataPair.getValue();
             double[] xArray = Arrays.stream(xValue.split(",")).mapToDouble(Double::parseDouble).toArray();
@@ -235,6 +349,9 @@ public class IntervalAnalysis {
         intervalState.addParamCube(paramName, Nd4j.create(single), Nd4j.create(probLower), Nd4j.create(probUpper));
     }
 
+
+
+
     private INDArray DistrCube(AST.Braces pp, IntervalState intervalState) {
         System.out.println("Distr Brace==================");
         return DistrCube(pp.expression, intervalState);
@@ -244,23 +361,26 @@ public class IntervalAnalysis {
         System.out.println("Distr Add==================");
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
-        long[] outShape = op1Array.shape().clone();
+        long[] op1shape = op1Array.shape();
+        long[] op2shape = op2Array.shape();
+        int maxDim = max(op1shape.length, op2shape.length);
+        long[] outShape = new long[maxDim];
         for (int i=0; i < outShape.length; i++) {
-            long op2Dimi = op2Array.shape()[i];
-            if (op2Array.shape()[i] > outShape[i])
-                outShape[i] = op2Dimi;
+            outShape[i] = max(op1shape[i], op2shape[i]);
         }
         return op1Array.broadcast(outShape).add(op2Array.broadcast(outShape));
     }
 
     private INDArray DistrCube(AST.MulOp pp, IntervalState intervalState) {
+        System.out.println("Distr Mul==================");
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
-        long[] outShape = op1Array.shape().clone();
+        long[] op1shape = op1Array.shape();
+        long[] op2shape = op2Array.shape();
+        int maxDim = max(op1shape.length, op2shape.length);
+        long[] outShape = new long[maxDim];
         for (int i=0; i < outShape.length; i++) {
-            long op2Dimi = op2Array.shape()[i];
-            if (op2Array.shape()[i] > outShape[i])
-                outShape[i] = op2Dimi;
+            outShape[i] = max(op1shape[i], op2shape[i]);
         }
         return op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
     }
@@ -275,6 +395,7 @@ public class IntervalAnalysis {
                 addParams(statement);
                 System.out.println(statement.statement.toString());
                 // if (annotations != null && !annotations.isEmpty() &&
+
                 //         (annotations.get(0).annotationType == AST.AnnotationType.Prior ||
                 //                 annotations.get(0).annotationType == AST.AnnotationType.Limits)
                 //         ) {
@@ -306,8 +427,8 @@ public class IntervalAnalysis {
                     Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
                     Double[] paramLimits = paramInfo.getKey();
                     ArrayList<Integer> paramDims = paramInfo.getValue();
-                    if (isIndependent(assignment.rhs)) {
-                        System.out.println("Independent param");
+                    if (isFuncConst(assignment.rhs)) {
+                        System.out.println("Const param");
                         INDArray[] distrArray = IndDistr(assignment.rhs, paramLimits);
                         if (paramDims.size() == 1) {
                             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
@@ -531,7 +652,7 @@ public class IntervalAnalysis {
         return retArray;
     }
 
-    private boolean isIndependent(AST.Expression rhs) {
+    private boolean isFuncConst(AST.Expression rhs) {
         if (rhs instanceof AST.FunctionCall) {
             AST.FunctionCall distrExpr = (AST.FunctionCall) rhs;
             for (AST.Expression pp: distrExpr.parameters){
@@ -539,8 +660,10 @@ public class IntervalAnalysis {
                     return false;
                 }
             }
+            return true;
         }
-        return true;
+        else
+            return false;
     }
 
     // private INDArray[] Distr(AST.Expression expr) {
@@ -683,8 +806,7 @@ public class IntervalAnalysis {
                 getDiscretePriorsSingle(single, prob1, prob2, gamma);
             }
         }
-        // retArray[0]: prob, [1] lower, [2] upper
-        return new INDArray[]{Nd4j.zeros(DataType.DOUBLE,piCounts).addi(pi), Nd4j.create(single)};
+        return new INDArray[]{Nd4j.create(single), Nd4j.create(prob1), Nd4j.create(prob2)};
     }
 
     private void addParams(Statement statement) {

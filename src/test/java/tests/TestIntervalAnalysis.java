@@ -8,6 +8,7 @@ import org.jgrapht.Graph;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
@@ -70,8 +71,13 @@ public class TestIntervalAnalysis {
     public void TestNd4j() {
         INDArray indArray = Nd4j.arange(6);
         INDArray indArray2 = Nd4j.arange(4);
-        double [][] new_array = {{0.3,0.8,44},{0.4,0.5,55}};
+        double [][][] new_array = {{{0.3,0.8,44},{0.4,0.5,55}},{{7,8,9},{5,6,7}}};
         INDArray nnn = Nd4j.create(new_array);
+        System.out.println("==========");
+        System.out.println(nnn.tensorAlongDimension(0, 2));
+        System.out.println(nnn.tensorAlongDimension(2, 2));
+        nnn.putScalar(4, 0.01);
+        System.out.println(nnn.length());
         System.out.println(indArray.reshape(6,1).repeat(1,4));
         System.out.println(indArray2.reshape(1,4).repeat(0,6));
         System.out.println(indArray.reshape(6,1).repeat(1,4).mul(indArray2.reshape(1,4).repeat(0,6)));
