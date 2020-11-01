@@ -73,16 +73,11 @@ public class TestIntervalAnalysis {
         INDArray indArray2 = Nd4j.arange(4);
         double [][][] new_array = {{{0.3,0.8,44},{0.4,0.5,55}},{{7,8,9},{5,6,7}}};
         INDArray nnn = Nd4j.create(new_array);
+        INDArray scalar = Nd4j.createFromArray(3.2);
+        ArrayList<Integer> newArray  = new ArrayList<>(1);
         System.out.println("==========");
-        System.out.println(nnn.tensorAlongDimension(0, 2));
-        System.out.println(nnn.tensorAlongDimension(2, 2));
-        nnn.putScalar(4, 0.01);
-        System.out.println(nnn.length());
-        System.out.println(indArray.reshape(6,1).repeat(1,4));
-        System.out.println(indArray2.reshape(1,4).repeat(0,6));
-        System.out.println(indArray.reshape(6,1).repeat(1,4).mul(indArray2.reshape(1,4).repeat(0,6)));
-        INDArray z = Nd4j.createUninitialized(6,4);
-        System.out.println(nnn.reshape(2,3,1).broadcast(2,3,4).mul(indArray2.reshape(1,1,4).broadcast(2,3,4)));
+        System.out.println(newArray.size());
+
 
     }
 
