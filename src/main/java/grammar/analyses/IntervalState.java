@@ -12,6 +12,7 @@ import org.nd4j.linalg.indexing.conditions.Condition;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import sun.awt.image.ImageWatched;
+import org.nd4j.linalg.api.buffer.DataType;
 
 import java.util.*;
 
@@ -74,7 +75,6 @@ public class IntervalState extends AbstractState{
         }
         Double fullLower = null;
         Double fullUpper = null;
-        System.out.println(lower);
         for (String ss: strings) {
             int[] numbersCopy = numbers.clone();
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
@@ -86,10 +86,13 @@ public class IntervalState extends AbstractState{
             if (fullLower == null) {
                 fullLower = currsumLower.sumNumber().doubleValue();
                 fullUpper = currsumUpper.sumNumber().doubleValue();
-                System.out.println(fullLower);
             }
             System.out.println(ss);
-            System.out.println(Nd4j.vstack(Nd4j.toFlattened(paramvalue), Nd4j.toFlattened(currsumLower).div(fullLower), Nd4j.toFlattened(currsumUpper).div(fullUpper)));
+            INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
+                    Nd4j.toFlattened(currsumLower).div(fullLower),
+                    Nd4j.toFlattened(currsumUpper).div(fullUpper));
+            Nd4j.writeTxt(outMatrix,
+                    "/Users/zixin/Documents/uiuc/fall20/analysis/javaOutput/analysis_" + ss + ".txt");
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");

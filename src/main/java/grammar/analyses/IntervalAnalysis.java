@@ -30,8 +30,8 @@ public class IntervalAnalysis {
     private Map<String, Pair<Double[], ArrayList<Integer>>> paramMap = new HashMap<>();
     private Map<String, Pair<AST.Data, String>> dataList = new HashMap<>();
     private Map<String, Double> scalarParam = new HashMap<>();
-    private int piCounts = 1000;
-    private double pi = 0.001;
+    private int piCounts = 20;
+    private double pi = 1.0/piCounts;
 
 
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
