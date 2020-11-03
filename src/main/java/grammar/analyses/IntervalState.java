@@ -43,7 +43,7 @@ public class IntervalState extends AbstractState{
         int currDim = dimSize.size();
         long newSplitLen = splits.shape()[splits.shape().length - 1];
         if (currDim == 1) {
-            paramValues.put(paramName, new Pair<>(currDim, splits));
+            paramValues.put(paramName, new Pair<>(currDim, splits.reshape(1,splits.length())));
             dimSize.add(newSplitLen);
             probCube.add(probLower.reshape(1,newSplitLen));
             probCube.add(probUpper.reshape(1, newSplitLen));
