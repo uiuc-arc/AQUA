@@ -18,6 +18,7 @@ import java.util.*;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
+import static org.nd4j.linalg.ops.transforms.Transforms.sin;
 
 
 public class IntervalState extends AbstractState{
@@ -40,9 +41,9 @@ public class IntervalState extends AbstractState{
 
     public void addParamCube(String paramName, INDArray splits, INDArray probLower, INDArray probUpper) {
         int currDim = dimSize.size();
-        paramValues.put(paramName, new Pair<>(currDim, splits));
         long newSplitLen = splits.shape()[splits.shape().length - 1];
         if (currDim == 1) {
+            paramValues.put(paramName, new Pair<>(currDim, splits));
             dimSize.add(newSplitLen);
             probCube.add(probLower.reshape(1,newSplitLen));
             probCube.add(probUpper.reshape(1, newSplitLen));
@@ -54,8 +55,9 @@ public class IntervalState extends AbstractState{
             long[] singleDim = new long[dimSize.size()];
             Arrays.fill(singleDim, 1);
             long[] realShapes = splits.shape();
-            System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
+            // System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
             singleDim[dimSize.size() - 1] = newSplitLen;
+            paramValues.put(paramName, new Pair<>(currDim, splits.reshape(singleDim)));
             // dimSize: 2,3,4,1  singleDim: 1,3,1,5
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
@@ -63,6 +65,28 @@ public class IntervalState extends AbstractState{
             probCube.set(0,oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).mul(probLower.reshape(singleDim).broadcast(outComeDimSize)));
             probCube.set(1,oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).mul(probUpper.reshape(singleDim).broadcast(outComeDimSize)));
         }
+    }
+
+    public double getResultsMean(String param) {
+        INDArray lower = probCube.get(0);
+        INDArray upper = probCube.get(1);
+        Integer nDim = lower.shape().length;
+        int[] numbers = new int[nDim - 1];
+        for(int i = 1; i < nDim; i++){
+            numbers[i - 1] = i;
+        }
+        Pair<Integer, INDArray> paramIdxValues = paramValues.get(param);
+        Integer paramDimIdx = paramIdxValues.getKey();
+        numbers[paramDimIdx - 1] = 0;
+        INDArray paramvalue = paramIdxValues.getValue();
+        INDArray currsumLower = lower.sum(numbers);
+        INDArray currsumUpper = upper.sum(numbers);
+        INDArray flatSingles = Nd4j.toFlattened(paramvalue);
+        INDArray lowerMaxIdx = Nd4j.toFlattened(currsumLower).argMax();
+        INDArray upperMaxIdx = Nd4j.toFlattened(currsumUpper).argMax();
+        double lowerMax = flatSingles.getDouble(lowerMaxIdx.getLong());
+        double upperMax = flatSingles.getDouble(upperMaxIdx.getLong());
+        return (lowerMax + upperMax) /2;
     }
 
     public void writeResults(Set<String> strings) {

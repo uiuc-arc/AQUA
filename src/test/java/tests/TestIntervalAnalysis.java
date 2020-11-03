@@ -29,6 +29,8 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
         String stanfile = "src/test/resources/stan/unemployment.stan";
         String standata = "src/test/resources/stan/unemployment.data.R";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.data.R";
         // String stanfile = "src/test/resources/stan/stan1610.stan";
         // String standata = "src/test/resources/stan/stan1610.data";
         // String stanfile = "src/test/resources/stan/radon.pooling.stan";

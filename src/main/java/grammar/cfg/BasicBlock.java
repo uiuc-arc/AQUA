@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BasicBlock {
-    public IntervalState dataflowFacts;
+    public IntervalState dataflowFacts = null;
     public ArrayList<Statement> getStatements() {
         return statements;
     }
