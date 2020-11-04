@@ -40,13 +40,17 @@ public class IntervalState extends AbstractState{
     }
 
     public void addParamCube(String paramName, INDArray splits, INDArray probLower, INDArray probUpper) {
+        if (splits.shape().length == 0) {
+            addDepParamCube(paramName, Nd4j.empty());
+            return;
+        }
         int currDim = dimSize.size();
         long newSplitLen = splits.shape()[splits.shape().length - 1];
         if (currDim == 1) {
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(1,splits.length())));
             dimSize.add(newSplitLen);
-            probCube.add(probLower.reshape(1,newSplitLen));
-            probCube.add(probUpper.reshape(1, newSplitLen));
+            probCube.add(exp(probLower).reshape(1,newSplitLen));
+            probCube.add(exp(probUpper).reshape(1, newSplitLen));
         }
         else {
             INDArray oldProbLower = probCube.get(0);
@@ -62,8 +66,8 @@ public class IntervalState extends AbstractState{
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
             long[] outComeDimSize = dimSize.stream().mapToLong(i -> i).toArray();
-            probCube.set(0,oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).mul(probLower.reshape(singleDim).broadcast(outComeDimSize)));
-            probCube.set(1,oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).mul(probUpper.reshape(singleDim).broadcast(outComeDimSize)));
+            probCube.set(0,oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).add(exp(probLower).reshape(singleDim).broadcast(outComeDimSize)));
+            probCube.set(1,oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).add(exp(probUpper).reshape(singleDim).broadcast(outComeDimSize)));
         }
     }
 
@@ -90,8 +94,8 @@ public class IntervalState extends AbstractState{
     }
 
     public void writeResults(Set<String> strings) {
-        INDArray lower = probCube.get(0);
-        INDArray upper = probCube.get(1);
+        INDArray lower = exp(probCube.get(0));
+        INDArray upper = exp(probCube.get(1));
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
         for(int i = 1; i < nDim; i++){
@@ -128,19 +132,25 @@ public class IntervalState extends AbstractState{
         // INDArray upper = probCube.get(1);
         BooleanIndexing.replaceWhere(likeProbLower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(likeProbUpper, 0, Conditions.isNan());
-        INDArray newLower = probCube.get(0).mul(likeProbLower);
-        INDArray newUpper = probCube.get(1).mul(likeProbUpper);
+        INDArray newLower = probCube.get(0).add(likeProbLower); // mul
+        INDArray newUpper = probCube.get(1).add(likeProbUpper); // mul
         probCube.set(0, newLower);
         probCube.set(1, newUpper);
     }
 
     public INDArray getParamCube(String paramName) {
         Pair<Integer, INDArray> paramValuePair = paramValues.get(paramName);
-        long[] singleDim = new long[dimSize.size()];
-        Arrays.fill(singleDim, 1);
-        long[] realShapes = paramValuePair.getValue().shape();
-        System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
-        return paramValuePair.getValue().reshape(singleDim);
+        if (paramValuePair.getValue().length() != 0) {
+            long[] singleDim = new long[dimSize.size()];
+            Arrays.fill(singleDim, 1);
+            long[] realShapes = paramValuePair.getValue().shape();
+            System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
+            return paramValuePair.getValue().reshape(singleDim);
+        }
+        else {
+            return paramValuePair.getValue();
+        }
+
     }
 
     public long[] getNewDim(long dataLength) {
@@ -155,7 +165,7 @@ public class IntervalState extends AbstractState{
         paramValues.put("Datai", new Pair<>(0, Nd4j.arange(dataLength)));
     }
 
-    // deprecated
+    @Deprecated
     public void addIndParam(String paramName, INDArray prob, INDArray lower, INDArray upper) {
         if (intervalProbPairs != null) {
             Integer paramIdx = (int) intervalProbPairs.shape()[1]; // idx for lower
@@ -180,11 +190,13 @@ public class IntervalState extends AbstractState{
         }
     }
 
+    @Deprecated
     public INDArray[] getParam(String paramName) {
         int paramIdx = paramMap.get(paramName);
         return new INDArray[]{intervalProbPairs.getColumn(paramIdx), intervalProbPairs.getColumn(paramIdx + 1)};
     }
 
+    @Deprecated
     public int getParamIdx(String paramName) {
         return (paramMap.get(paramName) - 1)/2;
     }
