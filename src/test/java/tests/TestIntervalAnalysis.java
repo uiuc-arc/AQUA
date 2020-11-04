@@ -31,8 +31,8 @@ public class TestIntervalAnalysis {
         String standata = "src/test/resources/stan/unemployment.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.data.R";
-        // String stanfile = "src/test/resources/stan/stan1610.stan";
-        // String standata = "src/test/resources/stan/stan1610.data";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/anova_radon_nopred/anova_radon_nopred.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/anova_radon_nopred/anova_radon_nopred.data.R";
         // String stanfile = "src/test/resources/stan/radon.pooling.stan";
         // String standata = "src/test/resources/stan/radon.pooling.data.R";
         // String stanfile = "src/test/resources/stan/shots.stan";
@@ -44,10 +44,14 @@ public class TestIntervalAnalysis {
         System.out.println(templateCode);
         File tempfile = File.createTempFile(tempFileName, ".template");
         FileUtils.writeStringToFile(tempfile, templateCode);
+        long startTime = System.nanoTime();
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.forwardAnalysis(CFG);
+        long endTime = System.nanoTime();
+        double duration = (endTime - startTime)/1000000000.0;
+        System.out.println("Analysis Time: " + duration);
     }
 
     @Test
@@ -71,14 +75,9 @@ public class TestIntervalAnalysis {
 
     @Test
     public void TestNd4j() {
-        INDArray indArray = Nd4j.arange(6);
-        INDArray indArray2 = Nd4j.arange(4);
-        double [][][] new_array = {{{0.3,0.8,44},{0.4,0.5,55}},{{7,8,9},{5,6,7}}};
-        INDArray nnn = Nd4j.create(new_array);
-        INDArray scalar = Nd4j.createFromArray(3.2);
-        ArrayList<Integer> newArray  = new ArrayList<>(1);
         System.out.println("==========");
-        System.out.println(newArray.size());
+        INDArray newarray = Nd4j.arange(5);
+        System.out.println(Nd4j.empty().length());
 
 
     }

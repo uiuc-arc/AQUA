@@ -72,6 +72,7 @@ public class IntervalState extends AbstractState{
     }
 
     public double getResultsMean(String param) {
+        System.out.println("****************" + param);
         INDArray lower = probCube.get(0);
         INDArray upper = probCube.get(1);
         Integer nDim = lower.shape().length;

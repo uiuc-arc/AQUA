@@ -45,6 +45,7 @@ public class IntervalAnalysis {
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
+        System.out.println(paramMap.keySet());
         IntervalState endFacts;
         Queue<BasicBlock> worklist = new LinkedList<>();
         // Pre-Analysis: Run a Worklist Algorithm
@@ -53,7 +54,9 @@ public class IntervalAnalysis {
         endFacts = WorklistIter(worklist);
         // Then focus on the max value from Pre-Analysis
         if (endFacts != null) {
-            for (String kk: paramMap.keySet()) {
+            for (String kk: endFacts.paramValues.keySet()) {
+                if (kk.equals("Datai"))
+                    continue;
                 Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
                 Double[] limits = limitsDims.getKey();
                 limits[2] = endFacts.getResultsMean(kk);
@@ -119,6 +122,8 @@ public class IntervalAnalysis {
                     for (BasicBlock basicBlock: section.basicBlocks) {
                         worklistAll.add(basicBlock);
                         for (Statement statement : basicBlock.getStatements()) {
+                            if (statement.statement instanceof AST.Decl)
+                                addParams(statement);
                             ArrayList<AST.Annotation> annotations = statement.statement.annotations;
                             if (annotations != null && !annotations.isEmpty() &&
                                     annotations.get(0).annotationType == AST.AnnotationType.Observe) {
@@ -153,8 +158,8 @@ public class IntervalAnalysis {
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
-        for (int i=0; i<newDataValue.length; i+= 12) {
-            newDataValue[i] = newDataValue[i] + 3*Math.sqrt(sd);
+        for (int i=0; i<newDataValue.length; i+= 100) {
+            newDataValue[i] = newDataValue[i]; // + 2*Math.sqrt(sd);
         }
     }
 
@@ -168,7 +173,6 @@ public class IntervalAnalysis {
         for (Statement statement : basicBlock.getStatements()) {
             if (statement.statement instanceof AST.Decl) {
                 System.out.println("Decl: " + statement.statement.toString());
-                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
                 addParams(statement);
                 System.out.println(statement.statement.toString());
                 changed = true;
