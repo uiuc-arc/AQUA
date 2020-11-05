@@ -16,6 +16,7 @@ import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
+import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
 import java.util.*;
@@ -26,14 +27,15 @@ import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 public class IntervalAnalysis {
     private Map<String, Pair<Double[], ArrayList<Integer>>> paramMap = new HashMap<>();
+    private Map<String, ArrayList<String>> transParamMap = new HashMap<>();
     private Map<String, Integer> paramDivs = new HashMap<>();
     private Map<String, Pair<AST.Data, double[]>> dataList = new HashMap<>();
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 100;
-    private int minCounts = 10;
-    private int PACounts = 10;
+    private int maxCounts = 80;
+    private int minCounts = 0;
+    private int PACounts = 1;
     private Boolean toAttack;
 
     @Deprecated
@@ -46,6 +48,8 @@ public class IntervalAnalysis {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
         System.out.println(paramMap.keySet());
+        ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
+        System.out.println(paramGroups);
         IntervalState endFacts;
         Queue<BasicBlock> worklist = new LinkedList<>();
         // Pre-Analysis: Run a Worklist Algorithm
@@ -57,31 +61,248 @@ public class IntervalAnalysis {
             for (String kk: endFacts.paramValues.keySet()) {
                 if (kk.equals("Datai"))
                     continue;
-                Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
-                Double[] limits = limitsDims.getKey();
-                limits[2] = endFacts.getResultsMean(kk);
+                // Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
+                // Double[] limits = limitsDims.getKey();
+                // limits[2] = endFacts.getResultsMean(kk);
                 paramDivs.put(kk, minCounts);
             }
         }
         // Analysis again by individual/groups of params
-        String prevKk = null;
+        Set<String> prevKk = null;
         toAttack = true;
-        for (String kk: paramMap.keySet()) {
-            paramDivs.put(kk, maxCounts);
+        for (Set<String> paramSet: paramGroups) {
             if (prevKk != null) {
-                paramDivs.put(prevKk, minCounts);
+                for (String param: paramSet) {
+                    paramDivs.put(param, minCounts);
+                }
+            }
+            for (String param: paramSet) {
+                paramDivs.put(param, maxCounts);
             }
             for (BasicBlock bb: worklistAll) {
                 bb.dataflowFacts = null;
             }
             scalarParam.clear();
             System.gc();
-            prevKk = kk;
+            prevKk = paramSet;
             worklist.add(worklistAll.peek());
             endFacts = WorklistIter(worklist);
-            System.out.println(Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
-            endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)));
+            if (endFacts.probCube.size() > 0)
+                System.out.println(Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+            else
+                System.out.println("Prob Cube Empty!");
+            endFacts.writeResults(new HashSet<>(paramSet));
         }
+        // String prevKk = null;
+        // for (String kk: paramMap.keySet()) {
+        //     paramDivs.put(kk, maxCounts);
+        //     if (prevKk != null) {
+        //         paramDivs.put(prevKk, minCounts);
+        //     }
+        //     for (BasicBlock bb: worklistAll) {
+        //         bb.dataflowFacts = null;
+        //     }
+        //     scalarParam.clear();
+        //     System.gc();
+        //     prevKk = kk;
+        //     worklist.add(worklistAll.peek());
+        //     endFacts = WorklistIter(worklist);
+        //     if (endFacts.probCube.size() > 0)
+        //         System.out.println(Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+        //     else
+        //         System.out.println("Prob Cube Empty!");
+        //     endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)));
+        // }
+    }
+
+    private ArrayList<Set<String>> GroupParams(ArrayList<Section> cfgSections) {
+        ArrayList<Set<String>> groups = new ArrayList<>();
+        for (Section section : cfgSections) {
+            System.out.println(section.sectionType);
+            if (section.sectionType == SectionType.DATA) {
+                ArrayList<AST.Data> dataSets = section.basicBlocks.get(0).getData();
+            } else if (section.sectionType == SectionType.FUNCTION) {
+                System.out.println(section.sectionName);
+                    for (BasicBlock basicBlock : section.basicBlocks) {
+                        for (Statement statement : basicBlock.getStatements()) {
+                            if (statement.statement instanceof AST.AssignmentStatement) {
+                                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                                addGroupsFromAssignment(groups, assignment);
+                            }
+                            else if (statement.statement instanceof AST.FunctionCallStatement) {
+                                System.out.println("FunctionCall: " + statement.statement.toString());
+
+                            } else if (statement.statement instanceof AST.IfStmt) {
+                                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+                            } else if (statement.statement instanceof AST.ForLoop) {
+                                AST.ForLoop forLoop = (AST.ForLoop) statement.statement;
+                            }
+                        }
+                    }
+            } else if (section.sectionType == SectionType.NAMEDSECTION) {
+                if (section.sectionName.equals("transformedparam")){
+                    for (BasicBlock basicBlock : section.basicBlocks) {
+                        for (Statement statement : basicBlock.getStatements()) {
+                            if (statement.statement instanceof AST.AssignmentStatement) {
+                                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                                // because already added, do nothing
+                                // addGroupsFromAssignment(groups, assignment);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return groups;
+    }
+
+    private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
+        ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+        String lhsParam = assignment.lhs.toString();
+        ArrayList<Set<String>> newGroups = new ArrayList<>();
+        for (String param: rhsParams) {
+            if (newGroups.isEmpty()) {
+                if (paramMap.containsKey(param)) {
+                    Set<String> newGroup = new HashSet<>();
+                    newGroup.add(param);
+                    newGroups.add(newGroup);
+                } else {
+                    String paramID = param.split("\\[")[0];
+                    Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
+                    ArrayList<Integer> dims = paramInfo.getValue();
+                    for (int i=1; i<= dims.get(0); i++) {
+                        Set<String> newGroup = new HashSet<>();
+                        newGroup.add(String.format("%s[%s]", paramID, i));
+                        newGroups.add(newGroup);
+                    }
+                }
+            } else {
+                if (paramMap.containsKey(param)) {
+                    for (Set<String> currGroup : newGroups) {
+                        currGroup.add(param);
+                    }
+                } else {
+                    String paramID = param.split("\\[")[0];
+                    Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
+                    ArrayList<Integer> dims = paramInfo.getValue();
+                    for (int i=1; i<= dims.get(0); i++) {
+                        newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                    }
+                }
+            }
+        }
+        // System.out.println("==============");
+        // System.out.println(assignment.toString());
+        // System.out.println(groups);
+        // System.out.println(rhsParams);
+        // System.out.println(transParamMap.keySet());
+        if (paramMap.containsKey(lhsParam)
+                && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))) {
+            for (Set<String> currGroup : newGroups) {
+                currGroup.add(lhsParam);
+                Boolean added = false;
+                for (Set<String> oldGroup: groups) {
+                    if (isGroupOverlaping(oldGroup, currGroup)) {
+                        oldGroup.addAll(currGroup);
+                        added = true;
+                    }
+                }
+                if (!added) {
+                    groups.add(currGroup);
+                }
+            }
+        } else if (paramMap.containsKey(lhsParam.split("\\[")[0] + "[1]") &&
+                (!transParamMap.containsKey(lhsParam.split("\\[")[0]))){
+            String paramID = lhsParam.split("\\[")[0];
+            Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
+            ArrayList<Integer> dims = paramInfo.getValue();
+            if (newGroups.size() == dims.get(0)) {
+                for (int i = 1; i <= dims.get(0); i++) {
+                    newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                }
+                groups.addAll(newGroups);
+            } else if (newGroups.size() == 1) {
+                for (int i = 1; i <= dims.get(0); i++) {
+                    Set<String> dupNewGroup = new HashSet<>(newGroups.get(0));
+                    dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                    groups.add(dupNewGroup);
+                }
+            }
+        } else { // lhs is data or transparam
+            if (!dataList.containsKey(lhsParam.split("\\[")[0])) {
+                if (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
+                    transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+            } else {
+                ArrayList<Set<String>> oldGroups = new ArrayList<>(groups.size());
+                for (Set<String> group : groups) {
+                    oldGroups.add(new HashSet<>(group));
+                }
+                for (Set<String> currGroup : newGroups) {
+                    Boolean added = false;
+                    for (int i=0; i< oldGroups.size(); i++) {
+                        if (isGroupOverlaping(oldGroups.get(i), currGroup)) {
+                            groups.get(i).addAll(currGroup);
+                            added = true;
+                        }
+                    }
+                    if (!added) {
+                        groups.add(currGroup);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean isGroupOverlaping(Set<String> oldGroup, Set<String> currGroup) {
+        return !Sets.intersection(oldGroup, currGroup).isEmpty();
+    }
+
+    private ArrayList<String> extractParamsFromExpr(AST.Expression rhs) {
+        ArrayList<String> retParams = new ArrayList<>();
+        if (rhs instanceof AST.FunctionCall) {
+            AST.FunctionCall rhsFunctionCall = (AST.FunctionCall) rhs;
+            for (AST.Expression arg: rhsFunctionCall.parameters)
+                retParams.addAll(extractParamsFromExpr(arg));
+        }
+        else if (rhs instanceof AST.Id) {
+            AST.Id rhsId = (AST.Id) rhs;
+            if (paramMap.containsKey(rhsId.id)) {
+                retParams.add(rhsId.id);
+            } else if (transParamMap.containsKey(rhsId.id)) {
+                retParams.addAll(transParamMap.get(rhsId.id));
+            }
+        }
+        else if (rhs instanceof AST.AddOp) {
+            AST.AddOp rhsAddOp = (AST.AddOp) rhs;
+            retParams.addAll(extractParamsFromExpr(rhsAddOp.op1));
+            retParams.addAll(extractParamsFromExpr(rhsAddOp.op2));
+        }
+        else if (rhs instanceof AST.MulOp) {
+            AST.MulOp rhsMulOp = (AST.MulOp) rhs;
+            retParams.addAll(extractParamsFromExpr(rhsMulOp.op1));
+            retParams.addAll(extractParamsFromExpr(rhsMulOp.op2));
+        }
+        else if (rhs instanceof AST.Braces) {
+            retParams.addAll(extractParamsFromExpr(((AST.Braces) rhs).expression));
+        }
+        else if (rhs instanceof AST.ArrayAccess) {
+            AST.ArrayAccess rhsArrayAccess = (AST.ArrayAccess) rhs;
+            if (paramMap.containsKey(rhsArrayAccess.toString())
+                    && ! transParamMap.containsKey(rhsArrayAccess.id.id)) {
+                retParams.add(rhsArrayAccess.toString());
+            }
+            else if (paramMap.containsKey(rhsArrayAccess.id.id + "[1]")
+                    && ! transParamMap.containsKey(rhsArrayAccess.id.id)) {
+                retParams.add(rhsArrayAccess.id.id); // then assume idp of different elements in array
+            }
+            else if (transParamMap.containsKey(rhsArrayAccess.toString())) {
+                retParams.addAll(transParamMap.get(rhsArrayAccess.toString()));
+            }
+            else if (transParamMap.containsKey(rhsArrayAccess.id.id)) {
+                retParams.addAll(transParamMap.get(rhsArrayAccess.id.id)); // same as their dependent param
+            }
+        }
+        return retParams;
     }
 
     private IntervalState WorklistIter(Queue<BasicBlock> worklist) {
@@ -109,10 +330,20 @@ public class IntervalAnalysis {
             System.out.println(section.sectionType);
             if (section.sectionType == SectionType.DATA) {
                 ArrayList<AST.Data> dataSets = section.basicBlocks.get(0).getData();
+                int dataDivConst = 1;
                 for (AST.Data dd: dataSets) {
                     String dataString = Utils.parseData(dd, 'f');
                     dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\.0,",",").replaceAll("\\.0$","");
                     double[] dataArray = Arrays.stream(dataString.split(",")).mapToDouble(Double::parseDouble).toArray();
+                    if (dataArray.length == 1) {
+                        dataArray[0] = dataArray[0] / dataDivConst;
+                    } else {
+                        double[] newDataArray = new double[dataArray.length / dataDivConst];
+                        System.arraycopy(dataArray, 0, newDataArray, 0, newDataArray.length);
+                        dataArray = newDataArray;
+                    }
+                    System.out.println(dd);
+                    System.out.println(Nd4j.createFromArray(dataArray));
                     dataList.put(dd.decl.id.id, new Pair(dd, dataArray));
                 }
 
@@ -130,11 +361,18 @@ public class IntervalAnalysis {
                                 AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
                                 String dataYName = assignment.lhs.toString().split("\\[")[0];
                                 obsDataList.add(dataYName);
-                                System.out.println(obsDataList);
                                 Pair<AST.Data, double[]> orgDataPair = dataList.get(dataYName);
                                 double[] newDataValue = orgDataPair.getValue().clone();
                                 getAttack(newDataValue);
                                 dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValue));
+                            }
+                            if (statement.statement instanceof AST.AssignmentStatement) {
+                                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                                if (! (assignment.rhs instanceof AST.FunctionCall)) {
+                                    ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                                    String lhsParam = assignment.lhs.toString();
+                                    transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                                }
                             }
                         }
                     }
@@ -144,6 +382,17 @@ public class IntervalAnalysis {
                 for (BasicBlock basicBlock: section.basicBlocks)
                     for (Statement statement : basicBlock.getStatements())
                         System.out.println(statement.statement.toString());
+            } else if (section.sectionName.equals("transformedparam")) {
+                for (BasicBlock basicBlock : section.basicBlocks) {
+                    for (Statement statement : basicBlock.getStatements()) {
+                        if (statement.statement instanceof AST.AssignmentStatement) {
+                            AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                            ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                            String lhsParam = assignment.lhs.toString();
+                            transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                        }
+                    }
+                }
             }
         }
     }
@@ -238,7 +487,15 @@ public class IntervalAnalysis {
                 else { // transformed parameters, completely dependent on other params
                     if (!(assignment.rhs instanceof AST.FunctionCall)) { // TODO: cond: not a distr
                         INDArray rhs = DistrCube(assignment.rhs, intervalState);
-                        intervalState.addDepParamCube(assignment.lhs.toString(), rhs); // with dim null
+                        if (!(assignment.lhs instanceof AST.ArrayAccess))
+                            intervalState.addDepParamCube(assignment.lhs.toString(), rhs); // with dim null
+                        else { // is arrayaccess like y_hat[i]
+                            AST.ArrayAccess lhsArrayAccess = (AST.ArrayAccess) assignment.lhs;
+                            String transParamId = lhsArrayAccess.id.id;
+                            ArrayList<Integer> dimArray = new ArrayList<>();
+                            getConstN(dimArray, lhsArrayAccess.dims.dims.get(0));
+                            intervalState.addDepParamCube(transParamId + "[" + dimArray.get(0) + "]", rhs);
+                        }
                     }
                     else {
                         // add hierarchical param
@@ -396,11 +653,11 @@ public class IntervalAnalysis {
         long[] shape2b = new long[maxDimCount + 1];
         Arrays.fill(shape1b, 1);
         Arrays.fill(shape2b, 1);
-        System.arraycopy(shape1, 0, shape1b, 0, shape1b.length);
-        System.arraycopy(shape2, 0, shape2b, 0, shape2b.length);
+        System.arraycopy(shape1, 0, shape1b, 0, shape1.length);
+        System.arraycopy(shape2, 0, shape2b, 0, shape2.length);
         long[] broadcastDims = new long[maxDimCount + 1];
         for (int i=0; i < maxDimCount + 1; i++) {
-            broadcastDims[i] = max(shape1[i], shape2[i]);
+            broadcastDims[i] = max(shape1b[i], shape2b[i]);
         }
         int piCounts;
         if (paramDivs.containsKey(paramName))
@@ -465,7 +722,9 @@ public class IntervalAnalysis {
             }
             // double minVal = Nd4j.min(likeCube).getDouble() - 100;
             // BooleanIndexing.replaceWhere(likeCube, minVal, Conditions.isInfinite());
-            INDArray logSum = likeCube.sum(0);
+            INDArray logSum = likeCube;
+            if (likeCube.shape()[0] != 1)
+                logSum = likeCube.sum(0);
             sumExpUpper = logSum; // Exp
             if (!toAttack)
                 sumExpLower = sumExpUpper;
@@ -477,7 +736,9 @@ public class IntervalAnalysis {
                             params[0].getDouble(ii),
                             params[1].getDouble(ii)));
                 }
-                logSum = likeCube.sum(0);
+                logSum = likeCube;
+                if (likeCube.shape()[0] != 1)
+                    logSum = likeCube.sum(0);
                 sumExpLower = logSum; // Exp
             }
             intervalState.addProb(sumExpLower, sumExpUpper);
@@ -569,6 +830,22 @@ public class IntervalAnalysis {
         else if (intervalState.paramValues.containsKey(pp.id)){
             return intervalState.getParamCube(pp.id);
         }
+        else if (intervalState.paramValues.containsKey(pp.id + "[1]")){
+            ArrayList<Integer> dimInfo = paramMap.get(pp.id + "[1]").getValue();
+            Integer paramLength = dimInfo.get(0);
+            INDArray paramIValue = intervalState.paramValues.get(pp.id + "[1]").getValue();
+            long[] oneDimShape = paramIValue.shape();
+            long[] newShape = new long[oneDimShape.length + 1];
+            System.arraycopy(oneDimShape,0, newShape, 1, oneDimShape.length);
+            newShape[0] = paramLength;
+            INDArray retArray = Nd4j.createUninitialized(newShape);
+            for (int i=0; i<paramLength; i++ ) {
+                String paramIName = String.format("%s[%s]", pp.id, i + 1);
+                paramIValue = intervalState.paramValues.get(paramIName).getValue();
+                retArray.slice(i).assign(paramIValue);
+            }
+            return retArray;
+        }
         else {// uninitialized param on RHS,
             String paramName = pp.toString();
             addUninitParam(intervalState, paramName);
@@ -583,12 +860,15 @@ public class IntervalAnalysis {
 
         // }
         // else {
+        ArrayList<Integer> dims = new ArrayList<>();
+        for (AST.Expression dd : pp.dims.dims)
+            getConstN(dims, dd);
         if (intervalState.paramValues.containsKey(pp.toString()))
             return intervalState.getParamCube(pp.toString());
+        else if (intervalState.paramValues.containsKey(pp.id.id + "[" + dims.get(0) + "]")) {
+            return intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]");
+        }
         else if (dataList.containsKey(pp.id.id)) { // is Data
-            ArrayList<Integer> dims = new ArrayList<>();
-            for (AST.Expression dd : pp.dims.dims)
-                getConstN(dims, dd);
             Pair<AST.Data, double[]> xDataPair = dataList.get(pp.id.id);
             double[] xArray = xDataPair.getValue();
             double dataElement = xArray[dims.get(0) - 1]; // TODO: support 2D array access

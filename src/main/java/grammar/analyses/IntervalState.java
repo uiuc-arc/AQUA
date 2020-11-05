@@ -95,6 +95,8 @@ public class IntervalState extends AbstractState{
     }
 
     public void writeResults(Set<String> strings) {
+        if (probCube.isEmpty() || paramValues.size() == 1)
+            return;
         INDArray lower = exp(probCube.get(0));
         INDArray upper = exp(probCube.get(1));
         Integer nDim = lower.shape().length;
@@ -129,12 +131,12 @@ public class IntervalState extends AbstractState{
     }
 
     public void addProb(INDArray likeProbLower, INDArray likeProbUpper) {
-        // INDArray lower = probCube.get(0);
-        // INDArray upper = probCube.get(1);
+        INDArray lower = probCube.get(0);
+        INDArray upper = probCube.get(1);
         BooleanIndexing.replaceWhere(likeProbLower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(likeProbUpper, 0, Conditions.isNan());
-        INDArray newLower = probCube.get(0).add(likeProbLower); // mul
-        INDArray newUpper = probCube.get(1).add(likeProbUpper); // mul
+        INDArray newLower = lower.add(likeProbLower.broadcast(lower.shape())); // mul
+        INDArray newUpper = upper.add(likeProbUpper.broadcast(lower.shape())); // mul
         probCube.set(0, newLower);
         probCube.set(1, newUpper);
     }
@@ -207,7 +209,11 @@ public class IntervalState extends AbstractState{
         // for (Pair intervalProbPair: IntervalProbPairs) {
         //     intervalProbPair.getKey()
         // }
-        System.out.println(paramValues);
+        if (paramValues.size() > 0) {
+            System.out.println(paramValues.keySet());
+        }
+        else
+            System.out.println("no param values");
         // System.out.println(intervalProbPairs.toString());
         // System.out.println(String.format("%d,%d",intervalProbPairs.shape()[0], intervalProbPairs.shape()[1]));
     }
