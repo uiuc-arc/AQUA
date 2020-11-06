@@ -11,9 +11,12 @@ import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Condition;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.ops.transforms.Transforms;
+import org.nd4j.linalg.util.Paths;
 import sun.awt.image.ImageWatched;
 import org.nd4j.linalg.api.buffer.DataType;
 
+import java.io.File;
+import java.nio.file.Files;
 import java.util.*;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
@@ -94,7 +97,7 @@ public class IntervalState extends AbstractState{
         return (lowerMax + upperMax) /2;
     }
 
-    public void writeResults(Set<String> strings) {
+    public void writeResults(Set<String> strings, String path) {
         if (probCube.isEmpty() || paramValues.size() == 1)
             return;
         INDArray lower = exp(probCube.get(0));
@@ -122,11 +125,29 @@ public class IntervalState extends AbstractState{
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
                     Nd4j.toFlattened(currsumLower).div(fullLower),
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
-            Nd4j.writeTxt(outMatrix,
-                    "/Users/zixin/Documents/uiuc/fall20/analysis/javaOutput/analysis_" + ss + ".txt");
+            String outputFile = path + "/analysis_" + ss + ".txt";
+            File file = new File(outputFile);
+            if (!file.exists())
+                Nd4j.writeTxt(outMatrix,outputFile);
+            else {
+                INDArray lastOut = Nd4j.readTxt(outputFile);
+                System.out.println(lastOut);
+                System.out.println(Nd4j.createFromArray(lastOut.shape()));
+            }
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
+        }
+    }
+
+    public static void deleteAnalysisOutputs(String path) {
+        File dir = new File(path);
+        File fileList[] = dir.listFiles();
+        for (File file: fileList) {
+            String fileName = file.getName();
+            if (fileName.endsWith(".txt") && fileName.startsWith("analysis"))
+                file.delete();
+
         }
     }
 
@@ -135,6 +156,8 @@ public class IntervalState extends AbstractState{
         INDArray upper = probCube.get(1);
         BooleanIndexing.replaceWhere(likeProbLower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(likeProbUpper, 0, Conditions.isNan());
+        System.out.println(Nd4j.createFromArray(lower.shape()));
+        System.out.println(Nd4j.createFromArray(likeProbLower.shape()));
         INDArray newLower = lower.add(likeProbLower.broadcast(lower.shape())); // mul
         INDArray newUpper = upper.add(likeProbUpper.broadcast(lower.shape())); // mul
         probCube.set(0, newLower);

@@ -22,6 +22,7 @@ import utils.Utils;
 import java.util.*;
 
 import static java.lang.Math.*;
+import static org.nd4j.linalg.indexing.Indices.shape;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 
 
@@ -33,16 +34,23 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 80;
+    private int maxCounts = 20;
     private int minCounts = 0;
-    private int PACounts = 1;
+    private int PACounts = 5;
     private Boolean toAttack;
+    private String path;
 
     @Deprecated
     private double maxProb = 1.0/(maxCounts - 1);
     @Deprecated
     private double minProb = 1.0/(minCounts - 1);
 
+    public void setPath(String filepath) {
+        if (filepath.substring(filepath.length() - 1).equals("/"))
+            path = filepath.substring(0, filepath.length() - 2);
+        else
+            path = filepath;
+    }
 
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
@@ -51,7 +59,8 @@ public class IntervalAnalysis {
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         System.out.println(paramGroups);
         IntervalState endFacts;
-        Queue<BasicBlock> worklist = new LinkedList<>();
+        IntervalState.deleteAnalysisOutputs(path);
+        ArrayList<BasicBlock> worklist = new ArrayList<>();
         // Pre-Analysis: Run a Worklist Algorithm
         toAttack = false;
         worklist.add(worklistAll.peek());
@@ -68,8 +77,8 @@ public class IntervalAnalysis {
             }
         }
         // Analysis again by individual/groups of params
-        Set<String> prevKk = null;
         toAttack = true;
+        Set<String> prevKk = null;
         for (Set<String> paramSet: paramGroups) {
             if (prevKk != null) {
                 for (String param: paramSet) {
@@ -87,11 +96,12 @@ public class IntervalAnalysis {
             prevKk = paramSet;
             worklist.add(worklistAll.peek());
             endFacts = WorklistIter(worklist);
-            if (endFacts.probCube.size() > 0)
-                System.out.println(Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+            if (endFacts.probCube.size() > 0) {
+                System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+            }
             else
                 System.out.println("Prob Cube Empty!");
-            endFacts.writeResults(new HashSet<>(paramSet));
+            endFacts.writeResults(new HashSet<>(paramSet), path);
         }
         // String prevKk = null;
         // for (String kk: paramMap.keySet()) {
@@ -185,19 +195,32 @@ public class IntervalAnalysis {
                     String paramID = param.split("\\[")[0];
                     Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
                     ArrayList<Integer> dims = paramInfo.getValue();
-                    for (int i=1; i<= dims.get(0); i++) {
-                        newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                    if (newGroups.size() > 1) {
+                        for (int i = 1; i <= dims.get(0); i++) {
+                            newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                        }
+                    }
+                    else { // size() == 1
+                        Set<String> onlyGroup = newGroups.get(0);
+                        newGroups.clear();
+                        for (int i = 1; i <= dims.get(0); i++) {
+                            Set<String> dupNewGroup = new HashSet<>(onlyGroup);
+                            dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                            newGroups.add(dupNewGroup);
+                        }
+
                     }
                 }
             }
         }
-        // System.out.println("==============");
-        // System.out.println(assignment.toString());
-        // System.out.println(groups);
-        // System.out.println(rhsParams);
-        // System.out.println(transParamMap.keySet());
+        System.out.println("==============");
+        System.out.println(assignment.toString());
+        System.out.println(groups);
+        System.out.println(rhsParams);
+        System.out.println(transParamMap.keySet());
         if (paramMap.containsKey(lhsParam)
-                && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))) {
+                && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
+                && (!transParamMap.containsKey(lhsParam))) {
             for (Set<String> currGroup : newGroups) {
                 currGroup.add(lhsParam);
                 Boolean added = false;
@@ -211,8 +234,9 @@ public class IntervalAnalysis {
                     groups.add(currGroup);
                 }
             }
-        } else if (paramMap.containsKey(lhsParam.split("\\[")[0] + "[1]") &&
-                (!transParamMap.containsKey(lhsParam.split("\\[")[0]))){
+        } else if (paramMap.containsKey(lhsParam.split("\\[")[0] + "[1]")
+                && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
+                && (!transParamMap.containsKey(lhsParam.split("\\[")[0] + "[1]"))){
             String paramID = lhsParam.split("\\[")[0];
             Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
             ArrayList<Integer> dims = paramInfo.getValue();
@@ -229,9 +253,11 @@ public class IntervalAnalysis {
                 }
             }
         } else { // lhs is data or transparam
-            if (!dataList.containsKey(lhsParam.split("\\[")[0])) {
-                if (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
+            if (!dataList.containsKey(lhsParam.split("\\[")[0])) { // transparam
+                if (!transParamMap.containsKey(lhsParam.split("\\[")[0])) {
                     transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                    System.out.println(transParamMap);
+                }
             } else {
                 ArrayList<Set<String>> oldGroups = new ArrayList<>(groups.size());
                 for (Set<String> group : groups) {
@@ -266,7 +292,7 @@ public class IntervalAnalysis {
         }
         else if (rhs instanceof AST.Id) {
             AST.Id rhsId = (AST.Id) rhs;
-            if (paramMap.containsKey(rhsId.id)) {
+            if (paramMap.containsKey(rhsId.id) || paramMap.containsKey(rhsId.id + "[1]")) {
                 retParams.add(rhsId.id);
             } else if (transParamMap.containsKey(rhsId.id)) {
                 retParams.addAll(transParamMap.get(rhsId.id));
@@ -305,11 +331,11 @@ public class IntervalAnalysis {
         return retParams;
     }
 
-    private IntervalState WorklistIter(Queue<BasicBlock> worklist) {
+    private IntervalState WorklistIter(ArrayList<BasicBlock> worklist) {
         IntervalState endFacts = null;
         BasicBlock currBlock;
         while (!worklist.isEmpty()) {
-            currBlock = worklist.remove();
+            currBlock = worklist.remove(0);
             System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
             endFacts = currBlock.dataflowFacts;
@@ -318,7 +344,11 @@ public class IntervalAnalysis {
                 BasicBlock succ = succs.get(cond);
                 succ.dataflowFacts = endFacts;
                 if (changed) {
-                    worklist.add(succ);
+                    System.out.println(cond);
+                    if (cond != null && (cond.equals("back") || cond.equals("true")))
+                        worklist.add(0,succ);
+                    else
+                        worklist.add(succ);
                 }
             }
         }
@@ -478,6 +508,7 @@ public class IntervalAnalysis {
                     // TODO: fix usage of single Id without dim, e.g beta~... but beta has dim 2
                     if (paramDivs.containsKey(newParamID)) {
                         initIndParamAllDims(intervalState, assignment, paramID, paramLimits, paramDims);
+                        // System.out.println(retArray.tensorAlongDimension(0, 0));
                     }
                     else {
                         initIndParamAllDimsPA(intervalState, assignment, paramID, paramLimits, paramDims);
@@ -487,8 +518,22 @@ public class IntervalAnalysis {
                 else { // transformed parameters, completely dependent on other params
                     if (!(assignment.rhs instanceof AST.FunctionCall)) { // TODO: cond: not a distr
                         INDArray rhs = DistrCube(assignment.rhs, intervalState);
-                        if (!(assignment.lhs instanceof AST.ArrayAccess))
-                            intervalState.addDepParamCube(assignment.lhs.toString(), rhs); // with dim null
+                        if (!(assignment.lhs instanceof AST.ArrayAccess)) {
+                            long[] rhsShape = rhs.shape();
+                            // Pair<Double[], ArrayList<Integer>> lhsLength = paramMap.get(assignment.lhs.toString());
+                            if (rhsShape.length == 0 || rhsShape[0] == 1)
+                                intervalState.addDepParamCube(assignment.lhs.toString(), rhs); // with dim null
+                            else {
+                                long[] rhsClone = rhsShape.clone();
+                                long dim0 = rhsClone[0];
+                                rhsClone[0] = 1;
+                                String lhsString = assignment.lhs.toString();
+                                for (int i=0; i<dim0; i++) {
+                                    String lhsIString = String.format("%s[%s]", lhsString, i+1);
+                                    intervalState.addDepParamCube(lhsIString, rhs.slice(i).reshape(rhsClone));
+                                }
+                            }
+                        }
                         else { // is arrayaccess like y_hat[i]
                             AST.ArrayAccess lhsArrayAccess = (AST.ArrayAccess) assignment.lhs;
                             String transParamId = lhsArrayAccess.id.id;
@@ -702,6 +747,8 @@ public class IntervalAnalysis {
         INDArray sumExpUpper = null;
         AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
+        System.out.println(Nd4j.createFromArray(params[0].shape()));
+        System.out.println(Nd4j.createFromArray(params[1].shape()));
         if (params == null) return;
         if (distrExpr.id.id.equals("normal")) {
             long[] shape1 = params[0].shape();
@@ -723,8 +770,13 @@ public class IntervalAnalysis {
             // double minVal = Nd4j.min(likeCube).getDouble() - 100;
             // BooleanIndexing.replaceWhere(likeCube, minVal, Conditions.isInfinite());
             INDArray logSum = likeCube;
-            if (likeCube.shape()[0] != 1)
+            if (likeCube.shape()[0] != 1) {
                 logSum = likeCube.sum(0);
+                long[] prevShape = likeCube.shape().clone();
+                prevShape[0] = 1;
+                logSum = logSum.reshape(prevShape);
+                System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
+            }
             sumExpUpper = logSum; // Exp
             if (!toAttack)
                 sumExpLower = sumExpUpper;
@@ -737,8 +789,13 @@ public class IntervalAnalysis {
                             params[1].getDouble(ii)));
                 }
                 logSum = likeCube;
-                if (likeCube.shape()[0] != 1)
+                if (likeCube.shape()[0] != 1) {
                     logSum = likeCube.sum(0);
+                    long[] prevShape = likeCube.shape().clone();
+                    prevShape[0] = 1;
+                    logSum = logSum.reshape(prevShape);
+                    System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
+                }
                 sumExpLower = logSum; // Exp
             }
             intervalState.addProb(sumExpLower, sumExpUpper);
@@ -797,7 +854,7 @@ public class IntervalAnalysis {
 
 
     private INDArray DistrCube(AST.Integer pp, IntervalState intervalState) {
-        return Nd4j.createFromArray(pp.value);
+        return Nd4j.createFromArray((double) pp.value);
     }
 
     private INDArray DistrCube(AST.Double pp, IntervalState intervalState) {
@@ -842,8 +899,13 @@ public class IntervalAnalysis {
             for (int i=0; i<paramLength; i++ ) {
                 String paramIName = String.format("%s[%s]", pp.id, i + 1);
                 paramIValue = intervalState.paramValues.get(paramIName).getValue();
-                retArray.slice(i).assign(paramIValue);
+                if (paramIValue.length() > 0)
+                    retArray.slice(i).assign(paramIValue);
+                else
+                    retArray.slice(i).assign(Double.POSITIVE_INFINITY);
             }
+            System.out.println(pp.id + "[1] " + Nd4j.createFromArray(retArray.slice(0).shape()));
+            System.out.println(pp.id + " " + Nd4j.createFromArray(retArray.shape()));
             return retArray;
         }
         else {// uninitialized param on RHS,
@@ -866,14 +928,14 @@ public class IntervalAnalysis {
         if (intervalState.paramValues.containsKey(pp.toString()))
             return intervalState.getParamCube(pp.toString());
         else if (intervalState.paramValues.containsKey(pp.id.id + "[" + dims.get(0) + "]")) {
+            System.out.println(pp.id.id + " access dim " + dims + Nd4j.createFromArray(intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]").shape()));
             return intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]");
         }
         else if (dataList.containsKey(pp.id.id)) { // is Data
             Pair<AST.Data, double[]> xDataPair = dataList.get(pp.id.id);
             double[] xArray = xDataPair.getValue();
             double dataElement = xArray[dims.get(0) - 1]; // TODO: support 2D array access
-            System.out.println("******************");
-            System.out.println(toAttack);
+            System.out.println("To Attack: " + toAttack);
             System.out.println(obsDataList);
             if ((!toAttack) || (!obsDataList.contains(pp.id.id)))
                 return Nd4j.createFromArray(dataElement); //.reshape(intervalState.getNewDim(1));
@@ -990,7 +1052,8 @@ public class IntervalAnalysis {
             else
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
 
-            return op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
+            INDArray retArray =  op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
+            return retArray;
         }
         else {
             return Nd4j.empty();
@@ -1234,9 +1297,15 @@ public class IntervalAnalysis {
             assert (data.decl.dtype.primitive == AST.Primitive.INTEGER);
             dimArray.add(Integer.valueOf(data.expression.toString()));
         }
-        else {
+        else if (scalarParam.containsKey(dd.toString())){
             dimArray.add(scalarParam.get(dd.toString()));
-
+        }
+        else if (dataList.containsKey(dd.toString().split("\\[")[0])){ // data array access
+            Pair<AST.Data, double[]> dataPair = dataList.get(dd.toString().split("\\[")[0]);
+            ArrayList<Integer> nested = new ArrayList<>();
+            getConstN(nested, ((AST.ArrayAccess) dd).dims.dims.get(0));
+            double[] dataValue = dataPair.getValue();
+            dimArray.add((int) dataValue[nested.get(0) - 1]);
         }
     }
 
