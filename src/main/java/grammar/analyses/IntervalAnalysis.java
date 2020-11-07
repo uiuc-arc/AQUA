@@ -57,7 +57,7 @@ public class IntervalAnalysis {
         InitWorklist(cfgSections);
         System.out.println(paramMap.keySet());
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
-        System.out.println(paramGroups);
+        System.out.println("groups of params:" + paramGroups);
         IntervalState endFacts;
         IntervalState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
@@ -68,41 +68,61 @@ public class IntervalAnalysis {
         // Then focus on the max value from Pre-Analysis
         if (endFacts != null) {
             for (String kk: endFacts.paramValues.keySet()) {
-                if (kk.equals("Datai"))
+                if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
                     continue;
-                // Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
-                // Double[] limits = limitsDims.getKey();
-                // limits[2] = endFacts.getResultsMean(kk);
-                paramDivs.put(kk, minCounts);
+                Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
+                Double[] limits = limitsDims.getKey();
+                limits[2] = endFacts.getResultsMean(kk);
+                // paramDivs.put(kk, minCounts);
             }
         }
-        // Analysis again by individual/groups of params
         toAttack = true;
-        Set<String> prevKk = null;
-        for (Set<String> paramSet: paramGroups) {
-            if (prevKk != null) {
-                for (String param: paramSet) {
-                    paramDivs.put(param, minCounts);
-                }
-            }
-            for (String param: paramSet) {
-                paramDivs.put(param, maxCounts);
-            }
-            for (BasicBlock bb: worklistAll) {
-                bb.dataflowFacts = null;
-            }
-            scalarParam.clear();
-            System.gc();
-            prevKk = paramSet;
-            worklist.add(worklistAll.peek());
-            endFacts = WorklistIter(worklist);
-            if (endFacts.probCube.size() > 0) {
-                System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
-            }
-            else
-                System.out.println("Prob Cube Empty!");
-            endFacts.writeResults(new HashSet<>(paramSet), path);
+        for (BasicBlock bb: worklistAll) {
+            bb.dataflowFacts = null;
         }
+        scalarParam.clear();
+        System.gc();
+        worklist.add(worklistAll.peek());
+        endFacts = WorklistIter(worklist);
+        if (endFacts.probCube.size() > 0) {
+            System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+        }
+        else
+            System.out.println("Prob Cube Empty!");
+        for (String kk: paramMap.keySet()) {
+            if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
+                continue;
+            endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)), path);
+        }
+
+        // Analysis again by individual/groups of params
+        // toAttack = true;
+        // Set<String> prevKk = null;
+        // for (Set<String> paramSet: paramGroups) {
+        //     if (prevKk != null) {
+        //         for (String param: paramSet) {
+        //             paramDivs.put(param, minCounts);
+        //         }
+        //     }
+        //     for (String param: paramSet) {
+        //         paramDivs.put(param, maxCounts);
+        //     }
+        //     for (BasicBlock bb: worklistAll) {
+        //         bb.dataflowFacts = null;
+        //     }
+        //     scalarParam.clear();
+        //     System.gc();
+        //     prevKk = paramSet;
+        //     worklist.add(worklistAll.peek());
+        //     endFacts = WorklistIter(worklist);
+        //     if (endFacts.probCube.size() > 0) {
+        //         System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+        //     }
+        //     else
+        //         System.out.println("Prob Cube Empty!");
+        //     endFacts.writeResults(new HashSet<>(paramSet), path);
+        // }
+        // Analysis by individual params
         // String prevKk = null;
         // for (String kk: paramMap.keySet()) {
         //     paramDivs.put(kk, maxCounts);
@@ -213,11 +233,11 @@ public class IntervalAnalysis {
                 }
             }
         }
-        System.out.println("==============");
-        System.out.println(assignment.toString());
-        System.out.println(groups);
-        System.out.println(rhsParams);
-        System.out.println(transParamMap.keySet());
+        // System.out.println("==============");
+        // System.out.println(assignment.toString());
+        // System.out.println(groups);
+        // System.out.println(rhsParams);
+        // System.out.println(transParamMap.keySet());
         if (paramMap.containsKey(lhsParam)
                 && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
                 && (!transParamMap.containsKey(lhsParam))) {
@@ -292,11 +312,13 @@ public class IntervalAnalysis {
         }
         else if (rhs instanceof AST.Id) {
             AST.Id rhsId = (AST.Id) rhs;
-            if (paramMap.containsKey(rhsId.id) || paramMap.containsKey(rhsId.id + "[1]")) {
+            if ((paramMap.containsKey(rhsId.id) || paramMap.containsKey(rhsId.id + "[1]"))
+                && (!(transParamMap.containsKey(rhsId.id) || transParamMap.containsKey(rhsId.id + "[1]")))){
                 retParams.add(rhsId.id);
             } else if (transParamMap.containsKey(rhsId.id)) {
                 retParams.addAll(transParamMap.get(rhsId.id));
-            }
+            } // else if (transParamMap.containsKey(rhsId.id + "[1]")) {
+            // }
         }
         else if (rhs instanceof AST.AddOp) {
             AST.AddOp rhsAddOp = (AST.AddOp) rhs;
@@ -345,15 +367,41 @@ public class IntervalAnalysis {
                 succ.dataflowFacts = endFacts;
                 if (changed) {
                     System.out.println(cond);
-                    if (cond != null && (cond.equals("back") || cond.equals("true")))
-                        worklist.add(0,succ);
-                    else
+                    if (cond == null)
                         worklist.add(succ);
+                    else if ((cond.equals("back") || cond.equals("true")))
+                        worklist.add(0,succ);
+                }
+                else if (cond != null && cond.equals("false")) {
+                    worklist.add(succ);
                 }
             }
         }
         return endFacts;
     }
+
+
+    // private IntervalState ForwardDFS(BasicBlock entryBlock) {
+    //     IntervalState endFacts;
+    //     Boolean changed = BlockAnalysisCube(entryBlock);
+    //     endFacts = entryBlock.dataflowFacts;
+    //     Map<String, BasicBlock> succs = entryBlock.getOutgoingEdges();
+    //     if (changed) {
+    //         for (String cond : succs.keySet()) {
+    //             BasicBlock succ = succs.get(cond);
+    //             if (cond == null) {
+    //                 succ.dataflowFacts = endFacts;
+    //                 changed = BlockAnalysisCube(succ);
+    //                 endFacts = succ.dataflowFacts;
+    //             } else if (cond.equals("true")) {
+    //                 succ.dataflowFacts = endFacts;
+    //                 changed = BlockAnalysisCube(succ);
+    //                 endFacts = succ.dataflowFacts;
+    //             }
+    //         }
+    //     }
+    //     return endFacts;
+    // }
 
     private void InitWorklist(ArrayList<Section> cfgSections) {
         for (Section section : cfgSections) {
@@ -747,8 +795,8 @@ public class IntervalAnalysis {
         INDArray sumExpUpper = null;
         AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
-        System.out.println(Nd4j.createFromArray(params[0].shape()));
-        System.out.println(Nd4j.createFromArray(params[1].shape()));
+        // System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
+        // System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         if (params == null) return;
         if (distrExpr.id.id.equals("normal")) {
             long[] shape1 = params[0].shape();

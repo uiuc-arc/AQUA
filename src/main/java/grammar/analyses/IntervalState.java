@@ -126,14 +126,15 @@ public class IntervalState extends AbstractState{
                     Nd4j.toFlattened(currsumLower).div(fullLower),
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
             String outputFile = path + "/analysis_" + ss + ".txt";
-            File file = new File(outputFile);
-            if (!file.exists())
-                Nd4j.writeTxt(outMatrix,outputFile);
-            else {
-                INDArray lastOut = Nd4j.readTxt(outputFile);
-                System.out.println(lastOut);
-                System.out.println(Nd4j.createFromArray(lastOut.shape()));
-            }
+            Nd4j.writeTxt(outMatrix,outputFile);
+            // File file = new File(outputFile);
+            // if (!file.exists())
+            //     Nd4j.writeTxt(outMatrix,outputFile);
+            // else {
+            //     INDArray lastOut = Nd4j.readTxt(outputFile);
+            //     System.out.println(lastOut);
+            //     System.out.println(Nd4j.createFromArray(lastOut.shape()));
+            // }
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
