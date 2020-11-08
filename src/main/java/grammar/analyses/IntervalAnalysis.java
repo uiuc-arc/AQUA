@@ -827,9 +827,9 @@ public class IntervalAnalysis {
         INDArray[] sumExpLowerUpper = new INDArray[2];
         AST.FunctionCall distrExpr = rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
-        // System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
-        // System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
-        if (params == null) return;
+        if (params == null || params[0].shape().length == 0 || params[1].shape().length == 0 ) return;
+        System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
+        System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         if (distrExpr.id.id.equals("normal")) {
             getProbLogLU(yArray, sumExpLowerUpper, params);
             intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
@@ -840,7 +840,6 @@ public class IntervalAnalysis {
         long[] shape1 = params[0].shape();
         long[] shape2 = params[1].shape();
         INDArray yNDArray = Nd4j.createFromArray(yArray[0]); // good data
-        System.out.println("y_good" + yNDArray);
         long[] maxShape = getMaxShape(shape1, shape2);
         maxShape = getMaxShape(maxShape, yNDArray.shape());
         params[0] = params[0].reshape(getReshape(shape1, maxShape)).broadcast(maxShape);
@@ -870,7 +869,6 @@ public class IntervalAnalysis {
             sumExpLowerUpper[0] = sumExpLowerUpper[1];
         else {
             yNDArray = Nd4j.createFromArray(yArray[1]); // bad data
-            System.out.println("y_corrupted" + yNDArray);
             yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
             for (long ii=0; ii<likeCube.length(); ii++) {
                 double yiiL = normal_LPDF(yNDArray.getDouble(ii),
@@ -952,6 +950,7 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.FunctionCall pp, IntervalState intervalState) {
+        System.out.println("Distr Func=================");
         INDArray ret = null;
         if (pp.id.id.equals("log_mix")) {
             INDArray[] params = getParams(intervalState, pp);
@@ -999,7 +998,7 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.Id pp, IntervalState intervalState) {
-        // System.out.println("Distr ID=================");
+        System.out.println("Distr ID=================" + pp.id);
 
         if (dataList.containsKey(pp.id)) {
             Pair<AST.Data, double[]> xDataPair = dataList.get(pp.id);
@@ -1054,7 +1053,7 @@ public class IntervalAnalysis {
 
 
     private INDArray DistrCube(AST.ArrayAccess pp, IntervalState intervalState) {
-        // System.out.println("Distr ArrayAccess==================");
+        System.out.println("Distr ArrayAccess==================" + pp.toString());
         // if (dataList.containsKey(pp.id)) {
 
         // }
@@ -1065,7 +1064,7 @@ public class IntervalAnalysis {
         if (intervalState.paramValues.containsKey(pp.toString()))
             return intervalState.getParamCube(pp.toString());
         else if (intervalState.paramValues.containsKey(pp.id.id + "[" + dims.get(0) + "]")) {
-            // System.out.println(pp.id.id + " access dim " + dims + Nd4j.createFromArray(intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]").shape()));
+            System.out.println(pp.id.id + " access dim " + dims + Nd4j.createFromArray(intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]").shape()));
             return intervalState.getParamCube(pp.id.id + "[" + dims.get(0) + "]");
         }
         else if (dataList.containsKey(pp.id.id)) { // is Data
@@ -1159,7 +1158,7 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.AddOp pp, IntervalState intervalState) {
-        // System.out.println("Distr Add==================");
+        System.out.println("Distr Add==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getAddNDArray(op1Array, op2Array);
@@ -1181,7 +1180,7 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.MulOp pp, IntervalState intervalState) {
-        // System.out.println("Distr Mul==================");
+        System.out.println("Distr Mul==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getMulNDArray(op1Array, op2Array);
