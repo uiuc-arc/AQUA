@@ -27,8 +27,11 @@ public class TestIntervalAnalysis {
     @Test
     //@Ignore
     public void Test5() throws IOException {
-        // String stanfile = "src/test/resources/stan/unemployment.stan";
-        // String standata = "src/test/resources/stan/unemployment.data.R";
+
+        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
+        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred");
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.data.R";
        //  String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/pilots/pilots.stan";
@@ -37,29 +40,18 @@ public class TestIntervalAnalysis {
         // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/electric_chr/electric_chr.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/lightspeed/lightspeed.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/lightspeed/lightspeed.data.R";
-        String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.stan";
-        String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.data.R";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.data.R";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_asym_prior/gauss_mix_asym_prior.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_asym_prior/gauss_mix_asym_prior.data.R";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_given_theta/gauss_mix_given_theta.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_given_theta/gauss_mix_given_theta.data.R";
+        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_ordered_prior/gauss_mix_ordered_prior.stan";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_ordered_prior/gauss_mix_ordered_prior.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.pooling/radon.pooling.stan";
-       //  String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.pooling/radon.pooling.data.R";
+        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.pooling/radon.pooling.sim.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.1/radon.1.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.1/radon.1.data.R";
-        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
-        String tempFileName = stanfile.replace(".stan", "");
-        String templateCode = stan2IRTranslator.getCode();
-        System.out.println("========Stan Code to Template=======");
-        System.out.println(templateCode);
-        File tempfile = File.createTempFile(tempFileName, ".template");
-        FileUtils.writeStringToFile(tempfile, templateCode);
-        long startTime = System.nanoTime();
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        ArrayList<Section> CFG = cfgBuilder.getSections();
-        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
-        int index=stanfile.lastIndexOf('/');
-        intervalAnalyzer.setPath(stanfile.substring(0,index));
-        intervalAnalyzer.forwardAnalysis(CFG);
-        long endTime = System.nanoTime();
-        double duration = (endTime - startTime)/1000000000.0;
-        System.out.println("Analysis Time: " + duration);
     }
 
     @Test
@@ -84,8 +76,10 @@ public class TestIntervalAnalysis {
     @Test
     public void TestNd4j() {
         System.out.println("==========");
-        INDArray newarray = Nd4j.arange(5);
-        System.out.println(Nd4j.empty().length());
+        INDArray newarray = Nd4j.arange(24).reshape(1,4,6);
+        INDArray newarray2 = Nd4j.arange(24).reshape(1,4,6);
+        System.out.println(Nd4j.concat(0,newarray, newarray2));
+        System.out.println(Nd4j.concat(0,newarray, newarray2).slice(0));
 
 
     }

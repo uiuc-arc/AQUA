@@ -52,8 +52,8 @@ public class IntervalState extends AbstractState{
         if (currDim == 1) {
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(1,splits.length())));
             dimSize.add(newSplitLen);
-            probCube.add(exp(probLower).reshape(1,newSplitLen));
-            probCube.add(exp(probUpper).reshape(1, newSplitLen));
+            probCube.add(probLower.reshape(1,newSplitLen));
+            probCube.add(probUpper.reshape(1, newSplitLen));
         }
         else {
             INDArray oldProbLower = probCube.get(0);
@@ -62,15 +62,15 @@ public class IntervalState extends AbstractState{
             long[] singleDim = new long[dimSize.size()];
             Arrays.fill(singleDim, 1);
             long[] realShapes = splits.shape();
-            // System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
+            System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
             singleDim[dimSize.size() - 1] = newSplitLen;
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(singleDim)));
             // dimSize: 2,3,4,1  singleDim: 1,3,1,5
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
             long[] outComeDimSize = dimSize.stream().mapToLong(i -> i).toArray();
-            probCube.set(0,oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).add(exp(probLower).reshape(singleDim).broadcast(outComeDimSize)));
-            probCube.set(1,oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).add(exp(probUpper).reshape(singleDim).broadcast(outComeDimSize)));
+            probCube.set(0,oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).add(log(probLower).reshape(singleDim).broadcast(outComeDimSize)));
+            probCube.set(1,oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).add(log(probUpper).reshape(singleDim).broadcast(outComeDimSize)));
         }
     }
 
@@ -100,8 +100,12 @@ public class IntervalState extends AbstractState{
     public void writeResults(Set<String> strings, String path) {
         if (probCube.isEmpty() || paramValues.size() == 1)
             return;
-        INDArray lower = exp(probCube.get(0));
-        INDArray upper = exp(probCube.get(1));
+        INDArray logLower = probCube.get(0);
+        INDArray logUpper = probCube.get(1);
+        INDArray lower = exp(logLower.subi(Nd4j.max(logLower)));
+        INDArray upper = exp(logUpper.subi(Nd4j.max(logUpper)));
+        BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
+        BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
         for(int i = 1; i < nDim; i++){
@@ -127,14 +131,21 @@ public class IntervalState extends AbstractState{
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
             String outputFile = path + "/analysis_" + ss + ".txt";
             Nd4j.writeTxt(outMatrix,outputFile);
-            // File file = new File(outputFile);
-            // if (!file.exists())
-            //     Nd4j.writeTxt(outMatrix,outputFile);
-            // else {
-            //     INDArray lastOut = Nd4j.readTxt(outputFile);
-            //     System.out.println(lastOut);
-            //     System.out.println(Nd4j.createFromArray(lastOut.shape()));
-            // }
+            File file = new File(outputFile);
+            if (!file.exists())
+                Nd4j.writeTxt(outMatrix,outputFile);
+            else {
+                INDArray lastOut = null;
+                try {
+                    lastOut = Nd4j.readTxt(outputFile);
+                    lastOut.slice(1).mul(outMatrix.slice(1));
+                    lastOut.slice(2).mul(outMatrix.slice(2));
+                    Nd4j.writeTxt(lastOut,outputFile);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
@@ -152,15 +163,19 @@ public class IntervalState extends AbstractState{
         }
     }
 
+
     public void addProb(INDArray likeProbLower, INDArray likeProbUpper) {
         INDArray lower = probCube.get(0);
         INDArray upper = probCube.get(1);
-        BooleanIndexing.replaceWhere(likeProbLower, 0, Conditions.isNan());
-        BooleanIndexing.replaceWhere(likeProbUpper, 0, Conditions.isNan());
+        BooleanIndexing.replaceWhere(likeProbLower, -Math.pow(1,16), Conditions.isNan());
+        BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
         System.out.println(Nd4j.createFromArray(lower.shape()));
         System.out.println(Nd4j.createFromArray(likeProbLower.shape()));
         INDArray newLower = lower.add(likeProbLower.broadcast(lower.shape())); // mul
         INDArray newUpper = upper.add(likeProbUpper.broadcast(lower.shape())); // mul
+        // System.out.println("old lower:" + lower);
+        // System.out.println("likelihood:" + likeProbLower);
+        // System.out.println("lower adds likelihood:" + newLower);
         probCube.set(0, newLower);
         probCube.set(1, newUpper);
     }

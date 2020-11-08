@@ -23,7 +23,9 @@ import java.util.*;
 
 import static java.lang.Math.*;
 import static org.nd4j.linalg.indexing.Indices.shape;
+import static org.nd4j.linalg.ops.transforms.Transforms.cosineSim;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
+import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
 public class IntervalAnalysis {
@@ -34,11 +36,12 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 20;
+    private int maxCounts = 10;
     private int minCounts = 0;
-    private int PACounts = 5;
+    private int PACounts = 1;
     private Boolean toAttack;
     private String path;
+    private Boolean addPrior = true;
 
     @Deprecated
     private double maxProb = 1.0/(maxCounts - 1);
@@ -68,60 +71,63 @@ public class IntervalAnalysis {
         // Then focus on the max value from Pre-Analysis
         if (endFacts != null) {
             for (String kk: endFacts.paramValues.keySet()) {
-                if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
+                if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
                     continue;
                 Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
+                System.out.println(kk);
                 Double[] limits = limitsDims.getKey();
                 limits[2] = endFacts.getResultsMean(kk);
-                // paramDivs.put(kk, minCounts);
+                paramDivs.put(kk, minCounts);
             }
         }
-        toAttack = true;
-        for (BasicBlock bb: worklistAll) {
-            bb.dataflowFacts = null;
-        }
-        scalarParam.clear();
-        System.gc();
-        worklist.add(worklistAll.peek());
-        endFacts = WorklistIter(worklist);
-        if (endFacts.probCube.size() > 0) {
-            System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
-        }
-        else
-            System.out.println("Prob Cube Empty!");
-        for (String kk: paramMap.keySet()) {
-            if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
-                continue;
-            endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)), path);
-        }
+        // toAttack = true;
+        // for (BasicBlock bb: worklistAll) {
+        //     bb.dataflowFacts = null;
+        // }
+        // scalarParam.clear();
+        // System.gc();
+        // worklist.add(worklistAll.peek());
+        // endFacts = WorklistIter(worklist);
+        // if (endFacts.probCube.size() > 0) {
+        //     System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape(// )));
+        // }
+        // else
+        //     System.out.println("Prob Cube Empty!");
+        // for (String kk: paramMap.keySet()) {
+        //     if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
+        //         continue;
+        //     endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)), path);
+        // }
 
         // Analysis again by individual/groups of params
-        // toAttack = true;
-        // Set<String> prevKk = null;
-        // for (Set<String> paramSet: paramGroups) {
-        //     if (prevKk != null) {
-        //         for (String param: paramSet) {
-        //             paramDivs.put(param, minCounts);
-        //         }
-        //     }
-        //     for (String param: paramSet) {
-        //         paramDivs.put(param, maxCounts);
-        //     }
-        //     for (BasicBlock bb: worklistAll) {
-        //         bb.dataflowFacts = null;
-        //     }
-        //     scalarParam.clear();
-        //     System.gc();
-        //     prevKk = paramSet;
-        //     worklist.add(worklistAll.peek());
-        //     endFacts = WorklistIter(worklist);
-        //     if (endFacts.probCube.size() > 0) {
-        //         System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
-        //     }
-        //     else
-        //         System.out.println("Prob Cube Empty!");
-        //     endFacts.writeResults(new HashSet<>(paramSet), path);
-        // }
+        toAttack = true;
+        Set<String> prevKk = null;
+        addPrior = true;
+        for (Set<String> paramSet: paramGroups) {
+            if (prevKk != null) {
+                for (String param: paramSet) {
+                    paramDivs.put(param, minCounts);
+                }
+            }
+            for (String param: paramSet) {
+                paramDivs.put(param, maxCounts);
+            }
+            for (BasicBlock bb: worklistAll) {
+                bb.dataflowFacts = null;
+            }
+            scalarParam.clear();
+            System.gc();
+            prevKk = paramSet;
+            worklist.add(worklistAll.peek());
+            endFacts = WorklistIter(worklist);
+            if (endFacts.probCube.size() > 0) {
+                System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+            }
+            else
+                System.out.println("Prob Cube Empty!");
+            endFacts.writeResults(new HashSet<>(paramSet), path);
+            addPrior = false;
+        }
         // Analysis by individual params
         // String prevKk = null;
         // for (String kk: paramMap.keySet()) {
@@ -189,6 +195,10 @@ public class IntervalAnalysis {
     private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
         String lhsParam = assignment.lhs.toString();
+        if (lhsParam.equals("target")) {
+            groups.add(new HashSet<>(rhsParams));
+            return;
+        }
         ArrayList<Set<String>> newGroups = new ArrayList<>();
         for (String param: rhsParams) {
             if (newGroups.isEmpty()) {
@@ -438,11 +448,7 @@ public class IntervalAnalysis {
                                     annotations.get(0).annotationType == AST.AnnotationType.Observe) {
                                 AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
                                 String dataYName = assignment.lhs.toString().split("\\[")[0];
-                                obsDataList.add(dataYName);
-                                Pair<AST.Data, double[]> orgDataPair = dataList.get(dataYName);
-                                double[] newDataValue = orgDataPair.getValue().clone();
-                                getAttack(newDataValue);
-                                dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValue));
+                                attackDataY(dataYName);
                             }
                             if (statement.statement instanceof AST.AssignmentStatement) {
                                 AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
@@ -450,6 +456,10 @@ public class IntervalAnalysis {
                                     ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
                                     String lhsParam = assignment.lhs.toString();
                                     transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                                }
+
+                                if (assignment.lhs.toString().equals("target")) {
+                                    attackDataY("y");
                                 }
                             }
                         }
@@ -475,6 +485,14 @@ public class IntervalAnalysis {
         }
     }
 
+    private void attackDataY(String dataYName) {
+        obsDataList.add(dataYName);
+        Pair<AST.Data, double[]> orgDataPair = dataList.get(dataYName);
+        double[] newDataValue = orgDataPair.getValue().clone();
+        getAttack(newDataValue);
+        dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValue));
+    }
+
     private void getAttack(double[] newDataValue) {
         double sd = 0;
         double sum = 0;
@@ -485,8 +503,8 @@ public class IntervalAnalysis {
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
-        for (int i=0; i<newDataValue.length; i+= 100) {
-            newDataValue[i] = newDataValue[i]; // + 2*Math.sqrt(sd);
+        for (int i=0; i<newDataValue.length; i+= 10) {
+            newDataValue[i] = newDataValue[i] + 5*Math.sqrt(sd)/newDataValue.length;
         }
     }
 
@@ -524,14 +542,14 @@ public class IntervalAnalysis {
     }
 
     private Boolean analyzeAssignment(IntervalState intervalState, Statement statement) {
-        Boolean changed;
+        Boolean changed = true;
         ArrayList<AST.Annotation> annotations = statement.statement.annotations;
         AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
         if (annotations != null && !annotations.isEmpty() &&
                 annotations.get(0).annotationType == AST.AnnotationType.Observe) {
             System.out.println("Observe (assign): " + statement.statement.toString());
             double[][] yArray = getYArray(assignment.lhs, intervalState);
-            ObsDistrCube(yArray, assignment, intervalState);
+            ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
         } else {
             System.out.println("Assignment: " + statement.statement.toString());
@@ -550,16 +568,27 @@ public class IntervalAnalysis {
                 Double[] paramLimits = paramInfo.getKey();
                 ArrayList<Integer> paramDims = paramInfo.getValue();
                 if (assignment.rhs instanceof AST.FunctionCall
-                        && isFuncConst(assignment.rhs)) { // completely independent new param
+                        && isFuncConst(assignment.rhs) && addPrior) { // completely independent new param
                     System.out.println("Const param");
                     // TODO: fix dim if rhs contains data
                     // TODO: fix usage of single Id without dim, e.g beta~... but beta has dim 2
-                    if (paramDivs.containsKey(newParamID)) {
-                        initIndParamAllDims(intervalState, assignment, paramID, paramLimits, paramDims);
-                        // System.out.println(retArray.tensorAlongDimension(0, 0));
+                    if (assignment.lhs.toString().contains("[")) {
+                        ArrayList<Integer> dims = new ArrayList<>();
+                        getConstN(dims, ((AST.ArrayAccess) assignment.lhs).dims.dims.get(0));
+                        if (paramDivs.containsKey(newParamID)) {
+                            initIndParamAllDims(intervalState, assignment, assignment.lhs.toString(), paramLimits, new ArrayList<>());
+                        } else {
+                            initIndParamAllDimsPA(intervalState, assignment, assignment.lhs.toString(), paramLimits, new ArrayList<>());
+
+                        }
                     }
                     else {
-                        initIndParamAllDimsPA(intervalState, assignment, paramID, paramLimits, paramDims);
+                        if (paramDivs.containsKey(newParamID)) {
+                            initIndParamAllDims(intervalState, assignment, paramID, paramLimits, paramDims);
+                            // System.out.println(retArray.tensorAlongDimension(0, 0));
+                        } else {
+                            initIndParamAllDimsPA(intervalState, assignment, paramID, paramLimits, paramDims);
+                        }
                     }
                     intervalState.printAbsState();
                 }
@@ -596,13 +625,20 @@ public class IntervalAnalysis {
                     }
                 }
                 changed = true;
-            } else {
-                // TODO:
+            } else if (paramID.equals("target")) {
+                analyzeTarget(intervalState, assignment.rhs);
                 changed = true;
-                throw new AssertionError();
             }
         }
         return changed;
+    }
+
+    private void analyzeTarget(IntervalState intervalState, AST.Expression rhs) {
+        AST.AddOp plusRhs = (AST.AddOp) rhs;
+        if (plusRhs.op2 instanceof AST.FunctionCall) {
+            INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
+            intervalState.addProb(probLUcat.slice(0), probLUcat.slice(1));
+        }
     }
 
     private double[][] getYArray(AST.Expression lhs, IntervalState intervalState) {
@@ -625,12 +661,11 @@ public class IntervalAnalysis {
                 ret2 = yDataPairCorrupted.getValue();
             } else {
                 INDArray twoRet = DistrCube(lhs, intervalState);
-                System.out.println(twoRet);
                 assert(twoRet.length() == 2);
                 ret1 = new double[]{twoRet.getDouble(0)};
                 ret2 = new double[]{twoRet.getDouble(1)};
             }
-            return new double[][]{ret2, ret1};
+            return new double[][]{ret1, ret2}; // 1 for good, 2 for bad
         }
     }
 
@@ -776,6 +811,8 @@ public class IntervalAnalysis {
                 double[] singlej = new double[piCounts];
                 double[] prob1j = new double[piCounts];
                 double[] prob2j = new double[piCounts];
+                if (sd == 0)
+                    sd = pow(10,-16);
                 NormalDistribution normal = new NormalDistributionImpl(mean, sd);
                 getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
                 // }
@@ -790,34 +827,64 @@ public class IntervalAnalysis {
         }
     }
 
-    private void ObsDistrCube(double[][] yArray, AST.AssignmentStatement assignment, IntervalState intervalState) {
-        INDArray sumExpLower = null;
-        INDArray sumExpUpper = null;
-        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+    private void ObsDistrCube(double[][] yArray, AST.FunctionCall rhs, IntervalState intervalState) {
+        INDArray[] sumExpLowerUpper = new INDArray[2];
+        AST.FunctionCall distrExpr = rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
         // System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
         // System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         if (params == null) return;
         if (distrExpr.id.id.equals("normal")) {
-            long[] shape1 = params[0].shape();
-            long[] shape2 = params[1].shape();
-            INDArray yNDArray = Nd4j.createFromArray(yArray[0]);
-            long[] maxShape = getMaxShape(shape1, shape2);
-            maxShape = getMaxShape(maxShape, yNDArray.shape());
-            params[0] = params[0].reshape(getReshape(shape1, maxShape)).broadcast(maxShape);
-            params[1] = params[1].reshape(getReshape(shape2, maxShape)).broadcast(maxShape);
+            getProbLogLU(yArray, sumExpLowerUpper, params);
+            System.out.println(sumExpLowerUpper[0]);
+            System.out.println(sumExpLowerUpper[1]);
+            intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
+        }
+    }
+
+    private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params) {
+        long[] shape1 = params[0].shape();
+        long[] shape2 = params[1].shape();
+        INDArray yNDArray = Nd4j.createFromArray(yArray[0]); // good data
+        System.out.println("y_good" + yNDArray);
+        long[] maxShape = getMaxShape(shape1, shape2);
+        maxShape = getMaxShape(maxShape, yNDArray.shape());
+        params[0] = params[0].reshape(getReshape(shape1, maxShape)).broadcast(maxShape);
+        params[1] = params[1].reshape(getReshape(shape2, maxShape)).broadcast(maxShape);
+        yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
+        INDArray likeCube = Nd4j.createUninitialized(maxShape);
+        for (long ii=0; ii<likeCube.length(); ii++) {
+            // NormalDistributionImpl normal = new NormalDistributionImpl(params[0].getDouble(ii), sd);
+            // likeCube.putScalar(ii, log(normal.density(yNDArray.getDouble(ii))));
+            double yiiL = normal_LPDF(yNDArray.getDouble(ii),
+                    params[0].getDouble(ii),
+                    params[1].getDouble(ii));
+            likeCube.putScalar(ii, yiiL);
+        }
+        // double minVal = Nd4j.min(likeCube).getDouble() - 100;
+        // BooleanIndexing.replaceWhere(likeCube, minVal, Conditions.isInfinite());
+        INDArray logSum = likeCube;
+        if (likeCube.shape()[0] != 1) {
+            logSum = likeCube.sum(0);
+            long[] prevShape = likeCube.shape().clone();
+            prevShape[0] = 1;
+            logSum = logSum.reshape(prevShape);
+            System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
+        }
+        sumExpLowerUpper[1] = logSum; // upper for good
+        if (!toAttack)
+            sumExpLowerUpper[0] = sumExpLowerUpper[1];
+        else {
+            yNDArray = Nd4j.createFromArray(yArray[1]); // bad data
+            System.out.println("y_corrupted" + yNDArray);
             yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
-            INDArray likeCube = Nd4j.createUninitialized(maxShape);
             for (long ii=0; ii<likeCube.length(); ii++) {
-                // NormalDistributionImpl normal = new NormalDistributionImpl(params[0].getDouble(ii), sd);
-                // likeCube.putScalar(ii, log(normal.density(yNDArray.getDouble(ii))));
-                likeCube.putScalar(ii, normal_LPDF(yNDArray.getDouble(ii),
+                double yiiL = normal_LPDF(yNDArray.getDouble(ii),
                         params[0].getDouble(ii),
-                        params[1].getDouble(ii)));
+                        params[1].getDouble(ii));
+                likeCube.putScalar(ii, yiiL);
             }
-            // double minVal = Nd4j.min(likeCube).getDouble() - 100;
-            // BooleanIndexing.replaceWhere(likeCube, minVal, Conditions.isInfinite());
-            INDArray logSum = likeCube;
+            logSum = likeCube;
             if (likeCube.shape()[0] != 1) {
                 logSum = likeCube.sum(0);
                 long[] prevShape = likeCube.shape().clone();
@@ -825,28 +892,7 @@ public class IntervalAnalysis {
                 logSum = logSum.reshape(prevShape);
                 System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
             }
-            sumExpUpper = logSum; // Exp
-            if (!toAttack)
-                sumExpLower = sumExpUpper;
-            else {
-                yNDArray = Nd4j.createFromArray(yArray[1]);
-                yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
-                for (long ii=0; ii<likeCube.length(); ii++) {
-                    likeCube.putScalar(ii, normal_LPDF(yNDArray.getDouble(ii),
-                            params[0].getDouble(ii),
-                            params[1].getDouble(ii)));
-                }
-                logSum = likeCube;
-                if (likeCube.shape()[0] != 1) {
-                    logSum = likeCube.sum(0);
-                    long[] prevShape = likeCube.shape().clone();
-                    prevShape[0] = 1;
-                    logSum = logSum.reshape(prevShape);
-                    System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
-                }
-                sumExpLower = logSum; // Exp
-            }
-            intervalState.addProb(sumExpLower, sumExpUpper);
+            sumExpLowerUpper[0] = logSum; // lower for bad
         }
     }
 
@@ -872,6 +918,9 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.Expression pp, IntervalState intervalState) {
+        if (pp instanceof AST.FunctionCall) {
+            return DistrCube((AST.FunctionCall) pp, intervalState);
+        }
         if (pp instanceof AST.Id) {
             return DistrCube((AST.Id) pp, intervalState);
         }
@@ -896,9 +945,55 @@ public class IntervalAnalysis {
         else if (pp instanceof AST.Double) {
             return DistrCube((AST.Double) pp, intervalState);
         }
+        else if (pp instanceof AST.UnaryExpression) {
+            return DistrCube((AST.UnaryExpression) pp, intervalState);
+        }
         return null;
     }
 
+
+    private INDArray DistrCube(AST.UnaryExpression pp, IntervalState intervalState) {
+        INDArray four = DistrCube(pp.expression,intervalState);
+        return four.negi();
+    }
+
+    private INDArray DistrCube(AST.FunctionCall pp, IntervalState intervalState) {
+        INDArray ret = null;
+        if (pp.id.id.equals("log_mix")) {
+            INDArray[] params = getParams(intervalState, pp);
+            INDArray theta = params[0];
+            INDArray omtheta = theta.subi(1).negi();
+            INDArray tLower = exp(params[1].slice(0));
+            INDArray tUpper = exp(params[1].slice(1));
+            INDArray omtLower = exp(params[2].slice(0));
+            INDArray omtUpper = exp(params[2].slice(1));
+            INDArray thetaTLower = getMulNDArray(theta, tLower);
+            INDArray thetaTUpper = getMulNDArray(theta, tUpper);
+            INDArray thetaOmtLower = getMulNDArray(omtheta, omtLower);
+            INDArray thetaOmtUpper = getMulNDArray(omtheta, omtUpper);
+            INDArray likeLower = getAddNDArray(thetaTLower, thetaOmtLower);
+            INDArray likeUpper = getAddNDArray(thetaTUpper, thetaOmtUpper);
+            ret = concat1(new INDArray[]{likeLower, likeUpper});
+        }
+        else if (pp.id.id.equals("normal_lpdf")) {
+            double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
+            INDArray mu = DistrCube(pp.parameters.get(1), intervalState);
+            INDArray sigma = DistrCube(pp.parameters.get(2), intervalState);
+            INDArray[] probLU = new INDArray[2];
+            getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma});
+            ret = log(concat1(probLU));
+        }
+        return ret;
+    }
+
+    private INDArray concat1(INDArray[] probLU) {
+        INDArray ret;
+        long[] newShape = new long[probLU[0].shape().length + 1];
+        newShape[0] = 1;
+        System.arraycopy(probLU[0].shape(), 0, newShape, 1, probLU[0].shape().length);
+        ret = (Nd4j.concat(0, probLU[0].reshape(newShape), probLU[1].reshape(newShape)));
+        return ret;
+    }
 
 
     private INDArray DistrCube(AST.Integer pp, IntervalState intervalState) {
@@ -1073,6 +1168,10 @@ public class IntervalAnalysis {
         System.out.println("Distr Add==================");
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getAddNDArray(op1Array, op2Array);
+    }
+
+    private INDArray getAddNDArray(INDArray op1Array, INDArray op2Array) {
         if (op1Array.length() != 0 && op2Array.length() != 0) {
             long[] op1shape = op1Array.shape();
             long[] op2shape = op2Array.shape();
@@ -1091,6 +1190,10 @@ public class IntervalAnalysis {
         System.out.println("Distr Mul==================");
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getMulNDArray(op1Array, op2Array);
+    }
+
+    private INDArray getMulNDArray(INDArray op1Array, INDArray op2Array) {
         if (op1Array.length() != 0 && op2Array.length() != 0) {
             long[] op1shape = op1Array.shape();
             long[] op2shape = op2Array.shape();
@@ -1100,8 +1203,7 @@ public class IntervalAnalysis {
             else
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
 
-            INDArray retArray =  op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
-            return retArray;
+            return op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
         }
         else {
             return Nd4j.empty();
@@ -1280,6 +1382,9 @@ public class IntervalAnalysis {
                 } else if (distrName.equals("gamma")) {
                     GammaDistribution gamma = new GammaDistributionImpl(funcParams.get(0), funcParams.get(1));
                     getDiscretePriorsSingle(single, prob1, prob2, gamma, pi);
+                } else if (distrName.equals("beta")) {
+                    BetaDistribution beta = new BetaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                    getDiscretePriorsSingle(single, prob1, prob2, beta, pi);
                 }
             }
             return new INDArray[]{Nd4j.createFromArray(single), Nd4j.createFromArray(prob1), Nd4j.createFromArray(prob2)};
@@ -1358,7 +1463,9 @@ public class IntervalAnalysis {
     }
 
     private double normal_LPDF(double y, double mu, double sigma) {
-        return -log(sigma) - 0.5*((y - mu)*(y - mu)/(sigma*sigma));
+        if (sigma <= pow(10, -16))// || sigma>20)
+            return -pow(10, 16);
+        return -Math.log(sigma) - 0.5*((y - mu)*(y - mu)/(sigma*sigma));
     }
 
     //=================================================================================================
@@ -1485,10 +1592,10 @@ public class IntervalAnalysis {
                     NormalDistributionImpl normal1 = new NormalDistributionImpl(mu.getDouble(ti,yi,0), sigma.getDouble(ti,0,1) + 0.0001);
                     NormalDistributionImpl normal2 = new NormalDistributionImpl(mu.getDouble(ti,yi,1), sigma.getDouble(ti,0,0) + 0.0001);
                     NormalDistributionImpl normal3 = new NormalDistributionImpl(mu.getDouble(ti,yi,1), sigma.getDouble(ti,0,1) + 0.0001);
-                    obsProb[0][ti] += log(normal0.density(yArray[yi]));
-                    obsProb[1][ti] += log(normal1.density(yArray[yi]));
-                    obsProb[2][ti] += log(normal2.density(yArray[yi]));
-                    obsProb[3][ti] += log(normal3.density(yArray[yi]));
+                    obsProb[0][ti] += Math.log(normal0.density(yArray[yi]));
+                    obsProb[1][ti] += Math.log(normal1.density(yArray[yi]));
+                    obsProb[2][ti] += Math.log(normal2.density(yArray[yi]));
+                    obsProb[3][ti] += Math.log(normal3.density(yArray[yi]));
                 }
             }
             INDArray newProb = exp(Nd4j.create(obsProb)).transpose();
