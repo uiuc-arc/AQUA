@@ -76,10 +76,13 @@ public class TestIntervalAnalysis {
     @Test
     public void TestNd4j() {
         System.out.println("==========");
-        INDArray newarray = Nd4j.arange(24).reshape(1,4,6);
-        INDArray newarray2 = Nd4j.arange(24).reshape(1,4,6);
-        System.out.println(Nd4j.concat(0,newarray, newarray2));
-        System.out.println(Nd4j.concat(0,newarray, newarray2).slice(0));
+        INDArray newarray = Nd4j.arange(24).reshape(4,6);
+        INDArray newarray2 = Nd4j.arange(24).reshape(4,6);
+        newarray.slice(1).assign(Double.NaN);
+        System.out.println(newarray.getDouble(8));
+        System.out.println(newarray);
+        System.out.println();
+        System.out.println(newarray.add(newarray2).reshape(1,4,6).broadcast(2,4,6));
 
 
     }

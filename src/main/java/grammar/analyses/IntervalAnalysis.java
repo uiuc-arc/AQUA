@@ -33,7 +33,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 50;
+    private int maxCounts = 30;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
@@ -103,7 +103,7 @@ public class IntervalAnalysis {
         addPrior = true;
         for (Set<String> paramSet: paramGroups) {
             if (prevKk != null) {
-                for (String param: paramSet) {
+                for (String param: prevKk) {
                     paramDivs.put(param, minCounts);
                 }
             }
@@ -603,7 +603,8 @@ public class IntervalAnalysis {
                                 String lhsString = assignment.lhs.toString();
                                 for (int i=0; i<dim0; i++) {
                                     String lhsIString = String.format("%s[%s]", lhsString, i+1);
-                                    intervalState.addDepParamCube(lhsIString, rhs.slice(i).reshape(rhsClone));
+                                    INDArray slicei = rhs.slice(i);
+                                    intervalState.addDepParamCube(lhsIString, slicei.reshape(rhsClone));
                                 }
                             }
                         }
@@ -695,8 +696,12 @@ public class IntervalAnalysis {
             INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 String currParamName = String.format("%s[%s]", paramID, jj);
-                if (paramDivs.get(currParamName) == minCounts)
-                    intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
+                if (paramDivs.get(currParamName) == minCounts) {
+                    if (minCounts != 0)
+                        intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
+                    else
+                        intervalState.addDepParamCube(currParamName, Nd4j.empty());
+                }
                 else { // maxCounts
                     INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
                     intervalState.addParamCube(currParamName, rhsMax[0], rhsMax[1], rhsMax[2]);
@@ -707,8 +712,12 @@ public class IntervalAnalysis {
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 for (Integer kk = 1; kk <= paramDims.get(1); kk++) {
                     String currParamName = String.format("%s[%s,%s]", paramID, jj, kk);
-                    if (paramDivs.get(currParamName) == minCounts)
-                        intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
+                    if (paramDivs.get(currParamName) == minCounts) {
+                        if (minCounts != 0)
+                            intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
+                        else
+                            intervalState.addDepParamCube(currParamName, Nd4j.empty());
+                    }
                     else {
                         INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
                         intervalState.addParamCube(currParamName, rhsMax[0], rhsMax[1], rhsMax[2]);
@@ -717,8 +726,13 @@ public class IntervalAnalysis {
             }
         } else if (paramDims.size() == 0) {
             if (paramDivs.get(paramID) == minCounts) {
-                INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
-                intervalState.addParamCube(paramID, rhsMin[0], rhsMin[1], rhsMin[2]);
+                if (minCounts != 0) {
+                    INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
+                    intervalState.addParamCube(paramID, rhsMin[0], rhsMin[1], rhsMin[2]);
+                }
+                else {
+                    intervalState.addDepParamCube(paramID, Nd4j.empty());
+                }
             } else { // maxCounts
                 INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
                 intervalState.addParamCube(paramID, rhsMax[0], rhsMax[1], rhsMax[2]);
@@ -849,13 +863,18 @@ public class IntervalAnalysis {
         for (long ii=0; ii<likeCube.length(); ii++) {
             // NormalDistributionImpl normal = new NormalDistributionImpl(params[0].getDouble(ii), sd);
             // likeCube.putScalar(ii, log(normal.density(yNDArray.getDouble(ii))));
-            double yiiL = normal_LPDF(yNDArray.getDouble(ii),
-                    params[0].getDouble(ii),
-                    params[1].getDouble(ii));
-            likeCube.putScalar(ii, yiiL);
+            double mu = params[0].getDouble(ii);
+            double sigma = params[1].getDouble(ii);
+            if (mu == Double.NaN || sigma == Double.NaN) {
+                likeCube.putScalar(ii, 0);
+            }
+            else {
+                double yiiL = normal_LPDF(yNDArray.getDouble(ii), mu, sigma);
+                likeCube.putScalar(ii, yiiL);
+            }
         }
         // double minVal = Nd4j.min(likeCube).getDouble() - 100;
-        // BooleanIndexing.replaceWhere(likeCube, minVal, Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
         INDArray logSum = likeCube;
         if (likeCube.shape()[0] != 1) {
             logSum = likeCube.sum(0);
@@ -876,6 +895,7 @@ public class IntervalAnalysis {
                         params[1].getDouble(ii));
                 likeCube.putScalar(ii, yiiL);
             }
+            BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
             logSum = likeCube;
             if (likeCube.shape()[0] != 1) {
                 logSum = likeCube.sum(0);
@@ -1026,10 +1046,18 @@ public class IntervalAnalysis {
         else if (intervalState.paramValues.containsKey(pp.id + "[1]")){
             ArrayList<Integer> dimInfo = paramMap.get(pp.id + "[1]").getValue();
             Integer paramLength = dimInfo.get(0);
-            INDArray paramIValue = intervalState.paramValues.get(pp.id + "[1]").getValue();
+            INDArray paramIValue = null;
+            for (int i=1; i<1+paramLength; i++) {
+                Pair<Integer, INDArray> paramIValuePair = intervalState.paramValues.get(pp.id + "[" + i + "]");
+                if (paramIValuePair != null && paramIValuePair.getValue().shape().length != 0) {
+                    paramIValue = paramIValuePair.getValue();
+                    break;
+                }
+            }
             long[] oneDimShape = paramIValue.shape();
-            long[] newShape = new long[oneDimShape.length + 1];
-            System.arraycopy(oneDimShape,0, newShape, 1, oneDimShape.length);
+            long[] newShape = new long[oneDimShape.length];
+            System.arraycopy(oneDimShape,0, newShape, 0, oneDimShape.length);
+            assert(newShape[0] == 1);
             newShape[0] = paramLength;
             INDArray retArray = Nd4j.createUninitialized(newShape);
             for (int i=0; i<paramLength; i++ ) {
@@ -1038,7 +1066,7 @@ public class IntervalAnalysis {
                 if (paramIValue.length() > 0)
                     retArray.slice(i).assign(paramIValue);
                 else
-                    retArray.slice(i).assign(Double.POSITIVE_INFINITY);
+                    retArray.slice(i).assign(Double.NaN);
             }
             // System.out.println(pp.id + "[1] " + Nd4j.createFromArray(retArray.slice(0).shape()));
             System.out.println(pp.id + " " + Nd4j.createFromArray(retArray.shape()));
