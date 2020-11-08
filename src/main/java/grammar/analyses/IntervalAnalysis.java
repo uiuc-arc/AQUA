@@ -565,7 +565,7 @@ public class IntervalAnalysis {
                 Double[] paramLimits = paramInfo.getKey();
                 ArrayList<Integer> paramDims = paramInfo.getValue();
                 if (assignment.rhs instanceof AST.FunctionCall
-                        && isFuncConst(assignment.rhs) && addPrior) { // completely independent new param
+                        && isFuncConst(assignment.rhs)) { // completely independent new param
                     System.out.println("Const param");
                     // TODO: fix dim if rhs contains data
                     // TODO: fix usage of single Id without dim, e.g beta~... but beta has dim 2
@@ -1263,20 +1263,33 @@ public class IntervalAnalysis {
                 single[0] = -pow(10, 16);
             if (single[single.length - 1] == Double.POSITIVE_INFINITY)
                 single[single.length - 1] = pow(10, 16);
-            prob1[0] = 0;
-            prob1[prob1.length - 1] = 0;
-            prob2[0] = 0;
-            prob2[prob2.length - 1] = 0;
-            prob2[prob2.length - 2] = 0;
-            double pp = pi;
-            for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
-                try {
-                    single[ii] = normal.inverseCumulativeProbability(pp);
-                    prob1[ii] = (castHasDensity.density(single[ii]));
-                    prob2[ii - 1] = prob1[ii];
-                } catch (MathException e) {
-                    e.printStackTrace();
+            if (addPrior) {
+                prob1[0] = 0;
+                prob1[prob1.length - 1] = 0;
+                prob2[0] = 0;
+                prob2[prob2.length - 1] = 0;
+                prob2[prob2.length - 2] = 0;
+                double pp = pi;
+                for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
+                    try {
+                        single[ii] = normal.inverseCumulativeProbability(pp);
+                        prob1[ii] = (castHasDensity.density(single[ii]));
+                        prob2[ii - 1] = prob1[ii];
+                    } catch (MathException e) {
+                        e.printStackTrace();
+                    }
                 }
+            } else {
+                double pp = pi;
+                for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
+                    try {
+                        single[ii] = normal.inverseCumulativeProbability(pp);
+                    } catch (MathException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Arrays.fill(prob1, 1);
+                Arrays.fill(prob2, 1);
             }
         }
         else {
@@ -1292,7 +1305,6 @@ public class IntervalAnalysis {
     }
 
     private void getDiscretePriorsSingleUn(double[] single, double[] prob1, double[] prob2, ContinuousDistribution normal, double pi) {
-        HasDensity<Double> castHasDensity = (HasDensity<Double>) normal;
         if (pi >= 0) {
             try {
                 single[0] = normal.inverseCumulativeProbability(0.00000000001);
@@ -1304,8 +1316,8 @@ public class IntervalAnalysis {
                 single[0] = -pow(10, 16);
             if (single[single.length - 1] == Double.POSITIVE_INFINITY)
                 single[single.length - 1] = pow(10, 16);
-            int ii = 1;
-            for (double pp = pi; pp <= 1 - pi; pp += pi, ii++) {
+            double pp = pi;
+            for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
                 try {
                     single[ii] = normal.inverseCumulativeProbability(pp);
                 } catch (MathException e) {
@@ -1327,7 +1339,6 @@ public class IntervalAnalysis {
     }
 
     private void getDiscretePriorsSingleUnif(double[] single, double[] prob1, double[] prob2, AbstractRealDistribution normal, double pi) {
-        AbstractRealDistribution castHasDensity = (AbstractRealDistribution) normal;
         if (pi >= 0) {
             single[0] = normal.inverseCumulativeProbability(0.0000000001);
             single[single.length - 1] = normal.inverseCumulativeProbability(0.9999999999);
@@ -1337,11 +1348,9 @@ public class IntervalAnalysis {
                 single[single.length - 1] = pow(10, 10);
             Arrays.fill(prob1, 1);
             Arrays.fill(prob2, 1);
-            int ii = 1;
-            for (double pp = pi; pp <= 1 - pi; pp += pi, ii++) {
+            double pp = pi;
+            for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
                 single[ii] = normal.inverseCumulativeProbability(pp);
-                // prob1[ii] = (castHasDensity.density(single[ii]));
-                // prob2[ii - 1] = prob1[ii];
             }
         }
         else {

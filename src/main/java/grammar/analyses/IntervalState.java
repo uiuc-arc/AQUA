@@ -15,8 +15,9 @@ import org.nd4j.linalg.util.Paths;
 import sun.awt.image.ImageWatched;
 import org.nd4j.linalg.api.buffer.DataType;
 
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
@@ -76,7 +77,6 @@ public class IntervalState extends AbstractState{
     }
 
     public double getResultsMean(String param) {
-        System.out.println("****************" + param);
         INDArray lower = probCube.get(0);
         INDArray upper = probCube.get(1);
         Integer nDim = lower.shape().length;
@@ -114,7 +114,20 @@ public class IntervalState extends AbstractState{
         }
         Double fullLower = null;
         Double fullUpper = null;
+        String[] pathSplits = path.split("/");
+        FileWriter mathOut = null;
+        BufferedWriter bw;
+        PrintWriter pw = null;
+        try {
+            mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
+            bw = new BufferedWriter(mathOut);
+            pw = new PrintWriter(bw);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int j = 0;
         for (String ss: strings) {
+            j++;
             int[] numbersCopy = numbers.clone();
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
             Integer paramDimIdx = paramIdxValues.getKey();
@@ -150,6 +163,21 @@ public class IntervalState extends AbstractState{
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
+            pw.println(String.format("txt%s=Import[\"%s\"];", j, outputFile));
+            pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
+            pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
+                    " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
+                    " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
+            pw.println(String.format("Graphics[{Orange, \n" +
+                    "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
+                    " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
+                    " PlotLabel -> \"%s\"]", j, ss));
+            pw.flush();
+        }
+        try {
+            mathOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -162,6 +190,25 @@ public class IntervalState extends AbstractState{
                 file.delete();
 
         }
+        String helperFunc = "getToData[txt_] := \n" +
+                " ToExpression[\n" +
+                "  StringReplace[\n" +
+                "   txt, {\"[\" -> \"{\", \"]\" -> \"}\", \"{\" -> \"<|\", \"}\" -> \"|>\", \n" +
+                "    \":\" -> \"->\", \"E\" -> \"*10^\"}]]\n" +
+                "pairNewRect[data_] := (Table[\n" +
+                "   {{tt[[1]], tt[[2]]}, {tt[[3]], tt[[4]]}},\n" +
+                "   {tt, Delete[\n" +
+                "     Transpose[{data[[1]], data[[2]], RotateLeft[data[[1]]], \n" +
+                "       RotateLeft[data[[3]]]}], -1]}])\n";
+        String[] pathSplits = path.split("/");
+        try {
+            FileWriter mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m");
+            mathOut.write(helperFunc);
+            mathOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
