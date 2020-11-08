@@ -62,7 +62,8 @@ public class IntervalState extends AbstractState{
             long[] singleDim = new long[dimSize.size()];
             Arrays.fill(singleDim, 1);
             long[] realShapes = splits.shape();
-            System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length);
+            if (splits.shape().length > 1)
+                System.arraycopy(realShapes, 0, singleDim, 0, realShapes.length); // changed
             singleDim[dimSize.size() - 1] = newSplitLen;
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(singleDim)));
             // dimSize: 2,3,4,1  singleDim: 1,3,1,5
