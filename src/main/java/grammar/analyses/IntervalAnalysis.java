@@ -33,9 +33,9 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 10;
+    private int maxCounts = 100;
     private int minCounts = 0;
-    private int PACounts = 1;
+    private int PACounts = 10;
     private Boolean toAttack;
     private String path;
     private Boolean addPrior = true;
@@ -58,6 +58,8 @@ public class IntervalAnalysis {
         System.out.println(paramMap.keySet());
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         System.out.println("groups of params:" + paramGroups);
+        if (paramGroups.size() > 1)
+            PACounts = 1;
         IntervalState endFacts;
         IntervalState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
