@@ -37,4 +37,10 @@ public class AnalysisRunner {
         double duration = (endTime - startTime)/1000000000.0;
         System.out.println("Analysis Time: " + duration);
     }
+
+    public static void main (String[] args) {
+        String localDir = "/home/zixinh2/analysis/progs/";
+        // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
+        AnalysisRunner.analyzeProgram(localDir, args[0]);
+    }
 }
