@@ -29,7 +29,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "unemployment");
+        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_chr");
         // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";

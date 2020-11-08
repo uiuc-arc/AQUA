@@ -146,8 +146,19 @@ public class IntervalState extends AbstractState{
             String outputFile = path + "/analysis_" + ss + ".txt";
             Nd4j.writeTxt(outMatrix,outputFile);
             File file = new File(outputFile);
-            if (!file.exists())
-                Nd4j.writeTxt(outMatrix,outputFile);
+            if (!file.exists()) {
+                Nd4j.writeTxt(outMatrix, outputFile);
+                pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
+                pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
+                pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
+                        " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
+                        " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
+                pw.println(String.format("Graphics[{Orange, \n" +
+                        "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
+                        " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
+                        " PlotLabel -> \"%s\"]", j, ss));
+                pw.flush();
+            }
             else {
                 INDArray lastOut = null;
                 try {
@@ -163,16 +174,6 @@ public class IntervalState extends AbstractState{
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
-            pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
-            pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
-            pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
-                    " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
-                    " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
-            pw.println(String.format("Graphics[{Orange, \n" +
-                    "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
-                    " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
-                    " PlotLabel -> \"%s\"]", j, ss));
-            pw.flush();
         }
         try {
             mathOut.close();

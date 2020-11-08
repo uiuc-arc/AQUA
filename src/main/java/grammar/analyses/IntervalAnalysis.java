@@ -33,7 +33,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 10;
+    private int maxCounts = 50;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
