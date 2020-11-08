@@ -7,6 +7,7 @@ import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.commons.math3.distribution.TDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
@@ -17,6 +18,8 @@ import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 
 import static java.lang.Math.*;
 import static org.nd4j.linalg.indexing.Indices.shape;
@@ -33,7 +36,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 30;
+    private int maxCounts = 50;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
@@ -844,68 +847,65 @@ public class IntervalAnalysis {
         if (params == null || params[0].shape().length == 0 || params[1].shape().length == 0 ) return;
         System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
         System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
-        if (distrExpr.id.id.equals("normal")) {
-            getProbLogLU(yArray, sumExpLowerUpper, params);
-            intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
-        }
+        getProbLogLU(yArray, sumExpLowerUpper, params, distrExpr.id.id);
+        intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
     }
 
-    private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params) {
-        long[] shape1 = params[0].shape();
-        long[] shape2 = params[1].shape();
+    private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params, String distrId) {
         INDArray yNDArray = Nd4j.createFromArray(yArray[0]); // good data
-        long[] maxShape = getMaxShape(shape1, shape2);
+        long[][] allShape = new long[params.length][];
+        long[] maxShape = params[0].shape();
+        for (int j=0; j < params.length; j++) {
+            allShape[j] = params[j].shape();
+            if (j == 1)
+                maxShape = getMaxShape(allShape[j-1], allShape[j]);
+            else
+                maxShape = getMaxShape(maxShape, allShape[j]);
+        }
         maxShape = getMaxShape(maxShape, yNDArray.shape());
-        params[0] = params[0].reshape(getReshape(shape1, maxShape)).broadcast(maxShape);
-        params[1] = params[1].reshape(getReshape(shape2, maxShape)).broadcast(maxShape);
+        System.out.println("maxShape " + Nd4j.createFromArray(maxShape));
+        for (int j=0; j < params.length; j++) {
+            System.out.println("allShape " + j+ Nd4j.createFromArray(allShape[j]));
+            params[j] = params[j].reshape(getReshape(allShape[j], maxShape)).broadcast(maxShape);
+        }
         yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
         INDArray likeCube = Nd4j.createUninitialized(maxShape);
-        for (long ii=0; ii<likeCube.length(); ii++) {
-            // NormalDistributionImpl normal = new NormalDistributionImpl(params[0].getDouble(ii), sd);
-            // likeCube.putScalar(ii, log(normal.density(yNDArray.getDouble(ii))));
-            double mu = params[0].getDouble(ii);
-            double sigma = params[1].getDouble(ii);
-            if (mu == Double.NaN || sigma == Double.NaN) {
-                likeCube.putScalar(ii, 0);
-            }
-            else {
-                double yiiL = normal_LPDF(yNDArray.getDouble(ii), mu, sigma);
-                likeCube.putScalar(ii, yiiL);
-            }
-        }
-        // double minVal = Nd4j.min(likeCube).getDouble() - 100;
-        BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
-        INDArray logSum = likeCube;
-        if (likeCube.shape()[0] != 1) {
-            logSum = likeCube.sum(0);
-            long[] prevShape = likeCube.shape().clone();
-            prevShape[0] = 1;
-            logSum = logSum.reshape(prevShape);
-            System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
-        }
+        INDArray logSum;
+        logSum = getLogSum(params, yNDArray, likeCube, distrId);
         sumExpLowerUpper[1] = logSum; // upper for good
         if (!toAttack)
             sumExpLowerUpper[0] = sumExpLowerUpper[1];
         else {
             yNDArray = Nd4j.createFromArray(yArray[1]); // bad data
             yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
-            for (long ii=0; ii<likeCube.length(); ii++) {
-                double yiiL = normal_LPDF(yNDArray.getDouble(ii),
-                        params[0].getDouble(ii),
-                        params[1].getDouble(ii));
-                likeCube.putScalar(ii, yiiL);
-            }
-            BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
-            logSum = likeCube;
-            if (likeCube.shape()[0] != 1) {
-                logSum = likeCube.sum(0);
-                long[] prevShape = likeCube.shape().clone();
-                prevShape[0] = 1;
-                logSum = logSum.reshape(prevShape);
-                System.out.println("sum shape: " + Nd4j.createFromArray(logSum.shape()));
-            }
+            logSum = getLogSum(params, yNDArray, likeCube, distrId);
             sumExpLowerUpper[0] = logSum; // lower for bad
         }
+    }
+
+    private INDArray getLogSum(INDArray[] params, INDArray yNDArray, INDArray likeCube, String distrId) {
+        INDArray logSum;
+        if (distrId.equals("normal")) {
+            for (long ii = 0; ii < likeCube.length(); ii++) {
+                double yiiL = normal_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii), params[1].getDouble(ii));
+                likeCube.putScalar(ii, yiiL);
+            }
+        } else if (distrId.equals("student_t")) {
+            for (long ii = 0; ii < likeCube.length(); ii++) {
+                double yiiL = student_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii),  // first param is nu
+                        params[1].getDouble(ii), params[2].getDouble(ii));
+                likeCube.putScalar(ii, yiiL);
+            }
+        }
+        BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
+        logSum = likeCube;
+        if (likeCube.shape()[0] != 1) {
+            logSum = likeCube.sum(0);
+            long[] prevShape = likeCube.shape().clone();
+            prevShape[0] = 1;
+            logSum = logSum.reshape(prevShape);
+        }
+        return logSum;
     }
 
     private INDArray[] getParams(IntervalState intervalState, AST.FunctionCall distrExpr) {
@@ -993,7 +993,7 @@ public class IntervalAnalysis {
             INDArray mu = DistrCube(pp.parameters.get(1), intervalState);
             INDArray sigma = DistrCube(pp.parameters.get(2), intervalState);
             INDArray[] probLU = new INDArray[2];
-            getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma});
+            getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
             ret = log(concat1(probLU));
         }
         return ret;
@@ -1492,12 +1492,16 @@ public class IntervalAnalysis {
         }
     }
 
-    private double normal_LPDF(double y, double mu, double sigma) {
+    private static double normal_LPDF(double y, double mu, double sigma) {
         if (sigma <= pow(10, -16))// || sigma>20)
             return -pow(10, 16);
         return -Math.log(sigma) - 0.5*((y - mu)*(y - mu)/(sigma*sigma));
     }
 
+    private static double student_LPDF(double y, double nu, double mu, double sigma) {
+        TDistribution studT = new TDistribution(nu);
+        return studT.logDensity((y - mu)/sigma);
+    }
     //=================================================================================================
     //=============  An Inefficient Implementation by Joint Probability Tables ========================
     //=================================================================================================

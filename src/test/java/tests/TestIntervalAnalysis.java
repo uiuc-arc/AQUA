@@ -29,7 +29,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_chr");
+        AnalysisRunner.analyzeProgram(localDir, "unemployment_t");
         // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.stan";
         // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.data.R";
         // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";
@@ -80,9 +80,9 @@ public class TestIntervalAnalysis {
         INDArray newarray2 = Nd4j.arange(24).reshape(4,6);
         newarray.slice(1).assign(Double.NaN);
         System.out.println(newarray.getDouble(8));
-        System.out.println(newarray);
-        System.out.println();
-        System.out.println(newarray.add(newarray2).reshape(1,4,6).broadcast(2,4,6));
+        double a = newarray.getDouble(8);
+        System.out.println(Math.log(a));
+        System.out.println(a*a/23.6);
 
 
     }
