@@ -33,7 +33,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 100;
+    private int maxCounts = 10;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
@@ -122,7 +122,7 @@ public class IntervalAnalysis {
                 // System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
             }
             else
-                // System.out.println("Prob Cube Empty!");
+                System.out.println("Prob Cube Empty!");
             endFacts.writeResults(new HashSet<>(paramSet), path);
             addPrior = false;
         }
