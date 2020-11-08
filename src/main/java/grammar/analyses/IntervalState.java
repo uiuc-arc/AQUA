@@ -163,7 +163,7 @@ public class IntervalState extends AbstractState{
             // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
             // System.out.println(intervalState.probCube.get(0));
             // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
-            pw.println(String.format("txt%s=Import[\"%s\"];", j, outputFile));
+            pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
             pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
             pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
                     " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
@@ -190,7 +190,8 @@ public class IntervalState extends AbstractState{
                 file.delete();
 
         }
-        String helperFunc = "getToData[txt_] := \n" +
+        String helperFunc = "SetDirectory[NotebookDirectory[]];\n" +
+                "getToData[txt_] := \n" +
                 " ToExpression[\n" +
                 "  StringReplace[\n" +
                 "   txt, {\"[\" -> \"{\", \"]\" -> \"}\", \"{\" -> \"<|\", \"}\" -> \"|>\", \n" +
@@ -199,7 +200,13 @@ public class IntervalState extends AbstractState{
                 "   {{tt[[1]], tt[[2]]}, {tt[[3]], tt[[4]]}},\n" +
                 "   {tt, Delete[\n" +
                 "     Transpose[{data[[1]], data[[2]], RotateLeft[data[[1]]], \n" +
-                "       RotateLeft[data[[3]]]}], -1]}])\n";
+                "       RotateLeft[data[[3]]]}], -1]}])\n" +
+                "pairNewRectCDF[data_] := (Table[\n" +
+                "   {{tt[[1]], tt[[2]]}, {tt[[3]], tt[[4]]}},\n" +
+                "   {tt, Delete[\n" +
+                "     Transpose[{data[[1]], Accumulate[data[[2]]], \n" +
+                "       RotateLeft[data[[1]]], \n" +
+                "       RotateLeft[Accumulate[data[[3]]]]}], -1]}])\n";
         String[] pathSplits = path.split("/");
         try {
             FileWriter mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m");
@@ -217,8 +224,8 @@ public class IntervalState extends AbstractState{
         INDArray upper = probCube.get(1);
         BooleanIndexing.replaceWhere(likeProbLower, -Math.pow(1,16), Conditions.isNan());
         BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
-        System.out.println(Nd4j.createFromArray(lower.shape()));
-        System.out.println(Nd4j.createFromArray(likeProbLower.shape()));
+        // System.out.println(Nd4j.createFromArray(lower.shape()));
+        // System.out.println(Nd4j.createFromArray(likeProbLower.shape()));
         INDArray newLower = lower.add(likeProbLower.broadcast(lower.shape())); // mul
         INDArray newUpper = upper.add(likeProbUpper.broadcast(lower.shape())); // mul
         // System.out.println("old lower:" + lower);
