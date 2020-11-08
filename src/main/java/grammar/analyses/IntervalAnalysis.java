@@ -1,17 +1,14 @@
 package grammar.analyses;
 
-import com.google.common.primitives.Doubles;
 import grammar.AST;
 import grammar.cfg.*;
 import grammar.cfg.BasicBlock;
-import jdk.internal.org.objectweb.asm.Type;
 import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.summarystats.StandardDeviation;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
