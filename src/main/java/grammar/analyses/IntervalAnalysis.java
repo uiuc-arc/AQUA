@@ -36,7 +36,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 50;
+    private int maxCounts = 10;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
@@ -61,8 +61,8 @@ public class IntervalAnalysis {
         // System.out.println(paramMap.keySet());
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         System.out.println("groups of params:" + paramGroups);
-        if (paramGroups.size() > 1)
-            PACounts = 1;
+        // if (paramGroups.size() > 1)
+        PACounts = 1;
         IntervalState endFacts;
         IntervalState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
@@ -70,39 +70,62 @@ public class IntervalAnalysis {
         toAttack = false;
         worklist.add(worklistAll.peek());
         endFacts = WorklistIter(worklist);
-        // Then focus on the max value from Pre-Analysis
+        // Again with min splits to find max interval
+        toAttack = false;
+        minCounts = 0;
+        maxCounts = 10;
         if (endFacts != null) {
             for (String kk: endFacts.paramValues.keySet()) {
                 if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
                     continue;
-                Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
-                Double[] limits = limitsDims.getKey();
-                limits[2] = endFacts.getResultsMean(kk);
                 paramDivs.put(kk, minCounts);
             }
         }
-        // toAttack = true;
-        // for (BasicBlock bb: worklistAll) {
-        //     bb.dataflowFacts = null;
-        // }
-        // scalarParam.clear();
-        // System.gc();
-        // worklist.add(worklistAll.peek());
-        // endFacts = WorklistIter(worklist);
-        // if (endFacts.probCube.size() > 0) {
-        //     System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape(// )));
-        // }
-        // else
-        //     System.out.println("Prob Cube Empty!");
-        // for (String kk: paramMap.keySet()) {
-        //     if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]))
-        //         continue;
-        //     endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)), path);
-        // }
-
-        // Analysis again by individual/groups of params
-        toAttack = true;
         Set<String> prevKk = null;
+        addPrior = true;
+        for (Set<String> paramSet: paramGroups) {
+            if (prevKk != null) {
+                for (String param: prevKk) {
+                    paramDivs.put(param, minCounts);
+                }
+            }
+            for (String param: paramSet) {
+                paramDivs.put(param, maxCounts);
+            }
+            for (BasicBlock bb: worklistAll) {
+                bb.dataflowFacts = null;
+            }
+            scalarParam.clear();
+            System.gc();
+            prevKk = paramSet;
+            worklist.add(worklistAll.peek());
+            endFacts = WorklistIter(worklist);
+            if (endFacts.probCube.size() > 0) {
+                // System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
+                for (String kk: endFacts.paramValues.keySet()) {
+                    if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
+                        continue;
+                    Pair<Integer, INDArray> kkResults = endFacts.paramValues.get(kk);
+                    if (kkResults.getKey()==null || kkResults.getValue().length() == 0)
+                        continue;
+                    Pair<Double[], ArrayList<Integer>> limitsDims = paramMap.get(kk);
+                    Double[] limits = limitsDims.getKey();
+                    double newMean =endFacts.getResultsMean(kk);
+                    if ((limits[2] != null  && abs(newMean) < abs(limits[2]))
+                        ||  (limits[1] == null && abs(newMean) < 25)) {
+                        limits[2] = newMean;
+                    }
+                    paramDivs.put(kk, minCounts);
+                }
+            }
+            else
+                System.out.println("Prob Cube Empty!");
+            addPrior = false;
+        }
+        toAttack = true;
+        minCounts = 0;
+        maxCounts = 50;
+        prevKk = null;
         addPrior = true;
         for (Set<String> paramSet: paramGroups) {
             if (prevKk != null) {
@@ -1138,6 +1161,8 @@ public class IntervalAnalysis {
     }
 
     private void addUninitParam(IntervalState intervalState, String paramName) {
+        System.out.println(paramName);
+        System.out.println(paramMap.keySet());
         Pair<Double[], ArrayList<Integer>> LimitsDim = paramMap.get(paramName);
         Double[] limits = LimitsDim.getKey();
         int piCounts;
@@ -1457,6 +1482,7 @@ public class IntervalAnalysis {
                     getConstN(dimArray, dd);
                 }
             }
+            System.out.println(dimArray);
             String arrayId = declStatement.id.id;
             if (dimArray.size() == 1) {
                 for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
