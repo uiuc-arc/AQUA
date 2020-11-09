@@ -29,29 +29,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "unemployment_t");
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/unemployment/unemployment.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/y_x/y_x.data.R";
-       //  String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/pilots/pilots.stan";
-       //  String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/pilots/pilots.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/electric_chr/electric_chr.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/electric_chr/electric_chr.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/lightspeed/lightspeed.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall19/are/aura_package/autotemp/org/lightspeed/lightspeed.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/anova_radon_nopred_chr/anova_radon_nopred_chr.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_asym_prior/gauss_mix_asym_prior.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_asym_prior/gauss_mix_asym_prior.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_given_theta/gauss_mix_given_theta.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_given_theta/gauss_mix_given_theta.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_ordered_prior/gauss_mix_ordered_prior.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/gauss_mix_ordered_prior/gauss_mix_ordered_prior.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.pooling/radon.pooling.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.pooling/radon.pooling.sim.data.R";
-        // String stanfile = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.1/radon.1.stan";
-        // String standata = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/radon.1/radon.1.data.R";
+        AnalysisRunner.analyzeProgram(localDir, "gauss_mix_asym_prior");
     }
 
     @Test
