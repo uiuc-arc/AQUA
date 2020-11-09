@@ -912,6 +912,7 @@ public class IntervalAnalysis {
         INDArray[] params = new NDArray[distrExpr.parameters.size()];
         int parami = 0;
         for (AST.Expression pp: distrExpr.parameters) {
+            System.out.println(pp.toString());
             if (pp instanceof AST.Integer) {
                 params[parami] = Nd4j.createFromArray(((AST.Integer) pp).value);
 
@@ -921,7 +922,7 @@ public class IntervalAnalysis {
             }
             else {
                 params[parami] = DistrCube(pp, intervalState);
-                if (params[parami].length() == 0)
+                if (params[parami] == null || params[parami].length() == 0)
                     return null;
             }
             parami++;
@@ -986,7 +987,7 @@ public class IntervalAnalysis {
             INDArray thetaOmtUpper = getMulNDArray(omtheta, omtUpper);
             INDArray likeLower = getAddNDArray(thetaTLower, thetaOmtLower);
             INDArray likeUpper = getAddNDArray(thetaTUpper, thetaOmtUpper);
-            ret = concat1(new INDArray[]{likeLower, likeUpper});
+            ret = concat1(new INDArray[]{log(likeLower), log(likeUpper)});
         }
         else if (pp.id.id.equals("normal_lpdf")) {
             double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
@@ -994,7 +995,7 @@ public class IntervalAnalysis {
             INDArray sigma = DistrCube(pp.parameters.get(2), intervalState);
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
-            ret = log(concat1(probLU));
+            ret = exp(concat1(probLU));
         }
         return ret;
     }
@@ -1047,12 +1048,16 @@ public class IntervalAnalysis {
             ArrayList<Integer> dimInfo = paramMap.get(pp.id + "[1]").getValue();
             Integer paramLength = dimInfo.get(0);
             INDArray paramIValue = null;
-            for (int i=1; i<1+paramLength; i++) {
+            int i=1;
+            for (; i<1+paramLength; i++) {
                 Pair<Integer, INDArray> paramIValuePair = intervalState.paramValues.get(pp.id + "[" + i + "]");
                 if (paramIValuePair != null && paramIValuePair.getValue().shape().length != 0) {
                     paramIValue = paramIValuePair.getValue();
                     break;
                 }
+            }
+            if (i == 1+paramLength) {
+                return null;
             }
             long[] oneDimShape = paramIValue.shape();
             long[] newShape = new long[oneDimShape.length];
@@ -1060,7 +1065,8 @@ public class IntervalAnalysis {
             assert(newShape[0] == 1);
             newShape[0] = paramLength;
             INDArray retArray = Nd4j.createUninitialized(newShape);
-            for (int i=0; i<paramLength; i++ ) {
+            i=0;
+            for (; i<paramLength; i++ ) {
                 String paramIName = String.format("%s[%s]", pp.id, i + 1);
                 paramIValue = intervalState.paramValues.get(paramIName).getValue();
                 if (paramIValue.length() > 0)

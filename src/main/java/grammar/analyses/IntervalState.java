@@ -131,8 +131,11 @@ public class IntervalState extends AbstractState{
         int j = 0;
         for (String ss: strings) {
             j++;
+            System.out.println(ss);
             int[] numbersCopy = numbers.clone();
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
+            if (paramIdxValues == null)
+                continue;
             Integer paramDimIdx = paramIdxValues.getKey();
             numbersCopy[paramDimIdx - 1] = 0;
             INDArray paramvalue = paramIdxValues.getValue();
@@ -142,7 +145,6 @@ public class IntervalState extends AbstractState{
                 fullLower = currsumLower.sumNumber().doubleValue();
                 fullUpper = currsumUpper.sumNumber().doubleValue();
             }
-            System.out.println(ss);
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
                     Nd4j.toFlattened(currsumLower).div(fullLower),
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
