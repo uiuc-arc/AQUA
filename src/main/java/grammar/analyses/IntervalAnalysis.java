@@ -882,6 +882,14 @@ public class IntervalAnalysis {
 
     private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params, String distrId) {
         INDArray yNDArray = Nd4j.createFromArray(yArray[0]); // good data
+        INDArray badcopy = null;
+        if (yNDArray.shape()[0] == 1 && params[0].shape()[0] ==2) {
+            long[] preShape = new long[params[0].shape().length];
+            System.arraycopy(params[0].shape(),0, preShape,0, preShape.length);
+            preShape[0] = 1;
+            badcopy = params[0].dup().slice(1).reshape(preShape);
+            params[0] = params[0].slice(0).reshape(preShape);
+        }
         long[][] allShape = new long[params.length][];
         long[] maxShape = params[0].shape();
         for (int j=0; j < params.length; j++) {
@@ -892,8 +900,6 @@ public class IntervalAnalysis {
                 maxShape = getMaxShape(maxShape, allShape[j]);
         }
         maxShape = getMaxShape(maxShape, yNDArray.shape());
-        System.out.println(Nd4j.createFromArray(maxShape));
-        System.out.println(Nd4j.createFromArray(yNDArray.shape()));
         for (int j=0; j < params.length; j++) {
             System.out.println("allShape " + j+ Nd4j.createFromArray(allShape[j]));
             params[j] = params[j].reshape(getReshape(allShape[j], maxShape)).broadcast(maxShape);
@@ -908,6 +914,8 @@ public class IntervalAnalysis {
         else {
             yNDArray = Nd4j.createFromArray(yArray[1]); // bad data
             yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);
+            if (badcopy != null)
+                params[0] = badcopy.reshape(getReshape(badcopy.shape(), maxShape)).broadcast(maxShape);
             logSum = getLogSum(params, yNDArray, likeCube, distrId);
             sumExpLowerUpper[0] = logSum; // lower for bad
         }
