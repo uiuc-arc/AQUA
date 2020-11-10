@@ -78,7 +78,7 @@ public class IntervalAnalysis {
         // Again with min splits to find max interval
         toAttack = false;
         minCounts = 0;
-        maxCounts = 50;
+        maxCounts = 10;
         if (endFacts != null) {
             for (String kk: endFacts.paramValues.keySet()) {
                 if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
@@ -1499,6 +1499,13 @@ public class IntervalAnalysis {
             getConstN(nested, ((AST.ArrayAccess) dd).dims.dims.get(0));
             double[] dataValue = dataPair.getValue();
             dimArray.add((int) dataValue[nested.get(0) - 1]);
+        } else if (scalarParam.containsKey(dd.toString().split("-")[0])) {
+            String ddStrings[] = dd.toString().split("-");
+            String stringT = ddStrings[0];
+            String minusC = ddStrings[1];
+            Integer currT = scalarParam.get(stringT);
+            Integer one = Integer.valueOf(minusC);
+            dimArray.add(currT - one);
         }
     }
 
