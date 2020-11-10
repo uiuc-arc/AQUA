@@ -43,7 +43,7 @@ public class IntervalAnalysis {
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
     private int maxCounts = 50;
     private int minCounts = 0;
-    private int PACounts = 10;
+    private int PACounts = 1;
     private Boolean toAttack;
     private String path;
     private Boolean addPrior = true;
@@ -78,7 +78,7 @@ public class IntervalAnalysis {
         // Again with min splits to find max interval
         toAttack = false;
         minCounts = 0;
-        maxCounts = 10;
+        maxCounts = 50;
         if (endFacts != null) {
             for (String kk: endFacts.paramValues.keySet()) {
                 if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
@@ -1509,6 +1509,8 @@ public class IntervalAnalysis {
     }
 
     private static double student_LPDF(double y, double nu, double mu, double sigma) {
+        if (nu <= pow(10, -16) || sigma <= pow(10, -16))// || sigma>20)
+            return -pow(10, 16);
         TDistribution studT = new TDistribution(nu);
         return studT.logDensity((y - mu)/sigma);
     }
