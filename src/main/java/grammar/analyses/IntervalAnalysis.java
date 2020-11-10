@@ -7,7 +7,11 @@ import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
+import org.apache.commons.math3.distribution.CauchyDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.math3.distribution.BetaDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
@@ -17,6 +21,7 @@ import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
+import javax.print.attribute.HashDocAttributeSet;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -36,7 +41,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 10;
+    private int maxCounts = 50;
     private int minCounts = 0;
     private int PACounts = 10;
     private Boolean toAttack;
@@ -849,7 +854,7 @@ public class IntervalAnalysis {
                 double[] prob2j = new double[piCounts];
                 if (sd == 0)
                     sd = pow(10,-16);
-                NormalDistribution normal = new NormalDistributionImpl(mean, sd);
+                NormalDistribution normal = new NormalDistribution(mean, sd);
                 getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
                 // }
                 prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob1j));
@@ -886,7 +891,8 @@ public class IntervalAnalysis {
                 maxShape = getMaxShape(maxShape, allShape[j]);
         }
         maxShape = getMaxShape(maxShape, yNDArray.shape());
-        System.out.println("maxShape " + Nd4j.createFromArray(maxShape));
+        System.out.println(Nd4j.createFromArray(maxShape));
+        System.out.println(Nd4j.createFromArray(yNDArray.shape()));
         for (int j=0; j < params.length; j++) {
             System.out.println("allShape " + j+ Nd4j.createFromArray(allShape[j]));
             params[j] = params[j].reshape(getReshape(allShape[j], maxShape)).broadcast(maxShape);
@@ -935,7 +941,6 @@ public class IntervalAnalysis {
         INDArray[] params = new NDArray[distrExpr.parameters.size()];
         int parami = 0;
         for (AST.Expression pp: distrExpr.parameters) {
-            System.out.println(pp.toString());
             if (pp instanceof AST.Integer) {
                 params[parami] = Nd4j.createFromArray(((AST.Integer) pp).value);
 
@@ -1098,7 +1103,6 @@ public class IntervalAnalysis {
                     retArray.slice(i).assign(Double.NaN);
             }
             // System.out.println(pp.id + "[1] " + Nd4j.createFromArray(retArray.slice(0).shape()));
-            System.out.println(pp.id + " " + Nd4j.createFromArray(retArray.shape()));
             return retArray;
         }
         else {// uninitialized param on RHS,
@@ -1161,8 +1165,6 @@ public class IntervalAnalysis {
     }
 
     private void addUninitParam(IntervalState intervalState, String paramName) {
-        System.out.println(paramName);
-        System.out.println(paramMap.keySet());
         Pair<Double[], ArrayList<Integer>> LimitsDim = paramMap.get(paramName);
         Double[] limits = LimitsDim.getKey();
         int piCounts;
@@ -1184,18 +1186,18 @@ public class IntervalAnalysis {
                 getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
             } else if (limits[0] != null) {
                 if (limits[0] == 0) {
-                    GammaDistribution gamma = new GammaDistributionImpl(1, 1);
+                    GammaDistribution gamma = new GammaDistribution(1, 1);
                     getDiscretePriorsSingleUn(single, probLower, probUpper, gamma, pi);
                 } else {
                     UniformRealDistribution unif = new UniformRealDistribution(limits[0], limits[0] + 5);
                     getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
                 }
             } else if (limits[2] != null) {
-                NormalDistribution normal = new NormalDistributionImpl(limits[2], 1);
+                NormalDistribution normal = new NormalDistribution(limits[2], 1);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");
-                NormalDistribution normal = new NormalDistributionImpl(0, 5);
+                NormalDistribution normal = new NormalDistribution(0, 5);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
             }
             intervalState.addParamCube(paramName, Nd4j.createFromArray(single).reshape(intervalState.getNewDim(piCounts)),
@@ -1305,15 +1307,10 @@ public class IntervalAnalysis {
 
 
     private void getDiscretePriorsSingle(double[] single, double[] prob1, double[] prob2,
-                                         ContinuousDistribution normal, double pi) {
-        HasDensity<Double> castHasDensity = (HasDensity<Double>) normal;
+                                         AbstractRealDistribution normal, double pi) {
         if (pi >= 0) {
-            try {
-                single[0] = normal.inverseCumulativeProbability(0.0000000001);
-                single[single.length - 1] = normal.inverseCumulativeProbability(0.9999999999);
-            } catch (MathException e) {
-                e.printStackTrace();
-            }
+            single[0] = normal.inverseCumulativeProbability(0.0000000001);
+            single[single.length - 1] = normal.inverseCumulativeProbability(0.9999999999);
             if (single[0] == Double.NEGATIVE_INFINITY)
                 single[0] = -pow(10, 16);
             if (single[single.length - 1] == Double.POSITIVE_INFINITY)
@@ -1325,69 +1322,44 @@ public class IntervalAnalysis {
                 prob2[prob2.length - 1] = 0;
                 prob2[prob2.length - 2] = 0;
                 double pp = pi;
-                for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
-                    try {
-                        single[ii] = normal.inverseCumulativeProbability(pp);
-                        prob1[ii] = (castHasDensity.density(single[ii]));
-                        prob2[ii - 1] = prob1[ii];
-                    } catch (MathException e) {
-                        e.printStackTrace();
+                    for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
+                            single[ii] = normal.inverseCumulativeProbability(pp);
+                            prob1[ii] = (normal.density(single[ii]));
+                            prob2[ii - 1] = prob1[ii];
                     }
-                }
             } else {
                 double pp = pi;
                 for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
-                    try {
                         single[ii] = normal.inverseCumulativeProbability(pp);
-                    } catch (MathException e) {
-                        e.printStackTrace();
-                    }
                 }
                 Arrays.fill(prob1, 1);
                 Arrays.fill(prob2, 1);
             }
         }
         else {
-            try {
                 single[0] = normal.inverseCumulativeProbability(0.5);
-                prob1[0] = castHasDensity.density(single[0]);
-                prob2[0] = castHasDensity.density(single[0]);
-            } catch (MathException e) {
-                e.printStackTrace();
-            }
-
+                    prob1[0] = normal.density(single[0]);
+                    prob2[0] = normal.density(single[0]);
         }
     }
 
-    private void getDiscretePriorsSingleUn(double[] single, double[] prob1, double[] prob2, ContinuousDistribution normal, double pi) {
+    private void getDiscretePriorsSingleUn(double[] single, double[] prob1, double[] prob2, AbstractRealDistribution normal, double pi) {
         if (pi >= 0) {
-            try {
-                single[0] = normal.inverseCumulativeProbability(0.00000000001);
-                single[single.length - 1] = normal.inverseCumulativeProbability(0.9999999999);
-            } catch (MathException e) {
-                e.printStackTrace();
-            }
+            single[0] = normal.inverseCumulativeProbability(0.00000000001);
+            single[single.length - 1] = normal.inverseCumulativeProbability(0.9999999999);
             if (single[0] == Double.NEGATIVE_INFINITY)
                 single[0] = -pow(10, 16);
             if (single[single.length - 1] == Double.POSITIVE_INFINITY)
                 single[single.length - 1] = pow(10, 16);
             double pp = pi;
             for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
-                try {
-                    single[ii] = normal.inverseCumulativeProbability(pp);
-                } catch (MathException e) {
-                    e.printStackTrace();
-                }
+                single[ii] = normal.inverseCumulativeProbability(pp);
             }
             Arrays.fill(prob1, 1);
             Arrays.fill(prob2, 1);
         }
         else {
-            try {
-                single[0] = normal.inverseCumulativeProbability(0.5);
-            } catch (MathException e) {
-                e.printStackTrace();
-            }
+            single[0] = normal.inverseCumulativeProbability(0.5);
             prob1[0] = 1;
             prob2[0] = 1;
         }
@@ -1438,13 +1410,16 @@ public class IntervalAnalysis {
                 }
                 String distrName = distrExpr.id.id;
                 if (distrName.equals("normal")) {
-                    NormalDistribution normal = new NormalDistributionImpl(funcParams.get(0), funcParams.get(1));
+                    NormalDistribution normal = new NormalDistribution(funcParams.get(0), funcParams.get(1));
                     getDiscretePriorsSingle(single, prob1, prob2, normal, pi);
                 } else if (distrName.equals("gamma")) {
-                    GammaDistribution gamma = new GammaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                    GammaDistribution gamma = new GammaDistribution(funcParams.get(0), funcParams.get(1));
                     getDiscretePriorsSingle(single, prob1, prob2, gamma, pi);
+                } else if (distrName.equals("cauchy")) {
+                    CauchyDistribution cauchy = new CauchyDistribution(funcParams.get(0), funcParams.get(1));
+                    getDiscretePriorsSingle(single, prob1, prob2, cauchy, pi);
                 } else if (distrName.equals("beta")) {
-                    BetaDistribution beta = new BetaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                    BetaDistribution beta = new BetaDistribution(funcParams.get(0), funcParams.get(1));
                     getDiscretePriorsSingle(single, prob1, prob2, beta, pi);
                 }
             }
@@ -1482,7 +1457,6 @@ public class IntervalAnalysis {
                     getConstN(dimArray, dd);
                 }
             }
-            System.out.println(dimArray);
             String arrayId = declStatement.id.id;
             if (dimArray.size() == 1) {
                 for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
@@ -1837,11 +1811,11 @@ public class IntervalAnalysis {
             }
             String distrName = distrExpr.id.id;
             if (distrName.equals("normal")) {
-                NormalDistribution normal = new NormalDistributionImpl(funcParams.get(0), funcParams.get(1));
+                NormalDistribution normal = new NormalDistribution(funcParams.get(0), funcParams.get(1));
                 getDiscretePriors(lower, upper, normal);
             }
             else if (distrName.equals("gamma")) {
-                GammaDistribution gamma = new GammaDistributionImpl(funcParams.get(0), funcParams.get(1));
+                GammaDistribution gamma = new GammaDistribution(funcParams.get(0), funcParams.get(1));
                 getDiscretePriors(lower, upper, gamma);
             }
         }
@@ -1852,16 +1826,12 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private void getDiscretePriors(double[] lower, double[] upper, ContinuousDistribution normal) {
+    private void getDiscretePriors(double[] lower, double[] upper, AbstractRealDistribution normal) {
         int ii = 0;
         //for(double pp=pi; pp <= 1-2*pi; pp += pi) {
         for(double pp=0; pp <= 1-1*maxProb; pp += maxProb) {
-            try {
-                lower[ii] = normal.inverseCumulativeProbability(pp);
-                upper[ii] = normal.inverseCumulativeProbability(pp+maxProb);
-            } catch (MathException e) {
-                e.printStackTrace();
-            }
+            lower[ii] = normal.inverseCumulativeProbability(pp);
+            upper[ii] = normal.inverseCumulativeProbability(pp+maxProb);
             ii++;
         }
         if (lower[0] == Double.NEGATIVE_INFINITY)

@@ -29,7 +29,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "radon_vary_si");
+        AnalysisRunner.analyzeProgram(localDir, "kidscore_momwork");
     }
 
     @Test
