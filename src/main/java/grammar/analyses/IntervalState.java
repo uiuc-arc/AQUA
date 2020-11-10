@@ -230,6 +230,10 @@ public class IntervalState extends AbstractState{
         INDArray upper = probCube.get(1);
         BooleanIndexing.replaceWhere(likeProbLower, -Math.pow(1,16), Conditions.isNan());
         BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
+        BooleanIndexing.replaceWhere(likeProbLower, -Math.pow(1,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(lower, -Math.pow(1,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(upper, -Math.pow(1,16), Conditions.isInfinite());
         // System.out.println(Nd4j.createFromArray(lower.shape()));
         // System.out.println(Nd4j.createFromArray(likeProbLower.shape()));
         INDArray newLower = lower.add(likeProbLower.broadcast(lower.shape())); // mul

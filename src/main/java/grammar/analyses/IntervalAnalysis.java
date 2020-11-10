@@ -756,6 +756,7 @@ public class IntervalAnalysis {
                 }
             }
         } else if (paramDims.size() == 0) {
+            System.out.println(paramID);
             if (paramDivs.get(paramID) == minCounts) {
                 if (minCounts != 0) {
                     INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
@@ -1420,6 +1421,9 @@ public class IntervalAnalysis {
                     getDiscretePriorsSingle(single, prob1, prob2, cauchy, pi);
                 } else if (distrName.equals("beta")) {
                     BetaDistribution beta = new BetaDistribution(funcParams.get(0), funcParams.get(1));
+                    getDiscretePriorsSingle(single, prob1, prob2, beta, pi);
+                } else if (distrName.equals("uniform")) {
+                    UniformRealDistribution beta = new UniformRealDistribution(funcParams.get(0), funcParams.get(1));
                     getDiscretePriorsSingle(single, prob1, prob2, beta, pi);
                 }
             }
