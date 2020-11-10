@@ -7,7 +7,9 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.impl.transforms.custom.CumSum;
 import org.nd4j.linalg.factory.NDArrayFactory;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.nd4j.linalg.indexing.conditions.Conditions;
 import translators.Stan2IRTranslator;
 
 import java.io.File;
@@ -21,24 +23,24 @@ public class AnalysisRunner {
         String standata = localDir + stanName + "/" + stanName + ".data.R";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
-        // Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
-        // String tempFileName = stanfile.replace(".stan", "");
-        // String templateCode = stan2IRTranslator.getCode();
-        // System.out.println("========Stan Code to Template=======");
-        // System.out.println(templateCode);
-        // File tempfile = null;
-        // try {
-        //     tempfile = File.createTempFile(tempFileName, ".template");
-        //     FileUtils.writeStringToFile(tempfile, templateCode);
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        // }
+        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
+        String tempFileName = stanfile.replace(".stan", "");
+        String templateCode = stan2IRTranslator.getCode();
+        System.out.println("========Stan Code to Template=======");
+        System.out.println(templateCode);
+        File tempfile = null;
+        try {
+            tempfile = File.createTempFile(tempFileName, ".template");
+            FileUtils.writeStringToFile(tempfile, templateCode);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         long startTime = System.nanoTime();
-        // CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        // ArrayList<Section> CFG = cfgBuilder.getSections();
-        // IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
-        // intervalAnalyzer.setPath(filePath);
-        // intervalAnalyzer.forwardAnalysis(CFG);
+        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
+        ArrayList<Section> CFG = cfgBuilder.getSections();
+        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        intervalAnalyzer.setPath(filePath);
+        intervalAnalyzer.forwardAnalysis(CFG);
         double[] avgMetrics = FindMetrics(filePath);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
@@ -58,6 +60,12 @@ public class AnalysisRunner {
             String fileName = file.getName();
             if (fileName.endsWith(".txt") && fileName.startsWith("analysis")) {
                 INDArray currParam = Nd4j.readTxt(file.getPath());
+                INDArray nanMatrix = currParam.dup();
+                BooleanIndexing.replaceWhere(nanMatrix,0, Conditions.equals(Double.NaN));
+                BooleanIndexing.replaceWhere(nanMatrix,1, Conditions.isNan());
+                if (nanMatrix.sum().getDouble() > 0) {
+                    System.out.println(fileName + " contains NaN");
+                }
                 count += 1;
                 double[] ret = TVD_KS(currParam);
                 avgTVD += ret[0];
