@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import static com.mxgraph.view.mxEdgeStyle.limits;
 import static java.lang.Math.*;
 import static org.nd4j.linalg.indexing.Indices.shape;
 import static org.nd4j.linalg.ops.transforms.Transforms.cosineSim;
@@ -42,7 +43,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 50;
+    private int maxCounts = 10;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack;
@@ -64,29 +65,31 @@ public class IntervalAnalysis {
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
-        // System.out.println(paramMap.keySet());
+        System.out.println(paramMap.keySet());
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         System.out.println("groups of params:" + paramGroups);
         // if (paramGroups.size() > 1)
-        PACounts = 1;
+        // PACounts = 1;
         IntervalState endFacts;
         IntervalState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         // Pre-Analysis: Run a Worklist Algorithm
         toAttack = false;
         worklist.add(worklistAll.peek());
-        endFacts = WorklistIter(worklist);
+        // endFacts = WorklistIter(worklist);
         // Again with min splits to find max interval
         toAttack = false;
         minCounts = 0;
         maxCounts = 10;
-        if (endFacts != null) {
-            for (String kk: endFacts.paramValues.keySet()) {
-                if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
-                    continue;
-                paramDivs.put(kk, minCounts);
-            }
-        }
+        for (String kk:paramMap.keySet())
+            paramDivs.put(kk, minCounts);
+        // if (endFacts != null) {
+        //     for (String kk: endFacts.paramValues.keySet()) {
+        //         if (kk.equals("Datai") || transParamMap.containsKey(kk.split("\\[")[0]) || (!paramMap.containsKey(kk)))
+        //             continue;
+        //         paramDivs.put(kk, minCounts);
+        //     }
+        // }
         Set<String> prevKk = null;
         addPrior = true;
         for (Set<String> paramSet: paramGroups) {
@@ -132,7 +135,7 @@ public class IntervalAnalysis {
         }
         toAttack = true;
         minCounts = 0;
-        maxCounts = 50;
+        maxCounts = 10;
         prevKk = null;
         addPrior = true;
         for (Set<String> paramSet: paramGroups) {
@@ -277,11 +280,11 @@ public class IntervalAnalysis {
                 }
             }
         }
-        // System.out.println("==============");
-        // System.out.println(assignment.toString());
-        // System.out.println(groups);
-        // System.out.println(rhsParams);
-        // System.out.println(transParamMap.keySet());
+        System.out.println("==============");
+        System.out.println(assignment.toString());
+        System.out.println(groups);
+        System.out.println(rhsParams);
+        System.out.println(transParamMap.keySet());
         if (paramMap.containsKey(lhsParam)
                 && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
                 && (!transParamMap.containsKey(lhsParam))) {
@@ -373,6 +376,11 @@ public class IntervalAnalysis {
             AST.MulOp rhsMulOp = (AST.MulOp) rhs;
             retParams.addAll(extractParamsFromExpr(rhsMulOp.op1));
             retParams.addAll(extractParamsFromExpr(rhsMulOp.op2));
+        }
+        else if (rhs instanceof AST.DivOp) {
+            AST.DivOp rhsDivOp = (AST.DivOp) rhs;
+            retParams.addAll(extractParamsFromExpr(rhsDivOp.op1));
+            retParams.addAll(extractParamsFromExpr(rhsDivOp.op2));
         }
         else if (rhs instanceof AST.Braces) {
             retParams.addAll(extractParamsFromExpr(((AST.Braces) rhs).expression));
@@ -473,8 +481,9 @@ public class IntervalAnalysis {
                     for (BasicBlock basicBlock: section.basicBlocks) {
                         worklistAll.add(basicBlock);
                         for (Statement statement : basicBlock.getStatements()) {
-                            if (statement.statement instanceof AST.Decl)
+                            if (statement.statement instanceof AST.Decl) {
                                 addParams(statement);
+                            }
                             ArrayList<AST.Annotation> annotations = statement.statement.annotations;
                             if (annotations != null && !annotations.isEmpty() &&
                                     annotations.get(0).annotationType == AST.AnnotationType.Observe) {
@@ -584,7 +593,7 @@ public class IntervalAnalysis {
             ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
         } else {
-            // System.out.println("Assignment: " + statement.statement.toString());
+            System.out.println("Assignment: " + statement.statement.toString());
             String paramID = assignment.lhs.toString().split("\\[")[0];
             if (paramMap.containsKey(paramID) || paramMap.containsKey(paramID + "[1]") || paramMap.containsKey(paramID + "[1,1]")) {
                 String newParamID = paramID;
@@ -806,11 +815,30 @@ public class IntervalAnalysis {
             // TODO:
         }
         else if (params.length == 2) {
-            INDArray[] singleprob = expand1D(params[0], params[1], "normal", assignment.lhs.toString());
-            if (singleprob[0].shape().length > 0)
-                intervalState.addParamCube(assignment.lhs.toString(), singleprob[0], singleprob[1], singleprob[2]);
-            else
-                intervalState.addDepParamCube(assignment.lhs.toString(), Nd4j.empty());
+            String arrayId = assignment.lhs.toString();
+            Pair<Double[], ArrayList<Integer>> limitDims = paramMap.get(arrayId);
+            if (limitDims == null && paramMap.containsKey(arrayId + "[1]"))
+                limitDims = paramMap.get(arrayId + "[1]");
+            ArrayList<Integer> dimArray = limitDims.getValue();
+            if (dimArray.size() == 1) {
+                for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
+                    String eleId = String.format("%s[%s]", arrayId, jj);
+                    INDArray[] singleprob = expand1D(params[0], params[1], distrExpr.id.id, eleId);
+                    if (paramDivs.get(eleId) != 0 && singleprob[0].shape().length > 0) {
+                        intervalState.addParamCube(eleId, singleprob[0], singleprob[1], singleprob[2]);
+                    }
+                    else
+                        intervalState.addDepParamCube(eleId, Nd4j.empty());
+                }
+            }  else if (dimArray.size() == 0) {
+                String eleId = arrayId;
+                INDArray[] singleprob = expand1D(params[0], params[1], distrExpr.id.id, eleId);
+                if (paramDivs.get(eleId) != 0 && singleprob[0].shape().length > 0) {
+                    intervalState.addParamCube(eleId, singleprob[0], singleprob[1], singleprob[2]);
+                }
+                else
+                    intervalState.addDepParamCube(eleId, Nd4j.empty());
+            }
             // TODO: support other dists
         }
     }
@@ -846,21 +874,42 @@ public class IntervalAnalysis {
             INDArray single = Nd4j.createUninitialized(broadcastDims);
             INDArray prob1 = Nd4j.createUninitialized(broadcastDims);
             INDArray prob2 = Nd4j.createUninitialized(broadcastDims);
-            for (int i = 0; i < input1b.length(); i++) {
-                double mean = input1b.getDouble(i);
-                double sd = input2b.getDouble(i);
-                // if (distrName.equals("normal")) {
-                double[] singlej = new double[piCounts];
-                double[] prob1j = new double[piCounts];
-                double[] prob2j = new double[piCounts];
-                if (sd == 0)
-                    sd = pow(10,-16);
-                NormalDistribution normal = new NormalDistribution(mean, sd);
-                getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
-                // }
-                prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob1j));
-                prob2.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob2j));
-                single.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(singlej));
+            if (distr.equals("normal")) {
+                for (int i = 0; i < input1b.length(); i++) {
+                    double mean = input1b.getDouble(i);
+                    double sd = input2b.getDouble(i);
+                    // if (distrName.equals("normal")) {
+                    double[] singlej = new double[piCounts];
+                    double[] prob1j = new double[piCounts];
+                    double[] prob2j = new double[piCounts];
+                    if (sd == 0)
+                        sd = pow(10, -16);
+                    NormalDistribution normal = new NormalDistribution(mean, sd);
+                    getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
+                    // }
+                    prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob1j));
+                    prob2.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob2j));
+                    single.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(singlej));
+                }
+            } else {
+                for (int i = 0; i < input1b.length(); i++) {
+                    double mean = input1b.getDouble(i);
+                    double sd = input2b.getDouble(i);
+                    // if (distrName.equals("normal")) {
+                    double[] singlej = new double[piCounts];
+                    double[] prob1j = new double[piCounts];
+                    double[] prob2j = new double[piCounts];
+                    if (mean == 0)
+                        mean = pow(10, -16);
+                    if (sd == 0)
+                        sd = pow(10, -16);
+                    GammaDistribution normal = new GammaDistribution(mean, sd);
+                    getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
+                    // }
+                    prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob1j));
+                    prob2.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob2j));
+                    single.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(singlej));
+                }
             }
             return new INDArray[]{single, prob1, prob2};
         }
@@ -1213,6 +1262,9 @@ public class IntervalAnalysis {
     }
 
     private void addUninitParam(IntervalState intervalState, String paramName) {
+        System.out.println(paramMap.keySet());
+        System.out.println(paramName);
+        System.out.println(paramMap.containsKey(paramName));
         Pair<Double[], ArrayList<Integer>> LimitsDim = paramMap.get(paramName);
         Double[] limits = LimitsDim.getKey();
         int piCounts;

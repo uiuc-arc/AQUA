@@ -140,10 +140,13 @@ public class IntervalState extends AbstractState{
         for (String ss: strings) {
             j++;
             System.out.println(ss);
+            if (ss.contains("robust_"))
+                continue;
             int[] numbersCopy = numbers.clone();
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
             if (paramIdxValues == null)
                 continue;
+            System.out.println(paramIdxValues);
             Integer paramDimIdx = paramIdxValues.getKey();
             numbersCopy[paramDimIdx - 1] = 0;
             INDArray paramvalue = paramIdxValues.getValue();
