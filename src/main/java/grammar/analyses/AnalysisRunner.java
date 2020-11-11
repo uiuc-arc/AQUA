@@ -69,8 +69,8 @@ public class AnalysisRunner {
                 }
                 count += 1;
                 double[] ret = TVD_KS(currParam);
-                System.out.println(fileName);
-                System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
+                // System.out.println(fileName);
+                // System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
                 avgTVD += ret[0];
                 avgKS += ret[1];
             }
@@ -100,7 +100,7 @@ public class AnalysisRunner {
             double rectHeight = Math.max(problu[i] - probul[i], probuu[i] - probll[i]);
             double rectWidth = value[i + 1] - value[i];
             TVDret += rectHeight * rectWidth;
-            System.out.println(String.format("%s,%s,%s",rectHeight * rectWidth, rectHeight, rectWidth));
+            // System.out.println(String.format("%s,%s,%s",rectHeight * rectWidth, rectHeight, rectWidth));
             KSret = Math.max(KSret, rectHeight);
         }
         return new double[]{TVDret / 2.0, KSret};

@@ -927,16 +927,31 @@ public class IntervalAnalysis {
     private INDArray getLogSum(INDArray[] params, INDArray yNDArray, INDArray likeCube, String distrId) {
         INDArray logSum;
         if (distrId.equals("normal")) {
-            for (long ii = 0; ii < likeCube.length(); ii++) {
-                double yiiL = normal_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii), params[1].getDouble(ii));
-                likeCube.putScalar(ii, yiiL);
-            }
+            likeCube = Transforms.log(params[1]).neg().subi(
+                    Transforms.pow(yNDArray.subi(params[0]),2).divi(Transforms.pow(params[1],2)).muli(0.5));
+            // return -Math.log(sigma) - 0.5*((y - mu)*(y - mu)/(sigma*sigma));
+            // for (long ii = 0; ii < likeCube.length(); ii++) {
+            //     double yiiL = normal_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii), params[1].getDouble(ii));
+            //     likeCube.putScalar(ii, yiiL);
+            // }
         } else if (distrId.equals("student_t")) {
-            for (long ii = 0; ii < likeCube.length(); ii++) {
-                double yiiL = student_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii),  // first param is nu
-                        params[1].getDouble(ii), params[2].getDouble(ii));
-                likeCube.putScalar(ii, yiiL);
-            }
+            INDArray nu = params[0];
+            INDArray mu = params[1];
+            INDArray sigma = params[2];
+            likeCube = Transforms.log(nu.mul(0.39226).sub(Transforms.pow(nu,2)).muli(0.016215)).subi(Transforms.log(nu).muli(-0.5));
+            likeCube = likeCube.addi(Transforms.log(Transforms.pow(yNDArray.subi(mu).divi(sigma),2).divi(nu).add(1.0)).muli(nu.addi(1).muli(-0.5)));
+
+
+            // for (long ii = 0; ii < likeCube.length(); ii++) {
+            //     double yiiL = student_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii),  // first param is nu
+            //             params[1].getDouble(ii), params[2].getDouble(ii));
+            //     likeCube.putScalar(ii, yiiL);
+            // }
+            // INDArray gammaDiv = params[0].dup();
+            // if
+            // likeCube.replaceWhere()
+
+
         } else if (distrId.equals("bernoulli_logit")) {
             INDArray sigmoidParams = Transforms.sigmoid(params[0]);
             likeCube = yNDArray.mul(sigmoidParams);
