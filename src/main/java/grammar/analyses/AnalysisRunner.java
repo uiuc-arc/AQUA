@@ -21,8 +21,8 @@ public class AnalysisRunner {
     public static void analyzeProgram (String localDir, String stanPath) {
         int index0=stanPath.lastIndexOf('/');
         String stanName = stanPath.substring(index0+1,stanPath.length());
-        String stanfile = localDir + stanName + "/" + stanName + ".stan";
-        String standata = localDir + stanName + "/" + stanName + ".data.R";
+        String stanfile = localDir + stanPath + "/" + stanName + ".stan";
+        String standata = localDir + stanPath + "/" + stanName + ".data.R";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);

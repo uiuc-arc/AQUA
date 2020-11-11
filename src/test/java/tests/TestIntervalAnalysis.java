@@ -56,7 +56,9 @@ public class TestIntervalAnalysis {
     public void TestNd4j() {
         System.out.println("==========");
         INDArray newarray = Nd4j.arange(24).reshape(4,6);
-        System.out.println(Nd4j.scalar(1.0).broadcast(newarray.shape()).div(newarray));
+        System.out.println("annn".lastIndexOf("/"));
+        System.out.println("annn".substring(-1+1,"annn".length()));
+
 
 
     }
