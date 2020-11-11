@@ -12,6 +12,7 @@ import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import translators.Stan2IRTranslator;
 
 import java.io.File;
@@ -55,12 +56,7 @@ public class TestIntervalAnalysis {
     public void TestNd4j() {
         System.out.println("==========");
         INDArray newarray = Nd4j.arange(24).reshape(4,6);
-        INDArray newarray2 = Nd4j.arange(24).reshape(4,6);
-        newarray.slice(1).assign(Double.NaN);
-        System.out.println(newarray.getDouble(8));
-        double a = newarray.getDouble(8);
-        System.out.println(Math.log(a));
-        System.out.println(a*a/23.6);
+        System.out.println(Nd4j.scalar(1.0).broadcast(newarray.shape()).div(newarray));
 
 
     }

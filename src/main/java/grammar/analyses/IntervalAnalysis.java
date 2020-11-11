@@ -18,6 +18,7 @@ import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
+import org.nd4j.linalg.ops.transforms.Transforms;
 import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
@@ -937,10 +938,15 @@ public class IntervalAnalysis {
                 likeCube.putScalar(ii, yiiL);
             }
         } else if (distrId.equals("bernoulli_logit")) {
-            for (long ii = 0; ii < likeCube.length(); ii++) {
-                double yiiL = bernoulli_logit_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii));
-                likeCube.putScalar(ii, yiiL);
-            }
+            INDArray sigmoidParams = Transforms.sigmoid(params[0]);
+            likeCube = yNDArray.mul(sigmoidParams);
+            likeCube = likeCube.add(Nd4j.scalar(1.0).broadcast(yNDArray.shape()).sub(yNDArray)
+                    .mul(Nd4j.scalar(1.0).broadcast(sigmoidParams.shape()).sub(sigmoidParams)));
+            likeCube = Transforms.log(likeCube);
+            // for (long ii = 0; ii < likeCube.length(); ii++) {
+            //     double yiiL = bernoulli_logit_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii));
+            //     likeCube.putScalar(ii, yiiL);
+            // }
         }
         BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
         logSum = likeCube;
@@ -1044,6 +1050,14 @@ public class IntervalAnalysis {
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
             ret = exp(concat1(probLU));
+        }
+        else if (pp.id.id.equals("sqrt")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            ret = Transforms.sqrt(param0);
+        }
+        else if (pp.id.id.equals("inv")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            ret = Nd4j.scalar(1.0).broadcast(param0.shape()).div(param0);
         }
         return ret;
     }
