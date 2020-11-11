@@ -873,9 +873,11 @@ public class IntervalAnalysis {
         INDArray[] sumExpLowerUpper = new INDArray[2];
         AST.FunctionCall distrExpr = rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
-        if (params == null || params[0].shape().length == 0 || params[1].shape().length == 0 ) return;
+        if (params == null || params[0].shape().length == 0  ) return;
+        if (params.length > 1 && params[1].shape().length == 0) return;
         System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
-        System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
+        if (params.length > 1)
+            System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         getProbLogLU(yArray, sumExpLowerUpper, params, distrExpr.id.id);
         intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
     }
@@ -934,6 +936,11 @@ public class IntervalAnalysis {
                         params[1].getDouble(ii), params[2].getDouble(ii));
                 likeCube.putScalar(ii, yiiL);
             }
+        } else if (distrId.equals("bernoulli_logit")) {
+            for (long ii = 0; ii < likeCube.length(); ii++) {
+                double yiiL = bernoulli_logit_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii));
+                likeCube.putScalar(ii, yiiL);
+            }
         }
         BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
         logSum = likeCube;
@@ -980,6 +987,10 @@ public class IntervalAnalysis {
         }
         else if (pp instanceof AST.MulOp) {
             return DistrCube((AST.MulOp) pp, intervalState);
+
+        }
+        else if (pp instanceof AST.DivOp) {
+            return DistrCube((AST.DivOp) pp, intervalState);
 
         }
         else if (pp instanceof AST.Braces) {
@@ -1256,6 +1267,14 @@ public class IntervalAnalysis {
         return getMulNDArray(op1Array, op2Array);
     }
 
+
+    private INDArray DistrCube(AST.DivOp pp, IntervalState intervalState) {
+        System.out.println("Distr Div==================" + pp.toString());
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getDivNDArray(op1Array, op2Array);
+    }
+
     private INDArray getMulNDArray(INDArray op1Array, INDArray op2Array) {
         if (op1Array.length() != 0 && op2Array.length() != 0) {
             long[] op1shape = op1Array.shape();
@@ -1267,6 +1286,23 @@ public class IntervalAnalysis {
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
 
             return op1Array.broadcast(outShape).mul(op2Array.broadcast(outShape));
+        }
+        else {
+            return Nd4j.empty();
+        }
+    }
+
+    private INDArray getDivNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+
+            return op1Array.broadcast(outShape).div(op2Array.broadcast(outShape));
         }
         else {
             return Nd4j.empty();
@@ -1529,6 +1565,12 @@ public class IntervalAnalysis {
         TDistribution studT = new TDistribution(nu);
         return studT.logDensity((y - mu)/sigma);
     }
+
+    private static double bernoulli_logit_LPDF(double y, double x) {
+        double expx = Math.exp(x);
+        double mlog1pexpx = -Math.log(1+expx);
+        return ((1-y)*(mlog1pexpx) + y*(x - mlog1pexpx));
+    }
     //=================================================================================================
     //=============  An Inefficient Implementation by Joint Probability Tables ========================
     //=================================================================================================
@@ -1576,7 +1618,7 @@ public class IntervalAnalysis {
                         ObsDistr(yArray, assignment, intervalState);
                     }
                 } else {
-                    // System.out.println("Assignment: " + statement.statement.toString());
+                    System.out.println("Assignment: " + statement.statement.toString());
                     String paramID = assignment.lhs.toString().split("\\[")[0];
                     if (!paramMap.containsKey(paramID)) {
                         addParams(statement);

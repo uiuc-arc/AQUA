@@ -106,10 +106,18 @@ public class IntervalState extends AbstractState{
             return;
         INDArray logLower = probCube.get(0);
         INDArray logUpper = probCube.get(1);
-        INDArray lower = exp(logLower.subi(Nd4j.max(logLower)));
+        logLower = logLower.subi(Nd4j.mean(logLower));
+        logUpper = logUpper.subi(Nd4j.mean(logUpper));
+        BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
+        BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray upper = exp(logUpper.subi(Nd4j.max(logUpper)));
+        INDArray lower = exp(logLower.subi(Nd4j.max(logUpper)));
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
+        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
         for(int i = 1; i < nDim; i++){
