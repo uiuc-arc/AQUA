@@ -97,6 +97,8 @@ public class IntervalAnalysis {
             }
             for (String param: paramSet) {
                 paramDivs.put(param, maxCounts);
+                if (param.contains("robust_"))
+                    paramDivs.put(param, 11);
             }
             for (BasicBlock bb: worklistAll) {
                 bb.dataflowFacts = null;
@@ -141,6 +143,8 @@ public class IntervalAnalysis {
             }
             for (String param: paramSet) {
                 paramDivs.put(param, maxCounts);
+                if (param.contains("robust_"))
+                    paramDivs.put(param, 11);
             }
             for (BasicBlock bb: worklistAll) {
                 bb.dataflowFacts = null;
@@ -728,32 +732,14 @@ public class IntervalAnalysis {
             INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 String currParamName = String.format("%s[%s]", paramID, jj);
-                if (paramDivs.get(currParamName) == minCounts) {
-                    if (minCounts != 0)
-                        intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
-                    else
-                        intervalState.addDepParamCube(currParamName, Nd4j.empty());
-                }
-                else { // maxCounts
-                    INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
-                    intervalState.addParamCube(currParamName, rhsMax[0], rhsMax[1], rhsMax[2]);
-                }
+                initParamHelper(intervalState, assignment, paramLimits, rhsMin, currParamName);
             }
         } else if (paramDims.size() == 2) {
             INDArray rhsMin[] = IndDistrSingle(assignment.rhs, paramLimits, minCounts); // split, probLower, probUpper
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 for (Integer kk = 1; kk <= paramDims.get(1); kk++) {
                     String currParamName = String.format("%s[%s,%s]", paramID, jj, kk);
-                    if (paramDivs.get(currParamName) == minCounts) {
-                        if (minCounts != 0)
-                            intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
-                        else
-                            intervalState.addDepParamCube(currParamName, Nd4j.empty());
-                    }
-                    else {
-                        INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
-                        intervalState.addParamCube(currParamName, rhsMax[0], rhsMax[1], rhsMax[2]);
-                    }
+                    initParamHelper(intervalState, assignment, paramLimits, rhsMin, currParamName);
                 }
             }
         } else if (paramDims.size() == 0) {
@@ -767,10 +753,23 @@ public class IntervalAnalysis {
                     intervalState.addDepParamCube(paramID, Nd4j.empty());
                 }
             } else { // maxCounts
-                INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, maxCounts); // split, probLower, probUpper
+                INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, paramDivs.get(paramID)); // split, probLower, probUpper
                 intervalState.addParamCube(paramID, rhsMax[0], rhsMax[1], rhsMax[2]);
 
             }
+        }
+    }
+
+    private void initParamHelper(IntervalState intervalState, AST.AssignmentStatement assignment, Double[] paramLimits, INDArray[] rhsMin, String currParamName) {
+        if (paramDivs.get(currParamName) == minCounts) {
+            if (minCounts != 0)
+                intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1], rhsMin[2]);
+            else
+                intervalState.addDepParamCube(currParamName, Nd4j.empty());
+        }
+        else { // maxCounts
+            INDArray rhsMax[] = IndDistrSingle(assignment.rhs, paramLimits, paramDivs.get(currParamName)); // split, probLower, probUpper
+            intervalState.addParamCube(currParamName, rhsMax[0], rhsMax[1], rhsMax[2]);
         }
     }
 
