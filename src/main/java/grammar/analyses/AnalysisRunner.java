@@ -3,6 +3,7 @@ package grammar.analyses;
 import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.impl.transforms.custom.CumSum;
 import org.nd4j.linalg.factory.NDArrayFactory;
@@ -23,6 +24,7 @@ public class AnalysisRunner {
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
+        String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
@@ -42,6 +44,7 @@ public class AnalysisRunner {
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);
+        intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
         double[] avgMetrics = FindMetrics(filePath);
         long endTime = System.nanoTime();
