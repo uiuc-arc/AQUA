@@ -18,7 +18,9 @@ import java.util.ArrayList;
 
 public class AnalysisRunner {
 
-    public static void analyzeProgram (String localDir, String stanName) {
+    public static void analyzeProgram (String localDir, String stanPath) {
+        int index0=stanPath.lastIndexOf('/');
+        String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanName + "/" + stanName + ".stan";
         String standata = localDir + stanName + "/" + stanName + ".data.R";
         int index=stanfile.lastIndexOf('/');

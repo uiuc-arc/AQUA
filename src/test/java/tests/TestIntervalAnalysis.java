@@ -30,7 +30,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "lightspeed_robust_reparam");
+        AnalysisRunner.analyzeProgram(localDir, "reparam/lightspeed_robust_reparam");
     }
 
     @Test
