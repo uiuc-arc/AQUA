@@ -107,18 +107,18 @@ public class IntervalState extends AbstractState{
             return;
         INDArray logLower = probCube.get(0);
         INDArray logUpper = probCube.get(1);
-        System.out.println(logLower);
         BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.medianNumber())));
         INDArray upper = exp(logUpper.subi((logUpper.medianNumber())));
-        System.out.println(lower);
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
         BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
         for(int i = 1; i < nDim; i++){
@@ -162,6 +162,7 @@ public class IntervalState extends AbstractState{
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
                     Nd4j.toFlattened(currsumLower).div(fullLower),
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
+            System.out.println(outMatrix);
             String outputFile = path + "/analysis_" + ss + ".txt";
             File file = new File(outputFile);
             if (!file.exists()) {

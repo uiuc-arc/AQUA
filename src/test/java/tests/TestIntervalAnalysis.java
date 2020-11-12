@@ -30,7 +30,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "flight_simulator_17.3");
+        AnalysisRunner.analyzeProgram(localDir, "unemployment");
     }
 
     @Test

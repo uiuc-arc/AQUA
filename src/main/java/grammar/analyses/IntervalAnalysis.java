@@ -84,13 +84,13 @@ public class IntervalAnalysis {
         IntervalState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         // Pre-Analysis: Run a Worklist Algorithm
-        toAttack = false;
-        worklist.add(worklistAll.peek());
+        // toAttack = false;
+        // worklist.add(worklistAll.peek());
         // endFacts = WorklistIter(worklist);
         // Again with min splits to find max interval
-        toAttack = false;
-        minCounts = 0;
-        maxCounts = 21;
+        // toAttack = false;
+        // minCounts = 0;
+        // maxCounts = 21;
         for (String kk:paramMap.keySet())
             paramDivs.put(kk, minCounts);
         // if (endFacts != null) {
@@ -220,7 +220,7 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = Double.valueOf(strMeanSd[1]);
+                paramLimits[3] = max(Double.valueOf(strMeanSd[1]),1);
                 System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
@@ -448,7 +448,7 @@ public class IntervalAnalysis {
         BasicBlock currBlock;
         while (!worklist.isEmpty()) {
             currBlock = worklist.remove(0);
-            // System.out.println("//////////// Analyze block: " + currBlock.getId());
+            System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
             endFacts = currBlock.dataflowFacts;
             Map<String, BasicBlock> succs = currBlock.getOutgoingEdges();
