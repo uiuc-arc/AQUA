@@ -1171,6 +1171,15 @@ public class IntervalAnalysis {
             getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
             ret = exp(concat1(probLU));
         }
+        else if (pp.id.id.equals("student_t_lpdf")) {
+            double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
+            INDArray nu = DistrCube(pp.parameters.get(1), intervalState);
+            INDArray mu = DistrCube(pp.parameters.get(2), intervalState);
+            INDArray sigma = DistrCube(pp.parameters.get(3), intervalState);
+            INDArray[] probLU = new INDArray[2];
+            getProbLogLU(yArray, probLU, new INDArray[]{nu, mu, sigma}, "student_t");
+            ret = exp(concat1(probLU));
+        }
         else if (pp.id.id.equals("sqrt")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
             ret = Transforms.sqrt(param0);
