@@ -1674,6 +1674,10 @@ public class IntervalAnalysis {
                             normal = new BetaDistribution(funcParams.get(0), funcParams.get(1));
                             Double alpha = (meanSd[2]*meanSd[2] - meanSd[2]*meanSd[2]*meanSd[2] - meanSd[2]*meanSd[3]*meanSd[3])/(meanSd[3]*meanSd[3]);
                             Double beta = (meanSd[2]-1)*(meanSd[2]*meanSd[2]-meanSd[2]+meanSd[3]*meanSd[3])/(meanSd[3]*meanSd[3]);
+                            if (alpha <= 0)
+                                alpha = funcParams.get(0);
+                            if (beta <=0 )
+                                beta = funcParams.get(1);
                             splitDistr = new BetaDistribution(alpha,beta);
                             break;
                         case "uniform":
