@@ -2,6 +2,7 @@ package grammar.analyses;
 
 import com.google.common.primitives.Ints;
 import grammar.AST;
+import org.nd4j.linalg.api.ndarray.BaseNDArray;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.impl.transforms.strict.Log;
 import org.nd4j.linalg.api.shape.Shape;
@@ -111,8 +112,8 @@ public class IntervalState extends AbstractState{
         BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
-        INDArray lower = exp(logLower.subi(Nd4j.mean(logLower)));
-        INDArray upper = exp(logUpper.subi(Nd4j.mean(logUpper)));
+        INDArray lower = exp(logLower.subi((logLower.medianNumber())));
+        INDArray upper = exp(logUpper.subi((logUpper.medianNumber())));
         System.out.println(lower);
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
