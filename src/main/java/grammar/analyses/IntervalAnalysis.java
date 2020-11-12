@@ -157,7 +157,7 @@ public class IntervalAnalysis {
             for (String param: paramSet) {
                 paramDivs.put(param, maxCounts);
                 if (param.contains("robust_"))
-                    paramDivs.put(param, maxCounts);
+                    paramDivs.put(param, 11);
             }
             for (BasicBlock bb: worklistAll) {
                 bb.dataflowFacts = null;
