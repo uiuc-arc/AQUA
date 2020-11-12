@@ -106,14 +106,14 @@ public class IntervalState extends AbstractState{
             return;
         INDArray logLower = probCube.get(0);
         INDArray logUpper = probCube.get(1);
-        logLower = logLower.subi(Nd4j.mean(logLower));
-        logUpper = logUpper.subi(Nd4j.mean(logUpper));
+        System.out.println(logLower);
         BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
-        INDArray upper = exp(logUpper.subi(Nd4j.max(logUpper)));
-        INDArray lower = exp(logLower.subi(Nd4j.max(logUpper)));
+        INDArray lower = exp(logLower.subi(Nd4j.mean(logLower)));
+        INDArray upper = exp(logUpper.subi(Nd4j.mean(logUpper)));
+        System.out.println(lower);
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());

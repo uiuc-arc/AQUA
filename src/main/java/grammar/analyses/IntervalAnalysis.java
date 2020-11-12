@@ -48,7 +48,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 50;
+    private int maxCounts = 21;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack;
@@ -90,7 +90,7 @@ public class IntervalAnalysis {
         // Again with min splits to find max interval
         toAttack = false;
         minCounts = 0;
-        maxCounts = 11;
+        maxCounts = 21;
         for (String kk:paramMap.keySet())
             paramDivs.put(kk, minCounts);
         // if (endFacts != null) {
@@ -930,6 +930,8 @@ public class IntervalAnalysis {
                 for (int i = 0; i < Math.max(input1b.length(), input2b.length()); i++) {
                     double givenMean = input1b.getDouble(i);
                     double givenSd = input2b.getDouble(i);
+                    if (givenSd == 0)
+                        givenSd = pow(10, -16);
                     // if (distrName.equals("normal")) {
                     double[] singlej = new double[piCounts];
                     double[] prob1j = new double[piCounts];
@@ -1473,7 +1475,13 @@ public class IntervalAnalysis {
             AST.FunctionCall distrExpr = (AST.FunctionCall) rhs;
             for (AST.Expression pp: distrExpr.parameters){
                 if(!(pp instanceof AST.Integer || pp instanceof AST.Double)){
-                    return false;
+                    if (pp instanceof AST.UnaryExpression) {
+                        AST.Expression negpp = ((AST.UnaryExpression) pp).expression;
+                        if(!(negpp instanceof AST.Integer || negpp instanceof AST.Double))
+                            return false;
+                    }
+                    else
+                        return false;
                 }
             }
             return true;
@@ -1619,8 +1627,11 @@ public class IntervalAnalysis {
                 for (AST.Expression pp : distrExpr.parameters) {
                     if (pp instanceof AST.Integer)
                         funcParams.add((double) ((AST.Integer) pp).value);
-                    else
+                    else if (pp instanceof AST.Double)
                         funcParams.add(((AST.Double) pp).value);
+                    else {
+                        funcParams.add(Double.valueOf(pp.toString()));
+                    }
                 }
                 String distrName = distrExpr.id.id;
                 AbstractRealDistribution normal = null;
@@ -1661,8 +1672,8 @@ public class IntervalAnalysis {
                             break;
                         case "beta":
                             normal = new BetaDistribution(funcParams.get(0), funcParams.get(1));
-                            Double alpha = (meanSd[0]*meanSd[0] - meanSd[0]*meanSd[0]*meanSd[0] - meanSd[0]*meanSd[1]*meanSd[1])/(meanSd[1]*meanSd[1]);
-                            Double beta = (meanSd[0]-1)*(meanSd[0]*meanSd[0]-meanSd[0]+meanSd[1]*meanSd[1])/(meanSd[1]*meanSd[1]);
+                            Double alpha = (meanSd[2]*meanSd[2] - meanSd[2]*meanSd[2]*meanSd[2] - meanSd[2]*meanSd[3]*meanSd[3])/(meanSd[3]*meanSd[3]);
+                            Double beta = (meanSd[2]-1)*(meanSd[2]*meanSd[2]-meanSd[2]+meanSd[3]*meanSd[3])/(meanSd[3]*meanSd[3]);
                             splitDistr = new BetaDistribution(alpha,beta);
                             break;
                         case "uniform":
