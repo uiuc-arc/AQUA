@@ -146,10 +146,12 @@ public class IntervalState extends AbstractState{
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
             if (paramIdxValues == null)
                 continue;
-            System.out.println(paramIdxValues);
             Integer paramDimIdx = paramIdxValues.getKey();
             numbersCopy[paramDimIdx - 1] = 0;
             INDArray paramvalue = paramIdxValues.getValue();
+            if (paramvalue.shape().length > 1) {
+                paramvalue = paramvalue.tensorAlongDimension(0,paramDimIdx);
+            }
             INDArray currsumLower = lower.sum(numbersCopy);
             INDArray currsumUpper = upper.sum(numbersCopy);
             if (fullLower == null) {

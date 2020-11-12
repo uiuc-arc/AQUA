@@ -90,7 +90,7 @@ public class IntervalAnalysis {
         // Again with min splits to find max interval
         toAttack = false;
         minCounts = 0;
-        maxCounts = 51;
+        maxCounts = 11;
         for (String kk:paramMap.keySet())
             paramDivs.put(kk, minCounts);
         // if (endFacts != null) {
@@ -220,7 +220,7 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = max(Double.valueOf(strMeanSd[1]), 1);
+                paramLimits[3] = Double.valueOf(strMeanSd[1]);
                 System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
@@ -890,9 +890,11 @@ public class IntervalAnalysis {
         Arrays.fill(shape2b, 1);
         System.arraycopy(shape1, 0, shape1b, 0, shape1.length);
         System.arraycopy(shape2, 0, shape2b, 0, shape2.length);
+        long[] maxDim12 = new long[maxDimCount + 1];
         long[] broadcastDims = new long[maxDimCount + 1];
         for (int i=0; i < maxDimCount + 1; i++) {
             broadcastDims[i] = max(shape1b[i], shape2b[i]);
+            maxDim12[i] = broadcastDims[i];
         }
         int piCounts;
         if (paramDivs.containsKey(paramName))
@@ -906,23 +908,35 @@ public class IntervalAnalysis {
             else
                 pi = -1; // indicating only one point
             broadcastDims[maxDimCount] = piCounts;
-            INDArray input1b = input1.broadcast(shape1b);
-            INDArray input2b = input2.broadcast(shape2b);
+            INDArray input1b = input1.reshape(shape1b).broadcast(maxDim12);
+            INDArray input2b = input2.reshape(shape2b).broadcast(maxDim12);
             INDArray single = Nd4j.createUninitialized(broadcastDims);
             INDArray prob1 = Nd4j.createUninitialized(broadcastDims);
             INDArray prob2 = Nd4j.createUninitialized(broadcastDims);
             if (distr.equals("normal")) {
-                for (int i = 0; i < input1b.length(); i++) {
-                    double mean = input1b.getDouble(i);
-                    double sd = input2b.getDouble(i);
+                Double mean = null;
+                Double sd = null;
+                if (paramMap.containsKey(paramName)) {
+                    Double[] limitsMeanSd = paramMap.get(paramName).getKey();
+                    mean = limitsMeanSd[2];
+                    sd = limitsMeanSd[3];
+                }
+                if (mean == null) {
+                    mean = Nd4j.mean(input1).getDouble();
+                    sd = Nd4j.mean(input2).getDouble();
+                }
+                if (sd == 0)
+                    sd = pow(10, -16);
+                for (int i = 0; i < Math.max(input1b.length(), input2b.length()); i++) {
+                    double givenMean = input1b.getDouble(i);
+                    double givenSd = input2b.getDouble(i);
                     // if (distrName.equals("normal")) {
                     double[] singlej = new double[piCounts];
                     double[] prob1j = new double[piCounts];
                     double[] prob2j = new double[piCounts];
-                    if (sd == 0)
-                        sd = pow(10, -16);
-                    NormalDistribution normal = new NormalDistribution(mean, sd);
-                    getDiscretePriorsSingle(singlej, prob1j, prob2j, normal, pi);
+                    NormalDistribution normal = new NormalDistribution(givenMean, givenSd);
+                    NormalDistribution splitDistr = new NormalDistribution(mean, sd);
+                    getDiscretePriorsSingleSplit(singlej, prob1j, prob2j, normal, splitDistr, pi);
                     // }
                     prob1.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob1j));
                     prob2.tensorAlongDimension(i, maxDimCount).assign(Nd4j.createFromArray(prob2j));
