@@ -55,7 +55,7 @@ public class IntervalAnalysis {
     private String path;
     private Boolean addPrior = true;
     private String stansummary;
-    private Set<String> robustParams = new HashSet<>();
+    private Boolean no_tau = false;
 
     @Deprecated
     private double maxProb = 1.0 / (maxCounts - 1);
@@ -78,6 +78,7 @@ public class IntervalAnalysis {
         InitWorklist(cfgSections);
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         addRobustToGroups(paramGroups);
+        System.out.println(paramGroups);
         getMeanFromMCMC();
         // if (paramGroups.size() > 1)
         // PACounts = 1;
@@ -278,8 +279,12 @@ public class IntervalAnalysis {
                     newGroups.add(ggDup);
                 }
             }
-            for (Set<String> ng: newGroups) //))))))))))))))))
-                ng.add("robust_local_nu");
+            if (newGroups.get(0).size() <= 3) {
+                for (Set<String> ng : newGroups) //))))))))))))))))
+                    ng.add("robust_local_nu");
+            } else {
+                no_tau = true;
+            }
             groups.clear();
             groups.addAll(newGroups);
         }
@@ -693,8 +698,8 @@ public class IntervalAnalysis {
         } else {
             // System.out.println("Assignment: " + statement.statement.toString());
             String paramID = assignment.lhs.toString().split("\\[")[0];
-            // if (paramID.contains("robust_local_tau")) // Don't consider nu
-            //     return true;
+            if (no_tau && paramID.contains("robust_local_tau")) // Don't consider nu
+                return true;
             if (paramMap.containsKey(paramID) || paramMap.containsKey(paramID + "[1]") || paramMap.containsKey(paramID + "[1,1]")) {
                 String newParamID = paramID;
                 Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
