@@ -276,7 +276,7 @@ public class IntervalAnalysis {
             for (Set<String> gg: groups) {
                 for (int i=0; i< tauDim.getValue().get(0); i++) {
                     Set<String> ggDup = new HashSet<>(gg);
-                    ggDup.add(String.format("%s[%s]", gg, i+1));
+                    ggDup.add(String.format("robust_local_tau[%s]", i+1));
                     newGroups.add(ggDup);
                 }
             }
@@ -320,8 +320,8 @@ public class IntervalAnalysis {
 
     private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
-        rhsParams.remove("robust_local_tau");
-        rhsParams.remove("robust_local_nu");
+        rhsParams.removeAll(Collections.singleton("robust_local_tau"));
+        rhsParams.removeAll(Collections.singleton("robust_local_nu"));
         String lhsParam = assignment.lhs.toString();
         if (lhsParam.equals("target")) {
             groups.add(new HashSet<>(rhsParams));
@@ -691,7 +691,7 @@ public class IntervalAnalysis {
             ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
         } else {
-            System.out.println("Assignment: " + statement.statement.toString());
+            // System.out.println("Assignment: " + statement.statement.toString());
             String paramID = assignment.lhs.toString().split("\\[")[0];
             if (paramID.contains("robust_local_tau")) // Don't consider nu
                 return true;
@@ -824,7 +824,7 @@ public class IntervalAnalysis {
             int currLoopValue = scalarParam.get(loopVar);
             ArrayList<Integer> endValue = new ArrayList<>();
             getConstN(endValue, forLoop.range.end);
-            System.out.println("/////////////////" + String.valueOf(currLoopValue));
+            // System.out.println("/////////////////" + String.valueOf(currLoopValue));
             if (currLoopValue < endValue.get(0)) {
                 scalarParam.put(loopVar, currLoopValue + 1);
                 changed = true;

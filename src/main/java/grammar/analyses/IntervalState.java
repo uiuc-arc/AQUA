@@ -71,8 +71,6 @@ public class IntervalState extends AbstractState{
             }
             singleDim[dimSize.size() - 1] = newSplitLen;
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(singleDim)));
-            System.out.println("^^^^^^^^^^^^^^^^6666");
-            System.out.println(paramName + currDim + Nd4j.createFromArray(singleDim));
             // dimSize: 2,3,4,1  singleDim: 1,3,1,5
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
