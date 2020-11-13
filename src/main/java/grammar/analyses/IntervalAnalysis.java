@@ -266,6 +266,20 @@ public class IntervalAnalysis {
                 }
             }
         }
+        Set<String> firstGroup = new HashSet<>(groups.get(0));
+        Set<String> firstGroupDup = new HashSet<>(groups.get(0));
+        for (String pp: firstGroup) {
+            if (!pp.contains("[") && paramMap.get(pp + "[1]") != null && paramMap.get(pp + "[1]").getValue().size() > 0) {
+                ArrayList<Integer> dims = paramMap.get(pp + "[1]").getValue();
+                firstGroupDup.remove(pp);
+                for (int i = 0; i < dims.get(0); i++) {
+                    Set<String> newfirstGroup = new HashSet<>(firstGroupDup);
+                    newfirstGroup.add(String.format("%s[%s]", pp, i + 1));
+                    groups.add(newfirstGroup);
+                    groups.remove(0);
+                }
+            }
+        }
         return groups;
     }
 
@@ -304,6 +318,7 @@ public class IntervalAnalysis {
 
     private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+
         String lhsParam = assignment.lhs.toString();
         if (lhsParam.equals("target")) {
             groups.add(new HashSet<>(rhsParams));
@@ -505,6 +520,8 @@ public class IntervalAnalysis {
                 retParams.addAll(extractParamsFromExpr(arg));
         }
         else if (rhs instanceof AST.Id) {
+            System.out.println(transParamMap);
+            System.out.println(paramMap);
             AST.Id rhsId = (AST.Id) rhs;
             if ((paramMap.containsKey(rhsId.id) || paramMap.containsKey(rhsId.id + "[1]"))
                 && (!(transParamMap.containsKey(rhsId.id) || transParamMap.containsKey(rhsId.id + "[1]")))){
@@ -647,8 +664,10 @@ public class IntervalAnalysis {
                                 } else {
                                     ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
                                     String lhsParam = assignment.lhs.toString().split("\\[")[0];
-                                    rhsParams.add(lhsParam);
-                                    transParamMap.put(lhsParam, rhsParams);
+                                    if (rhsParams.size() > 0 && !lhsParam.equals("target")) {
+                                        rhsParams.add(lhsParam);
+                                        transParamMap.put(lhsParam, rhsParams);
+                                    }
                                 }
 
                                 if (assignment.lhs.toString().equals("target")) {
@@ -820,6 +839,7 @@ public class IntervalAnalysis {
                 }
                 changed = true;
             } else if (paramID.equals("target")) {
+                System.out.println("===============target");
                 analyzeTarget(intervalState, assignment.rhs);
                 changed = true;
             }
@@ -829,9 +849,13 @@ public class IntervalAnalysis {
 
     private void analyzeTarget(IntervalState intervalState, AST.Expression rhs) {
         AST.AddOp plusRhs = (AST.AddOp) rhs;
-        if (plusRhs.op2 instanceof AST.FunctionCall) {
+        if (plusRhs.op2 instanceof AST.FunctionCall
+                || plusRhs.op2 instanceof AST.MulOp) {
             INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
-            intervalState.addProb(probLUcat.slice(0), probLUcat.slice(1));
+            System.out.println(Nd4j.createFromArray(probLUcat.slice(0).shape()));
+            long[] newShape = probLUcat.shape().clone();
+            newShape[0] = 1;
+            intervalState.addProb(probLUcat.slice(0).reshape(newShape), probLUcat.slice(1).reshape(newShape));
         }
     }
 
@@ -1219,7 +1243,6 @@ public class IntervalAnalysis {
             return DistrCube((AST.FunctionCall) pp, intervalState);
         }
         if (pp instanceof AST.Id) {
-            System.out.println(scalarParam);
             return DistrCube((AST.Id) pp, intervalState);
         }
         else if (pp instanceof AST.AddOp) {
@@ -1290,7 +1313,7 @@ public class IntervalAnalysis {
                 return Nd4j.empty();
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
-            ret = exp(concat1(probLU));
+            ret = concat1(probLU);
         }
         else if (pp.id.id.equals("student_t_lpdf")) {
             double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
@@ -1301,7 +1324,7 @@ public class IntervalAnalysis {
                 return Nd4j.empty();
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{nu, mu, sigma}, "student_t");
-            ret = exp(concat1(probLU));
+            ret = concat1(probLU);
         }
         else if (pp.id.id.equals("sqrt")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
@@ -1320,10 +1343,10 @@ public class IntervalAnalysis {
 
     private INDArray concat1(INDArray[] probLU) {
         INDArray ret;
-        long[] newShape = new long[probLU[0].shape().length + 1];
-        newShape[0] = 1;
-        System.arraycopy(probLU[0].shape(), 0, newShape, 1, probLU[0].shape().length);
-        ret = (Nd4j.concat(0, probLU[0].reshape(newShape), probLU[1].reshape(newShape)));
+        long[] newShape = new long[probLU[0].shape().length]; // no longer add 1 at front
+        // System.arraycopy(probLU[0].shape(), 0, newShape, 0, probLU[0].shape().length);
+        // ret = (Nd4j.concat(0, probLU[0].reshape(newShape), probLU[1].reshape(newShape)));
+        ret = (Nd4j.concat(0, probLU[0], probLU[1]));
         return ret;
     }
 
@@ -1394,6 +1417,9 @@ public class IntervalAnalysis {
             }
             // System.out.println(pp.id + "[1] " + Nd4j.createFromArray(retArray.slice(0).shape()));
             return retArray;
+        }
+        else if (scalarParam.containsKey(pp.id)) {
+            return Nd4j.scalar(scalarParam.get(pp.id));
         }
         else {// uninitialized param on RHS,
             String paramName = pp.toString();

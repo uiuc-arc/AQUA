@@ -71,6 +71,8 @@ public class IntervalState extends AbstractState{
             }
             singleDim[dimSize.size() - 1] = newSplitLen;
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(singleDim)));
+            System.out.println("^^^^^^^^^^^^^^^^6666");
+            System.out.println(paramName + currDim + Nd4j.createFromArray(singleDim));
             // dimSize: 2,3,4,1  singleDim: 1,3,1,5
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
@@ -113,6 +115,7 @@ public class IntervalState extends AbstractState{
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.medianNumber())));
         INDArray upper = exp(logUpper.subi((logUpper.medianNumber())));
+        System.out.println(lower);
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
