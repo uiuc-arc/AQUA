@@ -280,6 +280,8 @@ public class IntervalAnalysis {
                     newGroups.add(ggDup);
                 }
             }
+            for (Set<String> ng: newGroups) //))))))))))))))))
+                ng.add("robust_local_nu");
             groups.clear();
             groups.addAll(newGroups);
         }
@@ -693,8 +695,8 @@ public class IntervalAnalysis {
         } else {
             // System.out.println("Assignment: " + statement.statement.toString());
             String paramID = assignment.lhs.toString().split("\\[")[0];
-            if (paramID.contains("robust_local_tau")) // Don't consider nu
-                return true;
+            // if (paramID.contains("robust_local_tau")) // Don't consider nu
+            //     return true;
             if (paramMap.containsKey(paramID) || paramMap.containsKey(paramID + "[1]") || paramMap.containsKey(paramID + "[1,1]")) {
                 String newParamID = paramID;
                 Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
