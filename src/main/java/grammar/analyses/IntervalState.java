@@ -115,7 +115,6 @@ public class IntervalState extends AbstractState{
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.medianNumber())));
         INDArray upper = exp(logUpper.subi((logUpper.medianNumber())));
-        System.out.println(lower);
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
