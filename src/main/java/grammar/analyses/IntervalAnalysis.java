@@ -1804,6 +1804,8 @@ public class IntervalAnalysis {
                             limits[0] = Double.valueOf(aaLimits.lower.toString());
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
+                        if(declStatement.id.id.contains("robust_local_tau"))
+                            limits[1] = 2.0;
                     }
                 }
             }
