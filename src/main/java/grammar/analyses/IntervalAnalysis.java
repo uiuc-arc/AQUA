@@ -55,6 +55,7 @@ public class IntervalAnalysis {
     private String path;
     private Boolean addPrior = true;
     private String stansummary;
+    private Set<String> robustParams = new HashSet<>();
 
     @Deprecated
     private double maxProb = 1.0/(maxCounts - 1);
@@ -76,6 +77,7 @@ public class IntervalAnalysis {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
+        // addRobustToGroups(paramGroups);
         System.out.println("groups of params:" + paramGroups);
         getMeanFromMCMC();
         // if (paramGroups.size() > 1)
@@ -267,6 +269,39 @@ public class IntervalAnalysis {
         return groups;
     }
 
+    // private void addRobustToGroups(ArrayList<Set<String>> groups) {
+    //     System.out.println(groups);
+    //     System.out.println(robustParams);
+    //     for (String param: robustParams) {
+    //         if (paramMap.containsKey(param)) {
+    //             for (Set<String> gg: groups) {
+    //                 gg.add(param);
+    //             }
+    //         } else {
+    //             String paramID = param.split("\\[")[0];
+    //             Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
+    //             ArrayList<Integer> dims = paramInfo.getValue();
+    //             if (dims.get(0) > groups.size()) {
+    //                 ArrayList<Set<String>> newGroupsDup = new ArrayList<>(groups);
+    //                 groups.clear();
+    //                 while (newGroupsDup.size() > 0) {
+    //                     Set<String> onlyGroup = newGroupsDup.remove(0);
+    //                     for (int i = 1; i <= dims.get(0); i++) {
+    //                         Set<String> dupNewGroup = new HashSet<>(onlyGroup);
+    //                         dupNewGroup.add(String.format("%s[%s]", paramID, i));
+    //                         groups.add(dupNewGroup);
+    //                     }
+    //                 }
+    //             } else {
+    //                 for (int i = 1; i <= dims.get(0); i++) {
+    //                     groups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    // }
+
     private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
         String lhsParam = assignment.lhs.toString();
@@ -276,6 +311,9 @@ public class IntervalAnalysis {
         }
         ArrayList<Set<String>> newGroups = new ArrayList<>();
         for (String param: rhsParams) {
+            if (param.startsWith("robust_")) {
+                robustParams.add(param);
+            }
             if (newGroups.isEmpty()) {
                 if (paramMap.containsKey(param)) {
                     Set<String> newGroup = new HashSet<>();
@@ -301,8 +339,21 @@ public class IntervalAnalysis {
                     Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID + "[1]");
                     ArrayList<Integer> dims = paramInfo.getValue();
                     if (newGroups.size() > 1) {
-                        for (int i = 1; i <= dims.get(0); i++) {
-                            newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                        if (dims.get(0) > newGroups.size()) {
+                            ArrayList<Set<String>> newGroupsDup = new ArrayList<>(newGroups);
+                            newGroups.clear();
+                            while (newGroupsDup.size() > 0) {
+                                Set<String> onlyGroup = newGroupsDup.remove(0);
+                                for (int i = 1; i <= dims.get(0); i++) {
+                                    Set<String> dupNewGroup = new HashSet<>(onlyGroup);
+                                    dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                                    newGroups.add(dupNewGroup);
+                                }
+                            }
+                        } else {
+                            for (int i = 1; i <= dims.get(0); i++) {
+                                newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
+                            }
                         }
                     }
                     else { // size() == 1
@@ -318,11 +369,12 @@ public class IntervalAnalysis {
                 }
             }
         }
-        // System.out.println("==============");
-        // System.out.println(assignment.toString());
-        // System.out.println(groups);
-        // System.out.println(rhsParams);
-        // System.out.println(transParamMap.keySet());
+        System.out.println("==============");
+        System.out.println(assignment.toString());
+        System.out.println(groups);
+        System.out.println(newGroups);
+        if (lhsParam.startsWith("robust_"))
+            robustParams.add(lhsParam.split("\\[")[0]);
         if (paramMap.containsKey(lhsParam)
                 && (!transParamMap.containsKey(lhsParam.split("\\[")[0]))
                 && (!transParamMap.containsKey(lhsParam))) {
@@ -349,17 +401,66 @@ public class IntervalAnalysis {
                 for (int i = 1; i <= dims.get(0); i++) {
                     newGroups.get(i - 1).add(String.format("%s[%s]", paramID, i));
                 }
-                groups.addAll(newGroups);
-            } else if (newGroups.size() == 1) {
-                for (int i = 1; i <= dims.get(0); i++) {
-                    Set<String> dupNewGroup = new HashSet<>(newGroups.get(0));
-                    dupNewGroup.add(String.format("%s[%s]", paramID, i));
-                    groups.add(dupNewGroup);
+                if (newGroups.size() == groups.size()) {
+                    for (int i = 0; i < groups.size(); i++) {
+                        groups.get(i).addAll(newGroups.get(i));
+                    }
+
+                } else {
+                    groups.addAll(newGroups);
                 }
+            } else if (newGroups.size() == 1) {
+                if (groups.size() > 1 && groups.size() == dims.get(0)) {
+                    for (int i = 1; i <= dims.get(0); i++) {
+                        Set<String> dupNewGroup = new HashSet<>(newGroups.get(0));
+                        dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                        groups.get(i-1).addAll(dupNewGroup);
+                    }
+                } else {
+                    for (int i = 1; i <= dims.get(0); i++) {
+                        Set<String> dupNewGroup = new HashSet<>(newGroups.get(0));
+                        dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                        groups.add(dupNewGroup);
+                    }
+                }
+            } else if (newGroups.size() < dims.get(0)) {
+                ArrayList<Set<String>> newRhsGroups = new ArrayList<>();
+                for (int j=0; j< newGroups.size(); j++) {
+                    for (int i = 1; i <= dims.get(0); i++) {
+                        Set<String> dupNewGroup = new HashSet<>(newGroups.get(j));
+                        dupNewGroup.add(String.format("%s[%s]", paramID, i));
+                        newRhsGroups.add(dupNewGroup);
+                    }
+                }
+                ArrayList<Set<String>> oldGroups = new ArrayList<>(groups.size());
+                for (Set<String> group : groups) {
+                    oldGroups.add(new HashSet<>(group));
+                }
+                ArrayList<Set<String>> newdupGroups = new ArrayList<>(groups.size());
+                for (Set<String> currGroup : newRhsGroups) {
+                    Boolean added = false;
+                    for (int i=0; i< oldGroups.size(); i++) {
+                        if (isGroupOverlaping(oldGroups.get(i), currGroup)) {
+                            Set<String> tempSet = new HashSet<>();
+                            tempSet.addAll(currGroup);
+                            tempSet.addAll(groups.get(i));
+                            newdupGroups.add(tempSet);
+                            added = true;
+                        }
+                    }
+                    if (!added) {
+                        newdupGroups.add(currGroup);
+                    }
+                }
+                System.out.println("after merge: " + newdupGroups);
+                groups.clear();
+                groups.addAll(newdupGroups);
             }
         } else { // lhs is data or transparam
             if (!dataList.containsKey(lhsParam.split("\\[")[0])) { // transparam
                 if (!transParamMap.containsKey(lhsParam.split("\\[")[0])) {
+                    if (assignment.rhs instanceof AST.FunctionCall)
+                        rhsParams.add(lhsParam.split("\\[")[0]);
                     transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
                     // System.out.println(transParamMap);
                 }
@@ -368,18 +469,26 @@ public class IntervalAnalysis {
                 for (Set<String> group : groups) {
                     oldGroups.add(new HashSet<>(group));
                 }
+                ArrayList<Set<String>> newdupGroups = new ArrayList<>();
                 for (Set<String> currGroup : newGroups) {
                     Boolean added = false;
                     for (int i=0; i< oldGroups.size(); i++) {
                         if (isGroupOverlaping(oldGroups.get(i), currGroup)) {
-                            groups.get(i).addAll(currGroup);
+                            System.out.println(oldGroups.get(i) + " " + currGroup + " " + groups.get(i));
+                            Set<String> tempSet = new HashSet<>();
+                            tempSet.addAll(currGroup);
+                            tempSet.addAll(groups.get(i));
+                            newdupGroups.add(tempSet);
                             added = true;
                         }
                     }
                     if (!added) {
-                        groups.add(currGroup);
+                        newdupGroups.add(currGroup);
                     }
                 }
+                System.out.println("after merge: " + newdupGroups);
+                groups.clear();
+                groups.addAll(newdupGroups);
             }
         }
     }
@@ -535,6 +644,11 @@ public class IntervalAnalysis {
                                     ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
                                     String lhsParam = assignment.lhs.toString();
                                     transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                                } else {
+                                    ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                                    String lhsParam = assignment.lhs.toString().split("\\[")[0];
+                                    rhsParams.add(lhsParam);
+                                    transParamMap.put(lhsParam, rhsParams);
                                 }
 
                                 if (assignment.lhs.toString().equals("target")) {
@@ -1105,6 +1219,7 @@ public class IntervalAnalysis {
             return DistrCube((AST.FunctionCall) pp, intervalState);
         }
         if (pp instanceof AST.Id) {
+            System.out.println(scalarParam);
             return DistrCube((AST.Id) pp, intervalState);
         }
         else if (pp instanceof AST.AddOp) {
@@ -1149,6 +1264,10 @@ public class IntervalAnalysis {
         INDArray ret = null;
         if (pp.id.id.equals("log_mix")) {
             INDArray[] params = getParams(intervalState, pp);
+            for (int i=0; i<params.length; i++) {
+                if (params[i] == null)
+                    return null;
+            }
             INDArray theta = params[0];
             INDArray omtheta = theta.subi(1).negi();
             INDArray tLower = exp(params[1].slice(0));
@@ -1167,6 +1286,8 @@ public class IntervalAnalysis {
             double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
             INDArray mu = DistrCube(pp.parameters.get(1), intervalState);
             INDArray sigma = DistrCube(pp.parameters.get(2), intervalState);
+            if (mu ==null || sigma == null || mu.length() == 0 || sigma.length() == 0)
+                return Nd4j.empty();
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{mu, sigma}, "normal");
             ret = exp(concat1(probLU));
@@ -1176,16 +1297,22 @@ public class IntervalAnalysis {
             INDArray nu = DistrCube(pp.parameters.get(1), intervalState);
             INDArray mu = DistrCube(pp.parameters.get(2), intervalState);
             INDArray sigma = DistrCube(pp.parameters.get(3), intervalState);
+            if (nu == null || mu ==null || sigma == null || nu.length() == 0 || mu.length() == 0 || sigma.length() == 0)
+                return Nd4j.empty();
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{nu, mu, sigma}, "student_t");
             ret = exp(concat1(probLU));
         }
         else if (pp.id.id.equals("sqrt")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length() == 0)
+                return param0;
             ret = Transforms.sqrt(param0);
         }
         else if (pp.id.id.equals("inv")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length()== 0)
+                return param0;
             ret = Nd4j.scalar(1.0).broadcast(param0.shape()).div(param0);
         }
         return ret;
