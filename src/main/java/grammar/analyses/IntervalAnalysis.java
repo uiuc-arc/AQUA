@@ -265,6 +265,20 @@ public class IntervalAnalysis {
                 }
             }
         }
+        // Set<String> firstGroup = new HashSet<>(groups.get(0));
+        // Set<String> firstGroupDup = new HashSet<>(groups.get(0));
+        // for (String pp: firstGroup) {
+        //     if (!pp.contains("[") && paramMap.get(pp + "[1]") != null && paramMap.get(pp + "[1]").getValue().size() > 0) {
+        //         groups.remove(0);
+        //         ArrayList<Integer> dims = paramMap.get(pp + "[1]").getValue();
+        //         firstGroupDup.remove(pp);
+        //         for (int i = 0; i < dims.get(0); i++) {
+        //             Set<String> newfirstGroup = new HashSet<>(firstGroupDup);
+        //             newfirstGroup.add(String.format("%s[%s]", pp, i + 1));
+        //             groups.add(newfirstGroup);
+        //         }
+        //     }
+        // }
         return groups;
     }
 
@@ -287,6 +301,20 @@ public class IntervalAnalysis {
             }
             groups.clear();
             groups.addAll(newGroups);
+        }
+        else if (paramMap.containsKey("robust_weight[1]")) {
+            ArrayList<Set<String>> newGroups = new ArrayList<>();
+            Pair<Double[], ArrayList<Integer>> tauDim = paramMap.get("robust_weight[1]");
+            for (Set<String> gg: groups) {
+                for (int i=0; i< tauDim.getValue().get(0); i++) {
+                    Set<String> ggDup = new HashSet<>(gg);
+                    ggDup.add(String.format("robust_weight[%s]", i+1));
+                    newGroups.add(ggDup);
+                }
+            }
+            groups.clear();
+            groups.addAll(newGroups);
+
         }
     }
 
@@ -327,10 +355,13 @@ public class IntervalAnalysis {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
         rhsParams.removeAll(Collections.singleton("robust_local_tau"));
         rhsParams.removeAll(Collections.singleton("robust_local_nu"));
+        rhsParams.removeAll(Collections.singleton("robust_weight"));
         String lhsParam = assignment.lhs.toString();
-        if (lhsParam.equals("target")) {
+        if (lhsParam.equals("target") && assignment.rhs.toString().contains("log_mix")) {
             groups.add(new HashSet<>(rhsParams));
             return;
+        } else if (lhsParam.equals("target")) {
+            lhsParam = assignment.rhs.toString().split("_")[1].split(",")[0].split("\\(")[1];
         }
         ArrayList<Set<String>> newGroups = new ArrayList<>();
         for (String param: rhsParams) {
@@ -786,7 +817,8 @@ public class IntervalAnalysis {
         if (plusRhs.op2 instanceof AST.FunctionCall
                 || plusRhs.op2 instanceof AST.MulOp) {
             INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
-            // System.out.println(Nd4j.createFromArray(probLUcat.slice(0).shape()));
+            if(probLUcat == null || probLUcat.length() == 0)
+                return;
             long[] newShape = probLUcat.shape().clone();
             newShape[0] = 1;
             intervalState.addProb(probLUcat.slice(0).reshape(newShape), probLUcat.slice(1).reshape(newShape));
@@ -1221,16 +1253,22 @@ public class IntervalAnalysis {
         INDArray ret = null;
         if (pp.id.id.equals("log_mix")) {
             INDArray[] params = getParams(intervalState, pp);
+            if (params == null)
+                return null;
             for (int i=0; i<params.length; i++) {
                 if (params[i] == null)
                     return null;
             }
             INDArray theta = params[0];
             INDArray omtheta = theta.subi(1).negi();
-            INDArray tLower = exp(params[1].slice(0));
-            INDArray tUpper = exp(params[1].slice(1));
-            INDArray omtLower = exp(params[2].slice(0));
-            INDArray omtUpper = exp(params[2].slice(1));
+            long[] keepShape = params[1].shape().clone();
+            keepShape[0] = 1;
+            INDArray tLower = exp(params[1].slice(0).reshape(keepShape));
+            INDArray tUpper = exp(params[1].slice(1).reshape(keepShape));
+            long[] keepShape2 = params[2].shape().clone();
+            keepShape2[0] = 1;
+            INDArray omtLower = exp(params[2].slice(0).reshape(keepShape2));
+            INDArray omtUpper = exp(params[2].slice(1).reshape(keepShape2));
             INDArray thetaTLower = getMulNDArray(theta, tLower);
             INDArray thetaTUpper = getMulNDArray(theta, tUpper);
             INDArray thetaOmtLower = getMulNDArray(omtheta, omtLower);
