@@ -76,10 +76,8 @@ public class IntervalAnalysis {
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
-        System.out.println(paramMap.keySet());
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         addRobustToGroups(paramGroups);
-        System.out.println("groups of params:" + paramGroups);
         getMeanFromMCMC();
         // if (paramGroups.size() > 1)
         // PACounts = 1;
@@ -223,7 +221,7 @@ public class IntervalAnalysis {
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
                 paramLimits[3] = max(Double.valueOf(strMeanSd[1]), 1);
-                System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
+                // System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
     }
@@ -243,7 +241,7 @@ public class IntervalAnalysis {
                             addGroupsFromAssignment(groups, assignment);
                         }
                         else if (statement.statement instanceof AST.FunctionCallStatement) {
-                            System.out.println("FunctionCall: " + statement.statement.toString());
+                            // System.out.println("FunctionCall: " + statement.statement.toString());
 
                         } else if (statement.statement instanceof AST.IfStmt) {
                             AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
@@ -783,7 +781,7 @@ public class IntervalAnalysis {
         if (plusRhs.op2 instanceof AST.FunctionCall
                 || plusRhs.op2 instanceof AST.MulOp) {
             INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
-            System.out.println(Nd4j.createFromArray(probLUcat.slice(0).shape()));
+            // System.out.println(Nd4j.createFromArray(probLUcat.slice(0).shape()));
             long[] newShape = probLUcat.shape().clone();
             newShape[0] = 1;
             intervalState.addProb(probLUcat.slice(0).reshape(newShape), probLUcat.slice(1).reshape(newShape));
@@ -1074,7 +1072,7 @@ public class IntervalAnalysis {
         }
         maxShape = getMaxShape(maxShape, yNDArray.shape());
         for (int j=0; j < params.length; j++) {
-            System.out.println("allShape " + j+ Nd4j.createFromArray(allShape[j]));
+            // System.out.println("allShape " + j+ Nd4j.createFromArray(allShape[j]));
             params[j] = params[j].reshape(getReshape(allShape[j], maxShape)).broadcast(maxShape);
         }
         yNDArray = yNDArray.reshape(getReshape(yNDArray.shape(), maxShape)).broadcast(maxShape);

@@ -162,7 +162,6 @@ public class IntervalState extends AbstractState{
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
                     Nd4j.toFlattened(currsumLower).div(fullLower),
                     Nd4j.toFlattened(currsumUpper).div(fullUpper));
-            System.out.println(outMatrix);
             String outputFile = path + "/analysis_" + ss + ".txt";
             File file = new File(outputFile);
             if (!file.exists()) {
