@@ -147,7 +147,7 @@ public class IntervalAnalysis {
         // }
         toAttack = true;
         minCounts = 0;
-        maxCounts = 21;
+        maxCounts =21;
         prevKk = null;
         addPrior = true;
         for (Set<String> paramSet : paramGroups) {
@@ -1842,8 +1842,8 @@ public class IntervalAnalysis {
                             limits[0] = Double.valueOf(aaLimits.lower.toString());
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
-                        if(declStatement.id.id.contains("robust_local_tau"))
-                            limits[1] = 2.0;
+                        // if(declStatement.id.id.contains("robust_local_tau"))
+                        //     limits[1] = 2.0;
                     }
                 }
             }
