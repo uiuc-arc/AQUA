@@ -24,7 +24,8 @@ public class AnalysisRunner {
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
-        String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
+        // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
+        String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_1000.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
