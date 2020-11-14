@@ -103,7 +103,7 @@ public class AnalysisRunner {
         System.arraycopy(probu, 0, probuu, 0, probl.length);
         probuu[probu.length] = 1;
         for (int i = 0; i < probl.length - 1; i++) {
-            double rectHeight = Math.max(problu[i] - probul[i], probuu[i] - probll[i]);
+            double rectHeight = Math.max(Math.abs(problu[i] - probul[i]), Math.abs(probuu[i] - probll[i]));
             double rectWidth = value[i + 1] - value[i];
             TVDret += rectHeight * rectWidth;
             // System.out.println(String.format("%s,%s,%s",rectHeight * rectWidth, rectHeight, rectWidth));

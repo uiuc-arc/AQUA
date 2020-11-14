@@ -679,7 +679,7 @@ public class IntervalAnalysis {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
         for (int i=0; i<newDataValue.length; i+= 10) {
-            newDataValue[i] = newDataValue[i] + 5*Math.sqrt(sd)/newDataValue.length;
+            newDataValue[i] = newDataValue[i] + 4*Math.sqrt(sd/(double) newDataValue.length);
         }
     }
 
@@ -1644,7 +1644,8 @@ public class IntervalAnalysis {
                     for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
                             single[ii] = normal.inverseCumulativeProbability(pp);
                             prob1[ii] = (normal.density(single[ii]));
-                            prob2[ii - 1] = prob1[ii];
+                            // prob2[ii - 1] = prob1[ii]; // 2 is upper
+                            prob2[ii] = prob1[ii]; // 2 is upper
                     }
             } else {
                 double pp = pi;
@@ -1681,7 +1682,8 @@ public class IntervalAnalysis {
                 for (int ii = 1; ii <= single.length - 2; pp += pi, ii++) {
                     single[ii] = splitDistr.inverseCumulativeProbability(pp);
                     prob1[ii] = (normal.density(single[ii]));
-                    prob2[ii - 1] = prob1[ii];
+                    // prob2[ii - 1] = prob1[ii];
+                    prob2[ii] = prob1[ii];
                 }
             } else {
                 double pp = pi;
