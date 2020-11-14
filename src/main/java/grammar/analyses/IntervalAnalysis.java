@@ -678,8 +678,8 @@ public class IntervalAnalysis {
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
-        for (int i=0; i<newDataValue.length; i+= 10) {
-            newDataValue[i] = newDataValue[i] + 4*Math.sqrt(sd/(double) newDataValue.length);
+        for (int i=0; i<newDataValue.length; i+= 12) {
+            newDataValue[i] = newDataValue[i] + 5*Math.sqrt(sd/(double) newDataValue.length);
         }
     }
 
