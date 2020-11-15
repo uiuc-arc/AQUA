@@ -1577,14 +1577,14 @@ public class IntervalAnalysis {
         }
     }
 
-    private long[] getReshape(long[] op1shape, long[] outShape) {
+    public static long[] getReshape(long[] op1shape, long[] outShape) {
         long[] reShape = new long[outShape.length];
         Arrays.fill(reShape, 1);
         System.arraycopy(op1shape, 0, reShape, 0, op1shape.length);
         return reShape;
     }
 
-    private long[] getMaxShape(long[] op1shape, long[] op2shape) {
+    public static long[] getMaxShape(long[] op1shape, long[] op2shape) {
         long[] outShape;
         long minLength;
         if (op1shape.length >= op2shape.length) {

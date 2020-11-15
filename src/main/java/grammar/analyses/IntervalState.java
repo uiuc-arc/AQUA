@@ -137,6 +137,23 @@ public class IntervalState extends AbstractState{
         } catch (IOException e) {
             e.printStackTrace();
         }
+        // for (Pair<Integer, INDArray> pv: paramValues.values()) {
+        //     Integer dim = pv.getKey();
+        //     if (dim == null || dim <= 0) {
+        //         continue;
+        //     }
+        //     INDArray vv = pv.getValue();
+        //     INDArray vvdiff = vv.dup();
+        //     vvdiff.getScalar(0).assign(0);
+        //     for (int kk=1;kk<vv.length();kk++) {
+        //         vvdiff.getScalar(kk).subi(vv.getScalar(kk-1));
+        //     }
+        //     BooleanIndexing.replaceWhere(vvdiff, 0, Conditions.greaterThan(3));
+        //     lower.muli(vvdiff.reshape(IntervalAnalysis.getReshape(vvdiff.shape(),
+        //             lower.shape())).broadcast(lower.shape()));
+        //     upper.muli(vvdiff.reshape(IntervalAnalysis.getReshape(vvdiff.shape(),
+        //             lower.shape())).broadcast(lower.shape()));
+        // }
         int j = 0;
         for (String ss: strings) {
             j++;
