@@ -24,29 +24,29 @@ public class AnalysisRunner {
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
-        // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
-        String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
+        String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
+        // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
-        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
-        String tempFileName = stanfile.replace(".stan", "");
-        String templateCode = stan2IRTranslator.getCode();
-        System.out.println("========Stan Code to Template=======");
-        System.out.println(templateCode);
-        File tempfile = null;
-        try {
-            tempfile = File.createTempFile(tempFileName, ".template");
-            FileUtils.writeStringToFile(tempfile, templateCode);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
+        // String tempFileName = stanfile.replace(".stan", "");
+        // String templateCode = stan2IRTranslator.getCode();
+        // System.out.println("========Stan Code to Template=======");
+        // System.out.println(templateCode);
+        // File tempfile = null;
+        // try {
+        //     tempfile = File.createTempFile(tempFileName, ".template");
+        //     FileUtils.writeStringToFile(tempfile, templateCode);
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
         long startTime = System.nanoTime();
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        ArrayList<Section> CFG = cfgBuilder.getSections();
-        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
-        intervalAnalyzer.setPath(filePath);
-        intervalAnalyzer.setSummaryFile(stansummary);
-        intervalAnalyzer.forwardAnalysis(CFG);
+        // CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
+        // ArrayList<Section> CFG = cfgBuilder.getSections();
+        // IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        // intervalAnalyzer.setPath(filePath);
+        // intervalAnalyzer.setSummaryFile(stansummary);
+        // intervalAnalyzer.forwardAnalysis(CFG);
         double[] avgMetrics = FindMetrics(filePath);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
@@ -88,8 +88,12 @@ public class AnalysisRunner {
         double TVDret = 0;
         double KSret = 0;
         double[] value = param.slice(0).toDoubleVector();
-        double[] probl = Nd4j.cumsum(param.slice(1)).toDoubleVector();
-        double[] probu = Nd4j.cumsum(param.slice(2)).toDoubleVector();
+        INDArray pdfl = param.slice(1).get(NDArrayIndex.interval(1,value.length - 1));
+        INDArray pdfu = param.slice(2).get(NDArrayIndex.interval(1,value.length - 1));
+        pdfl = pdfl.div(pdfl.sumNumber());
+        pdfu = pdfu.div(pdfu.sumNumber());
+        double[] probl = Nd4j.cumsum(pdfl).toDoubleVector();
+        double[] probu = Nd4j.cumsum(pdfu).toDoubleVector();
         double[] probll =  new double[probl.length + 1];
         System.arraycopy(probl, 0, probll, 1, probl.length);
         probll[0] = 0;
