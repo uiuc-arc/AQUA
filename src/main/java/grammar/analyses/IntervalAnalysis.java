@@ -221,7 +221,7 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = max(Double.valueOf(strMeanSd[1]), 1);
+                paramLimits[3] = Double.valueOf(strMeanSd[1]);
                 // System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
