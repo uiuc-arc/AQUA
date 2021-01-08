@@ -28,25 +28,25 @@ public class AnalysisRunner {
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
-        // Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
-        // String tempFileName = stanfile.replace(".stan", "");
-        // String templateCode = stan2IRTranslator.getCode();
-        // System.out.println("========Stan Code to Template=======");
-        // System.out.println(templateCode);
-        // File tempfile = null;
-        // try {
-        //     tempfile = File.createTempFile(tempFileName, ".template");
-        //     FileUtils.writeStringToFile(tempfile, templateCode);
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        // }
+        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
+        String tempFileName = stanfile.replace(".stan", "");
+        String templateCode = stan2IRTranslator.getCode();
+        System.out.println("========Stan Code to Template=======");
+        System.out.println(templateCode);
+        File tempfile = null;
+        try {
+            tempfile = File.createTempFile(tempFileName, ".template");
+            FileUtils.writeStringToFile(tempfile, templateCode);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         long startTime = System.nanoTime();
-        // CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        // ArrayList<Section> CFG = cfgBuilder.getSections();
-        // IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
-        // intervalAnalyzer.setPath(filePath);
-        // intervalAnalyzer.setSummaryFile(stansummary);
-        // intervalAnalyzer.forwardAnalysis(CFG);
+        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
+        ArrayList<Section> CFG = cfgBuilder.getSections();
+        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        intervalAnalyzer.setPath(filePath);
+        intervalAnalyzer.setSummaryFile(stansummary);
+        intervalAnalyzer.forwardAnalysis(CFG);
         double[] avgMetrics = FindMetrics(filePath);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
@@ -56,6 +56,7 @@ public class AnalysisRunner {
     }
 
 
+    // if the original is best, remove the first & last block to try again
     public static double[] FindMetrics(String path) {
         double avgTVD = 0;
         double avgKS = 0;
@@ -90,6 +91,8 @@ public class AnalysisRunner {
         double[] value = param.slice(0).toDoubleVector();
         INDArray pdfl = param.slice(1).get(NDArrayIndex.interval(1,value.length - 1));
         INDArray pdfu = param.slice(2).get(NDArrayIndex.interval(1,value.length - 1));
+        double[] pdflo = pdfl.toDoubleVector();
+        double[] pdfuo = pdfu.toDoubleVector();
         pdfl = pdfl.div(pdfl.sumNumber());
         pdfu = pdfu.div(pdfu.sumNumber());
         double[] probl = Nd4j.cumsum(pdfl).toDoubleVector();
@@ -107,7 +110,10 @@ public class AnalysisRunner {
         System.arraycopy(probu, 0, probuu, 0, probl.length);
         probuu[probu.length] = 1;
         for (int i = 0; i < probl.length - 1; i++) {
-            double rectHeight = Math.max(Math.abs(problu[i] - probul[i]), Math.abs(probuu[i] - probll[i]));
+            // TVD on CDF
+            // double rectHeight = Math.max(Math.abs(problu[i] - probul[i]), Math.abs(probuu[i] - probll[i]));
+            // TVD on PDF
+            double rectHeight = Math.abs(pdflo[i] - pdfuo[i]);
             double rectWidth = value[i + 1] - value[i];
             TVDret += rectHeight * rectWidth;
             // System.out.println(String.format("%s,%s,%s",rectHeight * rectWidth, rectHeight, rectWidth));

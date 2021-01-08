@@ -48,7 +48,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 21;
+    private int maxCounts = 41;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack;
@@ -56,6 +56,9 @@ public class IntervalAnalysis {
     private Boolean addPrior = true;
     private String stansummary;
     private Boolean no_tau = false;
+    private Set<String> innerIntParams = new HashSet<>();
+    private Stack<String> integrateStack = new Stack<>();
+    HashSet<String> majorParam = new HashSet<>();
 
     @Deprecated
     private double maxProb = 1.0 / (maxCounts - 1);
@@ -73,12 +76,47 @@ public class IntervalAnalysis {
         stansummary = stansummarypath;
     }
 
+
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
+        Nd4j.setDataType(DataType.DOUBLE);
+        InitWorklist(cfgSections);
+        getMeanFromMCMC();
+        IntervalState endFacts;
+        IntervalState.deleteAnalysisOutputs(path);
+        toAttack = true;
+        addPrior = true;
+        no_tau = true;
+        ArrayList<BasicBlock> worklist = new ArrayList<>();
+        for (String kk : paramMap.keySet()) {
+            if (kk.contains("robust")) {
+                paramDivs.put(kk, 11);
+                if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
+                    majorParam.add(kk);
+            }
+            else {
+                paramDivs.put(kk, maxCounts);
+                majorParam.add(kk);
+            }
+        }
+        System.out.println(majorParam);
+        worklist.add(worklistAll.peek());
+        endFacts = WorklistIter(worklist);
+        if (endFacts.probCube[0] != null) {
+            System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube[0].shape()));
+            System.out.println(majorParam);
+            System.out.println(path);
+        } else
+            System.out.println("Prob Cube Empty!");
+        endFacts.writeResults(majorParam, path);
+    }
+
+    public void forwardAnalysisByGroups(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
         ArrayList<Set<String>> paramGroups = GroupParams(cfgSections);
         addRobustToGroups(paramGroups);
         System.out.println(paramGroups);
+        System.out.println(innerIntParams);
         getMeanFromMCMC();
         // if (paramGroups.size() > 1)
         // PACounts = 1;
@@ -147,7 +185,7 @@ public class IntervalAnalysis {
         // }
         toAttack = true;
         minCounts = 0;
-        maxCounts =21;
+        maxCounts =41;
         prevKk = null;
         addPrior = true;
         for (Set<String> paramSet : paramGroups) {
@@ -169,7 +207,7 @@ public class IntervalAnalysis {
             prevKk = paramSet;
             worklist.add(worklistAll.peek());
             endFacts = WorklistIter(worklist);
-            if (endFacts.probCube.size() > 0) {
+            if (endFacts.probCube[0] != null) {
                 // System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube.get(0).shape()));
             } else
                 System.out.println("Prob Cube Empty!");
@@ -221,7 +259,7 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = Double.valueOf(strMeanSd[1]);
+                paramLimits[3] = Double.valueOf(strMeanSd[1]) * 1;
                 // System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
@@ -301,6 +339,8 @@ public class IntervalAnalysis {
             }
             groups.clear();
             groups.addAll(newGroups);
+            innerIntParams.add("robust_local_tau");
+
         }
         else if (paramMap.containsKey("robust_weight[1]")) {
             ArrayList<Set<String>> newGroups = new ArrayList<>();
@@ -314,7 +354,7 @@ public class IntervalAnalysis {
             }
             groups.clear();
             groups.addAll(newGroups);
-
+            innerIntParams.add("robust_weight");
         }
     }
 
@@ -539,7 +579,7 @@ public class IntervalAnalysis {
             currBlock = worklist.remove(0);
             // System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
-            endFacts = currBlock.dataflowFacts;
+            endFacts = currBlock.dataflowFacts; // TODO: if else union from previous results
             Map<String, BasicBlock> succs = currBlock.getOutgoingEdges();
             for (String cond : succs.keySet()) {
                 BasicBlock succ = succs.get(cond);
@@ -678,8 +718,8 @@ public class IntervalAnalysis {
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
-        for (int i=0; i<newDataValue.length; i+= 12) {
-            newDataValue[i] = newDataValue[i] + 5*Math.sqrt(sd/(double) newDataValue.length);
+        for (int i=0; i<newDataValue.length; i+= 12) { // 5 *
+            newDataValue[i] = newDataValue[i] + 2 * Math.sqrt(sd/(double) newDataValue.length);
         }
     }
 
@@ -821,7 +861,11 @@ public class IntervalAnalysis {
                 return;
             long[] newShape = probLUcat.shape().clone();
             newShape[0] = 1;
-            intervalState.addProb(probLUcat.slice(0).reshape(newShape), probLUcat.slice(1).reshape(newShape));
+            INDArray[] sumExpLowerUpper = new INDArray[]{probLUcat.slice(0).reshape(newShape),probLUcat.slice(1).reshape(newShape)};
+            if (!integrateStack.empty())
+                intOutRobust(sumExpLowerUpper, intervalState);
+            intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
+            System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
         }
     }
 
@@ -1085,7 +1129,16 @@ public class IntervalAnalysis {
         if (params.length > 1)
             System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         getProbLogLU(yArray, sumExpLowerUpper, params, distrExpr.id.id);
+        if (!integrateStack.empty())
+            intOutRobust(sumExpLowerUpper, intervalState);
         intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
+    }
+
+    private void intOutRobust(INDArray[] sumExpLowerUpper, IntervalState intervalState) {
+        String intName = integrateStack.pop();
+        Integer intIdx = intervalState.intOut(intName);
+        sumExpLowerUpper[0] = log(exp(sumExpLowerUpper[0]).sum(intIdx));
+        sumExpLowerUpper[1] = log(exp(sumExpLowerUpper[1]).sum(intIdx));
     }
 
     private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params, String distrId) {
@@ -1453,6 +1506,8 @@ public class IntervalAnalysis {
     }
 
     private void addUninitParam(IntervalState intervalState, String paramName) {
+        if (!majorParam.contains(paramName))
+            integrateStack.add(paramName);
         Pair<Double[], ArrayList<Integer>> LimitsDim = paramMap.get(paramName);
         Double[] limitsMeanSd = LimitsDim.getKey();
         int piCounts;
@@ -1474,15 +1529,23 @@ public class IntervalAnalysis {
                 getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
             } else if (limitsMeanSd[0] != null) {
                 if (limitsMeanSd[0] == 0) {
-                    GammaDistribution gamma = new GammaDistribution(limitsMeanSd[2]*limitsMeanSd[2]/(limitsMeanSd[3]*limitsMeanSd[3]), (limitsMeanSd[3]*limitsMeanSd[3])/limitsMeanSd[2]);
-                    getDiscretePriorsSingleUn(single, probLower, probUpper, gamma, pi);
+                    // Equiv-prob
+                    // GammaDistribution gamma = new GammaDistribution(limitsMeanSd[2]*limitsMeanSd[2]/(limitsMeanSd[3]*limitsMeanSd[3]), (limitsMeanSd[3]*limitsMeanSd[3])/limitsMeanSd[2]);
+                    // getDiscretePriorsSingleUn(single, probLower, probUpper, gamma, pi);
+                    // Equiv-interval
+                    UniformRealDistribution unif = new UniformRealDistribution(0.1,  25);
+                    getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
                 } else {
                     UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[0], limitsMeanSd[0] + 5);
                     getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
                 }
             } else if (limitsMeanSd[2] != null) {
-                NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
-                getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
+                // Equiv-prob
+                // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
+                // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
+                // Equiv-interval
+                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 4*limitsMeanSd[3], limitsMeanSd[2] + 4*limitsMeanSd[3]);
+                getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");
                 UniformRealDistribution unif = new UniformRealDistribution(0, 10);

@@ -211,11 +211,15 @@ public class TestPSI {
 
     @Test
     public void testHiv() {
-        File folder = new File("../PPVM/autotemp/newtrans0418twomode/");
+        File folder = new File("../PPVM/autotemp/newtrans1114/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (!orgProgDir.isDirectory())
+                continue;
+            if (!(orgProgDir.getName().contains("flight")
+                    || orgProgDir.getName().contains("kidscore_momwork")
+                    || orgProgDir.getName().contains("radon_no_pool")))
                 continue;
             // if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr")))
             //         || orgProgDir.getName().contains("radon")
@@ -224,7 +228,7 @@ public class TestPSI {
             //         || orgProgDir.getName().contains("mix"))
             //     continue;
             // if (!orgProgDir.getName().contains("gp-fit"))
-            //    continue;
+            //    continueuuu;
             System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
             String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";

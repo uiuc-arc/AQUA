@@ -30,7 +30,7 @@ public class PsiMatheTranslator implements ITranslator{
     private StringBuilder output;
     private String pathDirString;
     private Boolean nomean=true;
-    public Integer dataReduceRatio=8;
+    public Integer dataReduceRatio=1;
     private String transformparamOut = "";
     private String bodyString;
     private HashMap<String, AST.Decl> paramDeclStatement = new HashMap<>();

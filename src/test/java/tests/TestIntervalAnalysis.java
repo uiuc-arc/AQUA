@@ -1,5 +1,6 @@
 package tests;
 
+import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import grammar.AST;
 import grammar.analyses.*;
 import grammar.cfg.*;
@@ -16,7 +17,9 @@ import org.nd4j.linalg.ops.transforms.Transforms;
 import translators.Stan2IRTranslator;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 import static grammar.analyses.Utilities.printStamentAttributes;
@@ -30,7 +33,36 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "y_x");
+        AnalysisRunner.analyzeProgram(localDir, "unemployment_robust_reparam");
+
+    }
+
+    ///
+
+    @Test
+    public void Test7() throws IOException {
+        File folder = new File("/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/org/");
+        File[] listOfFiles = folder.listFiles();
+        String targetOrgDir = "../PPVM/autotemp/newtrans1114/";
+        //TODO: check sshfs mount; before run ./patch_vector.sh; after finish run ./patch_simplex.sh
+
+        int i = 0;
+        ArrayList<String> restFiles=new ArrayList<>();
+        for (File orgProgDir : listOfFiles) {
+            if (orgProgDir.isDirectory()) {
+                String stanfile = "/Users/zixin/Documents/uiuc/fall19/are/PPVM/autotemp/trans" + "/" + orgProgDir.getName() + "/" + orgProgDir.getName() + ".stan";
+                String standata = orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".data.R";
+                System.out.println(orgProgDir.getName());
+                Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
+                String templateCode = stan2IRTranslator.getCode();
+                try (PrintWriter out = new PrintWriter(targetOrgDir + orgProgDir.getName() + ".template")) {
+                    out.println(templateCode);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
 
     }
 
@@ -56,12 +88,13 @@ public class TestIntervalAnalysis {
     @Test
     public void TestNd4j() {
         System.out.println("==========");
-        INDArray newarray = Nd4j.arange(24).reshape(4,6);
-        newarray.muli(100);
-        System.out.println(newarray);
-
-
-
+        INDArray[] newarray = new INDArray[2];
+        System.out.println(newarray[0]);
+        newarray[0] = Nd4j.arange(36).reshape(2,3,6);
+        System.out.println(newarray[0]);
+        newarray[0] = newarray[0].sum(1);
+        System.out.println(newarray[0]);
+        System.out.println(Nd4j.createFromArray(newarray[0].shape()));
 
     }
 
