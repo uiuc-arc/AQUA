@@ -4,10 +4,8 @@ import com.sun.org.apache.xpath.internal.axes.FilterExprWalker;
 import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
+import grammar.transformations.util.*;
 import grammar.transformations.util.StanFileWriter;
-import grammar.transformations.util.SampleToTarget;
-import grammar.transformations.util.StanFileWriter;
-import grammar.transformations.util.TransWriter;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.TokenStreamRewriter;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
@@ -20,7 +18,6 @@ import org.junit.rules.TemporaryFolder;
 import translators.Stan2IRTranslator;
 import translators.StanTranslator;
 import translators.listeners.CFGWalker;
-import grammar.transformations.util.ObserveToLoop;
 import utils.Utils;
 
 import java.io.File;
@@ -317,6 +314,7 @@ public class TestTransformer {
             transWriter.transformOrgPredCode();
             Boolean transformed;
 
+
             // ConstToParam
             System.out.println("========ConstToParam========");
             transWriter.resetCode();
@@ -451,6 +449,8 @@ public class TestTransformer {
 
     }
 
+
+
     @Test
     public void TestReparamLocalizer2() throws Exception {
         TransWriter transWriter = new TransWriter("src/test/resources/poisson.template");
@@ -463,22 +463,24 @@ public class TestTransformer {
 
     }
 
+
+
     @Test
     public void TestTransformAll() throws Exception {
-        File folder = new File("../aura_package/autotemp/timeseries_org/");
+        File folder = new File("../PPVM/autotemp/newtrans1114_org/");
         File[] listOfFiles = folder.listFiles();
         StanFileWriter stanFileWriter = new StanFileWriter();
-        String targetOrgDir = "../aura_package/autotemp/custom_trans/";
+        String targetOrgDir = "../PPVM/autotemp/newtrans1114/";
         //TODO: check sshfs mount; before run ./patch_vector.sh; after finish run ./patch_simplex.sh
 
         int i = 0;
         ArrayList<String> restFiles=new ArrayList<>();
         for (File orgProgDir : listOfFiles) {
             if (orgProgDir.isDirectory()) {
-                if (!orgProgDir.getName().contains("03_01"))
-                        continue;
-                if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
-                    continue;
+                // if (!orgProgDir.getName().contains("03_01"))
+                //        continue;
+                // if (orgProgDir.getName().contains("gp-fit-ARD") || orgProgDir.getName().contains("mix"))
+                 //   continue;
                 try {
                     File newDir = new File(targetOrgDir + orgProgDir.getName());
                     newDir.mkdir();
@@ -504,5 +506,29 @@ public class TestTransformer {
         }
         System.out.println(restFiles);
 
+    }
+
+    @Test
+    public void TestNewGenquant() throws Exception {
+        // 1. Get template code from stan
+        Stan2IRTranslator stan2IRTranslator =
+                new Stan2IRTranslator("src/test/resources/stan/radon.pooling.stan",
+                        "src/test/resources/stan/radon.pooling.data.R");
+        String code = stan2IRTranslator.getCode();
+        File file = temporaryFolder.newFile();
+        FileUtils.writeStringToFile(file, code);
+        System.out.println(code);
+        System.out.println("---------------------------");
+
+        // 2. parse template into CFG
+        CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
+        Template3Parser parser = cfgBuilder.parser;
+        parser.reset();
+        System.out.println("---------------------------");
+
+        // 3. new genquant
+        OrgGenCode orgGenCode = new OrgGenCode(cfgBuilder); // Implement a new orgGenCode
+        ParseTreeWalker walker = new ParseTreeWalker();
+        walker.walk(orgGenCode, parser.template());
     }
 }
