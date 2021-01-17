@@ -1,6 +1,7 @@
 package grammar.transformations.util;
 
 import grammar.AST;
+import grammar.StanParser;
 import grammar.Template3Listener;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
@@ -269,8 +270,6 @@ public class OrgGenCode implements Template3Listener {
 
     @Override
     public void exitTemplate(Template3Parser.TemplateContext ctx) {
-        System.out.println(dataName);
-        System.out.println(samplingStr.replaceAll("\\b" + dataName + "\\b", dataName + "_test"));
         genCode =
                 "\n@blk start generatedquantities\nfloat "+ dataName+"_test[" + dimMatch +"]\n"
                        // + transParamCode
@@ -280,6 +279,20 @@ public class OrgGenCode implements Template3Listener {
                         + "\n}\n";
 
         nplCode = dataName + "_corrupted\n";
+
+        // Change Sampling to lpdf
+        String newLikFunc = samplingStr.replace("rng","lpdf");
+        newLikFunc = newLikFunc.split("=")[1];
+        newLikFunc = newLikFunc.replaceFirst("\\(", "(z_test[observe_i] | ");
+        // get New Gen Code
+        String newGenCode = "generated quantities{\n" +
+                "real z_test[N];\n" +
+                "real lik;\n" +
+                "lik = 0;\n" +
+                "for (" + iMatch + " in 1:" + dimMatch + ") {\n" +
+                "\t   lik = lik+ " + newLikFunc + ";\n" +
+                "}";
+        System.out.println(newGenCode);
     }
 
     @Override
@@ -301,4 +314,5 @@ public class OrgGenCode implements Template3Listener {
     public void exitEveryRule(ParserRuleContext parserRuleContext) {
 
     }
+
 }

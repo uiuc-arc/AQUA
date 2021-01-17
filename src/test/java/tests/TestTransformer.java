@@ -522,13 +522,25 @@ public class TestTransformer {
 
         // 2. parse template into CFG
         CFGBuilder cfgBuilder = new CFGBuilder(file.getAbsolutePath(), null);
+        ParseTreeWalker walker = new ParseTreeWalker();
         Template3Parser parser = cfgBuilder.parser;
-        parser.reset();
         System.out.println("---------------------------");
+
+        // 2.1 get all vector expr in loop
+        TokenStreamRewriter antlrRewriter = new TokenStreamRewriter(cfgBuilder.parser.getTokenStream());
+        ObserveToLoop observeToLoop = new ObserveToLoop(cfgBuilder, antlrRewriter);
+        parser.reset();
+        walker.walk(observeToLoop, parser.template());
+        String templateCode = antlrRewriter.getText();
+        File tempfile = temporaryFolder.newFile();
+        FileUtils.writeStringToFile(tempfile, templateCode);
+        cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null, false);
+        parser = cfgBuilder.parser;
+
 
         // 3. new genquant
         OrgGenCode orgGenCode = new OrgGenCode(cfgBuilder); // Implement a new orgGenCode
-        ParseTreeWalker walker = new ParseTreeWalker();
+        parser.reset();
         walker.walk(orgGenCode, parser.template());
     }
 }
