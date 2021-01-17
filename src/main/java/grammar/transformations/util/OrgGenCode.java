@@ -286,7 +286,6 @@ public class OrgGenCode implements Template3Listener {
         newLikFunc = newLikFunc.replaceFirst("\\(", "(z_test[observe_i] | ");
         // get New Gen Code
         String newGenCode = "generated quantities{\n" +
-                "real z_test[N];\n" +
                 "real lik;\n" +
                 "lik = 0;\n" +
                 "for (" + iMatch + " in 1:" + dimMatch + ") {\n" +
