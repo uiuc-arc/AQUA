@@ -1,5 +1,6 @@
 package grammar.analyses;
 
+import grammar.AST;
 import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
 import org.apache.commons.io.FileUtils;
@@ -16,14 +17,20 @@ import translators.Stan2IRTranslator;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class AnalysisRunner {
+    private static List<String> hierModels = Arrays.asList("anova_radon_nopred_chr", "anova_radon_nopred", "electric_chr", "hiv", "pilots", "radon.1", "radon_no_pool_chr", "radon_no_pool", "radon_vary_inter_slope_17.1", "radon_vary_si_chr", "radon_vary_si");
 
     public static void analyzeProgram (String localDir, String stanPath) {
         int index0=stanPath.lastIndexOf('/');
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
+        if (hierModels.contains(stanName)) {
+            standata = localDir + stanPath + "/" + "one" + ".data.R";
+        }
         String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         int index=stanfile.lastIndexOf('/');
@@ -53,6 +60,7 @@ public class AnalysisRunner {
         System.out.println("Analysis Time: " + duration);
         System.out.println("Total Variation Distance:" + avgMetrics[0]);
         System.out.println("K-S Distance:" + avgMetrics[1]);
+        System.out.println("MSE Change:" + avgMetrics[2]);
     }
 
 
@@ -60,6 +68,7 @@ public class AnalysisRunner {
     public static double[] FindMetrics(String path) {
         double avgTVD = 0;
         double avgKS = 0;
+        double avgMSE = 0;
         int count = 0;
         File dir = new File(path);
         File fileList[] = dir.listFiles();
@@ -71,7 +80,7 @@ public class AnalysisRunner {
                 INDArray nanMatrix = currParam.dup();
                 BooleanIndexing.replaceWhere(nanMatrix,0, Conditions.equals(Double.NaN));
                 BooleanIndexing.replaceWhere(nanMatrix,1, Conditions.isNan());
-                if (nanMatrix.sum().getDouble() > 0) {
+                if (nanMatrix.sum().getDouble() > 1) {
                     System.out.println(fileName + " contains NaN");
                 }
                 count += 1;
@@ -80,9 +89,25 @@ public class AnalysisRunner {
                 // System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
                 avgTVD += ret[0];
                 avgKS += ret[1];
+                avgMSE += MSE(currParam);
             }
         }
-        return new double[]{avgTVD/(double) count, avgKS/(double) count};
+        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgMSE/(double) count};
+    }
+
+    public static double MSE(INDArray param) {
+        double[] value = param.slice(0).toDoubleVector();
+        double[] pdfl = param.slice(1).toDoubleVector();
+        double[] pdfu = param.slice(2).toDoubleVector();
+        return Math.pow(getE(value, pdfl) - getE(value, pdfu),2);
+    }
+
+    public static double getE(double[] value, double[] prob) {
+        double expectation = 0;
+        for (int i =0; i< value.length; i++) {
+            expectation += value[i] * prob[i];
+        }
+        return expectation;
     }
 
     public static double[] TVD_KS(INDArray param) {

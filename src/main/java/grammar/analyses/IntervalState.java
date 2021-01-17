@@ -128,14 +128,13 @@ public class IntervalState extends AbstractState{
         if (probCube[0] == null || paramValues.size() == 1)
             return;
         INDArray logLower = probCube[0];
-        System.out.println(logLower);
         INDArray logUpper = probCube[1];
         BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
-        INDArray lower = exp(logLower.subi((logLower.medianNumber())));
-        INDArray upper = exp(logUpper.subi((logUpper.medianNumber())));
+        INDArray lower = exp(logLower.subi((logLower.maxNumber()))); //
+        INDArray upper = exp(logUpper.subi((logUpper.maxNumber()))); //
         BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
         BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
@@ -189,6 +188,8 @@ public class IntervalState extends AbstractState{
             int[] numbersCopy = numbers.clone();
             Pair<Integer, INDArray> paramIdxValues = paramValues.get(ss);
             if (paramIdxValues == null)
+                continue;
+            if (paramIdxValues.getKey() == null)
                 continue;
             Integer paramDimIdx = paramIdxValues.getKey();
             numbersCopy[paramDimIdx - 1] = 0;

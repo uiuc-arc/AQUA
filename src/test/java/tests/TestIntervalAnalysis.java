@@ -33,7 +33,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "unemployment_robust_reparam");
+        AnalysisRunner.analyzeProgram(localDir, "hiv_robust_reparam");
 
     }
 
@@ -89,12 +89,9 @@ public class TestIntervalAnalysis {
     public void TestNd4j() {
         System.out.println("==========");
         INDArray[] newarray = new INDArray[2];
-        System.out.println(newarray[0]);
         newarray[0] = Nd4j.arange(36).reshape(2,3,6);
+        System.out.println(Transforms.pow(newarray[0],2).subi(10));
         System.out.println(newarray[0]);
-        newarray[0] = newarray[0].sum(1);
-        System.out.println(newarray[0]);
-        System.out.println(Nd4j.createFromArray(newarray[0].shape()));
 
     }
 

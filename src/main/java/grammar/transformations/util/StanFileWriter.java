@@ -132,6 +132,7 @@ public class StanFileWriter {
 
 
         // Reweighter
+        /*
         try {
             System.out.println("========Reweighting========");
             transName = "robust_reweight";
@@ -230,5 +231,6 @@ public class StanFileWriter {
         // }
         File stancopy = new File(strFilePath + "/" + progName + "_copy.stan");
         boolean success = stancopy.delete();
+        */
     }
 }
