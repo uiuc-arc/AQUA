@@ -1,7 +1,5 @@
 package tests;
 
-import com.sun.org.apache.xpath.internal.axes.FilterExprWalker;
-import grammar.AST;
 import grammar.Template3Parser;
 import grammar.cfg.CFGBuilder;
 import grammar.transformations.util.*;
