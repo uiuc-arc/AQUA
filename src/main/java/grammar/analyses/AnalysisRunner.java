@@ -64,7 +64,8 @@ public class AnalysisRunner {
         System.out.println("Analysis Time: " + duration);
         System.out.println("Total Variation Distance:" + avgMetrics[0]);
         System.out.println("K-S Distance:" + avgMetrics[1]);
-        System.out.println("MSE Change:" + avgMetrics[2]);
+        System.out.println("Exp Change:" + avgMetrics[2]);
+        System.out.println("MSE Change:" + avgMetrics[3]);
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(filePath + "/output0117.txt", "UTF-8");
@@ -80,6 +81,7 @@ public class AnalysisRunner {
     public static double[] FindMetrics(String path) {
         double avgTVD = 0;
         double avgKS = 0;
+        double avgExp = 0;
         double avgMSE = 0;
         int count = 0;
         File dir = new File(path);
@@ -101,17 +103,19 @@ public class AnalysisRunner {
                 // System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
                 avgTVD += ret[0];
                 avgKS += ret[1];
-                avgMSE += MSE(currParam);
+                double expDist = MSE(currParam);
+                avgExp += expDist;
+                avgMSE += Math.pow(expDist, 2);
             }
         }
-        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgMSE/(double) count};
+        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) count, avgMSE/(double) count};
     }
 
     public static double MSE(INDArray param) {
         double[] value = param.slice(0).toDoubleVector();
         double[] pdfl = param.slice(1).toDoubleVector();
         double[] pdfu = param.slice(2).toDoubleVector();
-        return Math.pow(getE(value, pdfl) - getE(value, pdfu),2);
+        return Math.abs(getE(value, pdfl) - getE(value, pdfu));
     }
 
     public static double getE(double[] value, double[] prob) {
