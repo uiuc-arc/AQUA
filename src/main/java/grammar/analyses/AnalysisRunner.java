@@ -31,7 +31,7 @@ public class AnalysisRunner {
             standata = localDir + stanPath + "/" + "one" + ".data.R";
         }
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
-        String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_1000.txt";
+        String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
