@@ -55,7 +55,7 @@ public class IntervalAnalysis {
     private Boolean addPrior = true;
     private String stansummary;
     private Boolean no_tau = false;
-    private Boolean no_prior = true;
+    public Boolean no_prior = true;
     private Set<String> innerIntParams = new HashSet<>();
     private Stack<String> integrateStack = new Stack<>();
     HashSet<String> majorParam = new HashSet<>();
@@ -98,12 +98,12 @@ public class IntervalAnalysis {
                 majorParam.add(kk);
             }
         }
-        System.out.println(majorParam);
+        // System.out.println(majorParam);
         worklist.add(worklistAll.peek());
         endFacts = WorklistIter(worklist);
         if (endFacts.probCube[0] != null) {
-            System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube[0].shape()));
-            System.out.println(majorParam);
+            //System.out.println("End Prob Cube Shape:" + Nd4j.createFromArray(endFacts.probCube[0].shape()));
+            // System.out.println(majorParam);
             System.out.println(path);
         } else
             System.out.println("Prob Cube Empty!");
@@ -893,7 +893,7 @@ public class IntervalAnalysis {
             if (!integrateStack.empty())
                 intOutRobust(sumExpLowerUpper, intervalState);
             intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
-            System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
+            // System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
         }
     }
 
@@ -1153,9 +1153,9 @@ public class IntervalAnalysis {
         INDArray[] params = getParams(intervalState, distrExpr);
         if (params == null || params[0].shape().length == 0  ) return;
         if (params.length > 1 && params[1].shape().length == 0) return;
-        System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
-        if (params.length > 1)
-            System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
+        // System.out.println("Obs param0 shape: " + Nd4j.createFromArray(params[0].shape()));
+        // if (params.length > 1)
+        //     System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         getProbLogLU(yArray, sumExpLowerUpper, params, distrExpr.id.id);
         if (!integrateStack.empty())
             intOutRobust(sumExpLowerUpper, intervalState);
@@ -1165,8 +1165,8 @@ public class IntervalAnalysis {
     private void intOutRobust(INDArray[] sumExpLowerUpper, IntervalState intervalState) {
         String intName = integrateStack.pop();
         Integer intIdx = intervalState.intOut(intName);
-        System.out.println(intName);
-        System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
+        // System.out.println(intName);
+        // System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
         sumExpLowerUpper[0] = log(exp(sumExpLowerUpper[0]).sum(intIdx));
         sumExpLowerUpper[1] = log(exp(sumExpLowerUpper[1]).sum(intIdx));
     }

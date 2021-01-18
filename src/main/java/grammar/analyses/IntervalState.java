@@ -174,9 +174,8 @@ public class IntervalState extends AbstractState{
         int j = 0;
         for (String ss: strings) {
             j++;
-            System.out.println(ss);
+            // System.out.println(ss);
             if (ss.contains("robust_")) {
-                System.out.println(paramValues.get(ss).getValue());
                 continue;
             }
             int[] numbersCopy = numbers.clone();

@@ -14,8 +14,7 @@ import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import translators.Stan2IRTranslator;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,6 +50,11 @@ public class AnalysisRunner {
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        // if (hierModels.contains(stanName)) {
+        //     intervalAnalyzer.no_prior = true;
+        // } else {
+        //     intervalAnalyzer.no_prior = false;
+        // }
         intervalAnalyzer.setPath(filePath);
         intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
@@ -61,6 +65,14 @@ public class AnalysisRunner {
         System.out.println("Total Variation Distance:" + avgMetrics[0]);
         System.out.println("K-S Distance:" + avgMetrics[1]);
         System.out.println("MSE Change:" + avgMetrics[2]);
+        PrintWriter writer = null;
+        try {
+            writer = new PrintWriter(filePath + "/output0117.txt", "UTF-8");
+            writer.println(String.valueOf(duration) + "," + Arrays.toString(avgMetrics).replace("[","").replace("]","").replace(" ",""));
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
