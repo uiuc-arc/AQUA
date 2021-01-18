@@ -674,7 +674,13 @@ public class IntervalAnalysis {
                                 } */
 
                                 if (assignment.lhs.toString().equals("target")) {
-                                    attackDataY("y");
+                                    String rhs = assignment.rhs.toString();
+                                    if (rhs.contains("_lpdf(")) {
+                                        String dataYName = rhs.split("_lpdf\\(")[1].split(",")[0];
+                                        attackDataY(dataYName.split("\\[")[0]);
+                                    }
+                                    else
+                                        attackDataY("y");
                                 }
                             }
                         }

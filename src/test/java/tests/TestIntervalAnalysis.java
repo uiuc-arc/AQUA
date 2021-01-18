@@ -31,8 +31,8 @@ public class TestIntervalAnalysis {
     //@Ignore
     public void Test5() throws IOException {
 
-        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "gauss_mix_asym_prior_robust_reparam");
+        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
+        AnalysisRunner.analyzeProgram(localDir, "kidscore_momwork_robust_reweight");
 
     }
 
