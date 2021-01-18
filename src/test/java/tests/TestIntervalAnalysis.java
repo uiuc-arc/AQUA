@@ -32,7 +32,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
-        AnalysisRunner.analyzeProgram(localDir, "unemployment_t");
+        AnalysisRunner.analyzeProgram(localDir, "gauss_mix_asym_prior_robust_reparam");
 
     }
 

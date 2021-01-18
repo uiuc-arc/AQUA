@@ -27,8 +27,9 @@ public class AnalysisRunner {
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
-        if (hierModels.contains(stanName)) {
+        if (hierModels.contains(stanName.split("_robust")[0])) {
             standata = localDir + stanPath + "/" + "one" + ".data.R";
+            System.out.println("remove prior!!!");
         }
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
