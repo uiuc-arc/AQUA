@@ -149,7 +149,7 @@ public class AnalysisRunner {
 
 
     public static void main (String[] args) {
-        String localDir = "/home/zixinh2/analysis/progs/";
+        String localDir = "/home/zixin/analysis_progs/progs/";
         // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
         AnalysisRunner.analyzeProgram(localDir, args[0]);
     }

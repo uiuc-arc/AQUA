@@ -23,7 +23,6 @@ import org.nd4j.linalg.ops.transforms.Transforms;
 import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
-import javax.print.attribute.HashDocAttributeSet;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -35,10 +34,7 @@ import java.util.function.Consumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-import static com.mxgraph.view.mxEdgeStyle.limits;
 import static java.lang.Math.*;
-import static org.nd4j.linalg.indexing.Indices.shape;
-import static org.nd4j.linalg.ops.transforms.Transforms.cosineSim;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
@@ -1578,7 +1574,7 @@ public class IntervalAnalysis {
                 // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
                 // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
                 // Equiv-interval
-                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 4 *limitsMeanSd[3], limitsMeanSd[2] + 4 *limitsMeanSd[3]);
+                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 6 *limitsMeanSd[3], limitsMeanSd[2] + 6 *limitsMeanSd[3]);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");

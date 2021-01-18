@@ -12,11 +12,6 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Condition;
 import org.nd4j.linalg.indexing.conditions.Conditions;
-import org.nd4j.linalg.ops.transforms.Transforms;
-import org.nd4j.linalg.util.ArrayUtil;
-import org.nd4j.linalg.util.Paths;
-import sun.awt.image.ImageWatched;
-import org.nd4j.linalg.api.buffer.DataType;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -25,7 +20,6 @@ import java.util.*;
 
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
 import static org.nd4j.linalg.ops.transforms.Transforms.log;
-import static org.nd4j.linalg.ops.transforms.Transforms.sin;
 
 
 public class IntervalState extends AbstractState{
