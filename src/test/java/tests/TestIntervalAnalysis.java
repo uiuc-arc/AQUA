@@ -1,6 +1,5 @@
 package tests;
 
-import com.sun.scenario.effect.impl.sw.sse.SSEBlend_SRC_OUTPeer;
 import grammar.AST;
 import grammar.analyses.*;
 import grammar.cfg.*;
