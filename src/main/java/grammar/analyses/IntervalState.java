@@ -276,7 +276,7 @@ public class IntervalState extends AbstractState{
 
 
     public void addProb(INDArray likeProbLower, INDArray likeProbUpper) {
-        System.out.println("Add Prob");
+        // System.out.println("Add Prob");
         INDArray lower = probCube[0];
         INDArray upper = probCube[1];
         BooleanIndexing.replaceWhere(likeProbLower, -Math.pow(1,16), Conditions.isNan());

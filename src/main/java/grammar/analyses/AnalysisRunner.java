@@ -89,12 +89,12 @@ public class AnalysisRunner {
             if (fileName.endsWith(".txt") && fileName.startsWith("analysis")
                     && (!fileName.contains("robust_"))) {
                 INDArray currParam = Nd4j.readTxt(file.getPath());
-                INDArray nanMatrix = currParam.dup();
-                BooleanIndexing.replaceWhere(nanMatrix,0, Conditions.equals(Double.NaN));
-                BooleanIndexing.replaceWhere(nanMatrix,1, Conditions.isNan());
-                if (nanMatrix.sum().getDouble() > 1) {
-                    System.out.println(fileName + " contains NaN");
-                }
+                // INDArray nanMatrix = currParam.dup();
+                // BooleanIndexing.replaceWhere(nanMatrix,0, Conditions.equals(Double.NaN));
+                // BooleanIndexing.replaceWhere(nanMatrix,1, Conditions.isNan());
+                // if (nanMatrix.sum().getDouble() > 1) {
+                //     System.out.println(fileName + " contains NaN");
+                // }
                 count += 1;
                 double[] ret = TVD_KS(currParam);
                 // System.out.println(fileName);
