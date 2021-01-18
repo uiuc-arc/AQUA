@@ -47,7 +47,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 41;
+    private int maxCounts = 31;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack;
@@ -89,7 +89,7 @@ public class IntervalAnalysis {
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 41);
+                paramDivs.put(kk, 31);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
