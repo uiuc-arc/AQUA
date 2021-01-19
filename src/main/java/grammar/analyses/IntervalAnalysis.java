@@ -1969,6 +1969,8 @@ public class IntervalAnalysis {
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
                         // if(declStatement.id.id.contains("robust_local_tau"))
                         //     limits[1] = 2.0;
+                        if(declStatement.id.id.contains("robust_weight"))
+                            limits[1] = 0.5;
                     }
                 }
             }
