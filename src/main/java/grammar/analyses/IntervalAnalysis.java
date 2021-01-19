@@ -679,6 +679,10 @@ public class IntervalAnalysis {
                                         String dataYName = rhs.split("_lpdf\\(")[1].split(",")[0];
                                         attackDataY(dataYName.split("\\[")[0]);
                                     }
+                                    else if (rhs.contains("_lpmf(")) {
+                                        String dataYName = rhs.split("_lpmf\\(")[1].split(",")[0];
+                                        attackDataY(dataYName.split("\\[")[0]);
+                                    }
                                     else
                                         attackDataY("y");
                                 }
@@ -1251,8 +1255,11 @@ public class IntervalAnalysis {
 
 
         } else if (distrId.equals("bernoulli_logit")) {
+            BooleanIndexing.replaceWhere(yNDArray, 0, Conditions.greaterThan(1));
+            BooleanIndexing.replaceWhere(yNDArray, 1, Conditions.lessThan(0));
             INDArray sigmoidParams = Transforms.sigmoid(params[0]);
             likeCube = yNDArray.mul(sigmoidParams);
+            // TODO: fix this
             likeCube = likeCube.add(Nd4j.scalar(1.0).broadcast(yNDArray.shape()).sub(yNDArray)
                     .mul(Nd4j.scalar(1.0).broadcast(sigmoidParams.shape()).sub(sigmoidParams)));
             likeCube = Transforms.log(likeCube);
@@ -1385,6 +1392,15 @@ public class IntervalAnalysis {
                 return Nd4j.empty();
             INDArray[] probLU = new INDArray[2];
             getProbLogLU(yArray, probLU, new INDArray[]{nu, mu, sigma}, "student_t");
+            ret = concat1(probLU);
+        }
+        else if (pp.id.id.equals("bernoulli_logit_lpmf")) {
+            double[][] yArray = getYArray(pp.parameters.get(0), intervalState);
+            INDArray pu = DistrCube(pp.parameters.get(1), intervalState);
+            if (pu == null || pu.length() == 0)
+                return Nd4j.empty();
+            INDArray[] probLU = new INDArray[2];
+            getProbLogLU(yArray, probLU, new INDArray[]{pu}, "bernoulli_logit");
             ret = concat1(probLU);
         }
         else if (pp.id.id.equals("sqrt")) {
@@ -1628,7 +1644,6 @@ public class IntervalAnalysis {
     }
 
     private INDArray DistrCube(AST.MulOp pp, IntervalState intervalState) {
-        // System.out.println("Distr Mul==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getMulNDArray(op1Array, op2Array);

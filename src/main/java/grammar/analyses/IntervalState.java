@@ -42,13 +42,25 @@ public class IntervalState extends AbstractState{
         Pair<Integer, INDArray> pair =  paramValues.remove(intName);
         Integer intIdx = pair.getKey();
         dimSize.remove((int) intIdx);
-        long[] realShape = probCube[0].shape();
+        long[] squeezeShape = getSqueezeShape(intIdx, probCube[0]);
+        probCube[0] = probCube[0].reshape(squeezeShape);
+        probCube[1] = probCube[1].reshape(squeezeShape);
+        for (Pair<Integer, INDArray> pp:paramValues.values()) {
+            if (pp.getKey() > intIdx) {
+                squeezeShape = getSqueezeShape(intIdx, pp.getValue());
+                pp.setValue(pp.getValue().reshape(squeezeShape));
+                pp.setKey(pp.getKey() - 1);
+            }
+        }
+        return intIdx;
+    }
+
+    private static long[] getSqueezeShape(Integer intIdx, INDArray valueCube) {
+        long[] realShape = valueCube.shape();
         long[] squeezeShape = new long[realShape.length - 1];
         System.arraycopy(realShape, 0, squeezeShape, 0, intIdx);
         System.arraycopy(realShape, intIdx+1, squeezeShape, intIdx, squeezeShape.length - intIdx);
-        probCube[0] = probCube[0].reshape(squeezeShape);
-        probCube[1] = probCube[1].reshape(squeezeShape);
-        return intIdx;
+        return squeezeShape;
     }
 
     public void addDepParamCube(String paramName, INDArray splits) {
@@ -89,6 +101,7 @@ public class IntervalState extends AbstractState{
             if (paramName.contains("robust_local_") || paramName.contains("robust_weight")) {
                 probCube[0] = oldProbLower.reshape(oldDimSize);
                 probCube[1] = oldProbUpper.reshape(oldDimSize);
+                dimSize.set(dimSize.size() - 1, (long) 1);
             } else {
                 probCube[0] = oldProbLower.reshape(oldDimSize).broadcast(outComeDimSize).addi(log(probLower).reshape(singleDim).broadcast(outComeDimSize));
                 probCube[1] = oldProbUpper.reshape(oldDimSize).broadcast(outComeDimSize).addi(log(probUpper).reshape(singleDim).broadcast(outComeDimSize));
