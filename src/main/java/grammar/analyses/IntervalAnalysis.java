@@ -1359,19 +1359,28 @@ public class IntervalAnalysis {
             INDArray omtheta = theta.subi(1).negi();
             long[] keepShape = params[1].shape().clone();
             keepShape[0] = 1;
-            INDArray tLower = exp(params[1].slice(0).reshape(keepShape));
-            INDArray tUpper = exp(params[1].slice(1).reshape(keepShape));
+            INDArray tLowerlog = params[1].slice(0);
+            INDArray tUpperlog = params[1].slice(1);
+            // Number smallConst = params[1].maxNumber();
+            // if (params[2].maxNumber().doubleValue() >smallConst.doubleValue())
+            //     smallConst = params[2].maxNumber();
+            INDArray tLower = exp(tLowerlog).reshape(keepShape); // .subi(smallConst)
+            INDArray tUpper = exp(tUpperlog).reshape(keepShape); // .subi(smallConst)
             long[] keepShape2 = params[2].shape().clone();
             keepShape2[0] = 1;
-            INDArray omtLower = exp(params[2].slice(0).reshape(keepShape2));
-            INDArray omtUpper = exp(params[2].slice(1).reshape(keepShape2));
+            tLowerlog = params[2].slice(0);
+            tUpperlog = params[2].slice(1);
+            INDArray omtLower = exp(tLowerlog).reshape(keepShape2);
+            INDArray omtUpper = exp(tUpperlog).reshape(keepShape2);
             INDArray thetaTLower = getMulNDArray(theta, tLower);
             INDArray thetaTUpper = getMulNDArray(theta, tUpper);
             INDArray thetaOmtLower = getMulNDArray(omtheta, omtLower);
             INDArray thetaOmtUpper = getMulNDArray(omtheta, omtUpper);
-            INDArray likeLower = getAddNDArray(thetaTLower, thetaOmtLower);
-            INDArray likeUpper = getAddNDArray(thetaTUpper, thetaOmtUpper);
-            ret = concat1(new INDArray[]{log(likeLower), log(likeUpper)});
+            INDArray likeLower = log(getAddNDArray(thetaTLower, thetaOmtLower));
+            INDArray likeUpper = log(getAddNDArray(thetaTUpper, thetaOmtUpper));
+            // BooleanIndexing.replaceWhere(likeLower,-746,Conditions.isInfinite());
+            // BooleanIndexing.replaceWhere(likeUpper,-746,Conditions.isInfinite());
+            ret = concat1(new INDArray[]{likeLower, likeUpper});
         }
         else if (pp.id.id.equals("normal_lpdf")) {
             double[][] yArray = getYArray(pp.parameters.get(0), intervalState);

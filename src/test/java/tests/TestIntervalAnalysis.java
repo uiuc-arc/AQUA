@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.jgrapht.Graph;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
@@ -32,7 +33,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        AnalysisRunner.analyzeProgram(localDir, "unemployment_robust_reparam");
+        AnalysisRunner.analyzeProgram(localDir, "normal_mixture_robust_student");
 
     }
 
@@ -86,11 +87,12 @@ public class TestIntervalAnalysis {
 
     @Test
     public void TestNd4j() {
+        Nd4j.setDataType(DataType.DOUBLE);
         System.out.println("==========");
         INDArray[] newarray = new INDArray[2];
         newarray[0] = Nd4j.arange(36).reshape(2,3,6);
-        System.out.println(Transforms.pow(newarray[0],2).subi(10));
-        System.out.println(newarray[0]);
+        System.out.println(Transforms.exp(Nd4j.createFromArray(-746.0)));
+
 
     }
 
