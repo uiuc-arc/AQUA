@@ -157,10 +157,11 @@ public class AnalysisRunner {
             // double rectHeight = Math.max(Math.abs(problu[i] - probul[i]), Math.abs(probuu[i] - probll[i]));
             // TVD on PDF
             double rectHeight = Math.abs(pdflo[i] - pdfuo[i]);
+            double cdfHeight = Math.abs(probl[i] - probu[i]);
             double rectWidth = value[i + 1] - value[i];
             TVDret += rectHeight * rectWidth;
             // System.out.println(String.format("%s,%s,%s",rectHeight * rectWidth, rectHeight, rectWidth));
-            KSret = Math.max(KSret, rectHeight);
+            KSret = Math.max(KSret, cdfHeight);
         }
         return new double[]{TVDret / 2.0, KSret};
     }
