@@ -1424,6 +1424,13 @@ public class IntervalAnalysis {
                 return param0;
             ret = Nd4j.scalar(1.0).broadcast(param0.shape()).div(param0);
         }
+        else if (pp.id.id.equals("inv_sqrt")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length()== 0)
+                return param0;
+            ret = Transforms.sqrt(param0);
+            ret = Nd4j.scalar(1.0).broadcast(ret.shape()).div(ret);
+        }
         return ret;
     }
 
@@ -1967,8 +1974,8 @@ public class IntervalAnalysis {
                             limits[0] = Double.valueOf(aaLimits.lower.toString());
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
-                        // if(declStatement.id.id.contains("robust_local_tau"))
-                        //     limits[1] = 2.0;
+                        if(declStatement.id.id.contains("robust_local_tau"))
+                            limits[1] = 2.0;
                         if(declStatement.id.id.contains("robust_weight"))
                             limits[1] = 0.5;
                     }
@@ -1989,13 +1996,13 @@ public class IntervalAnalysis {
             if (dimArray.size() == 1) {
                 for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
                     String eleId = String.format("%s[%s]", arrayId, jj);
-                    paramMap.put(eleId, new Pair(limits, dimArray));
+                    paramMap.put(eleId, new Pair(limits.clone(), dimArray));
                 }
             } else if (dimArray.size() == 2) {
                 for (Integer jj = 1; jj <= dimArray.get(0); jj++) {
                     for (Integer kk = 1; kk <= dimArray.get(1); kk++) {
                         String eleId = String.format("%s[%s,%s]", arrayId, jj, kk);
-                        paramMap.put(eleId, new Pair(limits, dimArray));
+                        paramMap.put(eleId, new Pair(limits.clone(), dimArray));
                     }
                 }
             } else if (dimArray.size() == 0) {

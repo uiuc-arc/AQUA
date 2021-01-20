@@ -32,7 +32,7 @@ public class AnalysisRunner {
             System.out.println("remove prior!!!");
         }
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
-        String stansummary = localDir + stanPath + "/" + stanName.split("_robust")[0] + "_rw_summary_100.txt";
+        String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
