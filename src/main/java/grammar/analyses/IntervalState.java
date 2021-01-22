@@ -98,7 +98,7 @@ public class IntervalState extends AbstractState{
             int[] oldDimSize = Ints.toArray(dimSize);
             dimSize.set(dimSize.size() - 1, newSplitLen);
             long[] outComeDimSize = dimSize.stream().mapToLong(i -> i).toArray();
-            if (paramName.contains("robust_local_") || paramName.contains("robust_weight")) {
+            if (paramName.contains("robust_local_") || paramName.contains("robust_weight") || (paramName.contains("timeseries_mu") && ! paramName.contains("[1]") )) {
                 probCube[0] = oldProbLower.reshape(oldDimSize);
                 probCube[1] = oldProbUpper.reshape(oldDimSize);
                 dimSize.set(dimSize.size() - 1, (long) 1);

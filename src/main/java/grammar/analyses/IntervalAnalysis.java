@@ -15,6 +15,7 @@ import org.apache.commons.math3.distribution.GammaDistribution;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.random.impl.UniformDistribution;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
@@ -95,10 +96,14 @@ public class IntervalAnalysis {
             }
             else {
                 paramDivs.put(kk, maxCounts);
-                majorParam.add(kk);
+                if (kk.contains("timeseries_mu")) {
+                    if (kk.contains("[1]"))
+                        majorParam.add(kk);
+                }
+                else
+                    majorParam.add(kk);
             }
         }
-        // System.out.println(majorParam);
         worklist.add(worklistAll.peek());
         endFacts = WorklistIter(worklist);
         if (endFacts.probCube[0] != null) {
@@ -259,7 +264,7 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = Double.valueOf(strMeanSd[1]) * 1;
+                paramLimits[3] = max(Double.valueOf(strMeanSd[1]), 0.5);
                 // System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
@@ -1173,12 +1178,14 @@ public class IntervalAnalysis {
     }
 
     private void intOutRobust(INDArray[] sumExpLowerUpper, IntervalState intervalState) {
-        String intName = integrateStack.pop();
-        Integer intIdx = intervalState.intOut(intName);
-        // System.out.println(intName);
-        // System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
-        sumExpLowerUpper[0] = log(exp(sumExpLowerUpper[0]).sum(intIdx));
-        sumExpLowerUpper[1] = log(exp(sumExpLowerUpper[1]).sum(intIdx));
+        while(!integrateStack.empty()) {
+            String intName = integrateStack.pop();
+            Integer intIdx = intervalState.intOut(intName);
+            // System.out.println(intName);
+            // System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
+            sumExpLowerUpper[0] = log(exp(sumExpLowerUpper[0]).sum(intIdx));
+            sumExpLowerUpper[1] = log(exp(sumExpLowerUpper[1]).sum(intIdx));
+        }
     }
 
     private void getProbLogLU(double[][] yArray, INDArray[] sumExpLowerUpper, INDArray[] params, String distrId) {
@@ -1311,6 +1318,10 @@ public class IntervalAnalysis {
             return DistrCube((AST.AddOp) pp, intervalState);
 
         }
+        else if (pp instanceof AST.MinusOp) {
+            return DistrCube((AST.MinusOp) pp, intervalState);
+
+        }
         else if (pp instanceof AST.MulOp) {
             return DistrCube((AST.MulOp) pp, intervalState);
 
@@ -1335,6 +1346,7 @@ public class IntervalAnalysis {
         else if (pp instanceof AST.UnaryExpression) {
             return DistrCube((AST.UnaryExpression) pp, intervalState);
         }
+        System.out.println("Expression " + pp.toString() + " not supported!");
         return null;
     }
 
@@ -1644,6 +1656,13 @@ public class IntervalAnalysis {
         return getAddNDArray(op1Array, op2Array);
     }
 
+    private INDArray DistrCube(AST.MinusOp pp, IntervalState intervalState) {
+        // System.out.println("Distr Add==================" + pp.toString());
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getMinusNDArray(op1Array, op2Array);
+    }
+
     private INDArray getAddNDArray(INDArray op1Array, INDArray op2Array) {
         if (op1Array.length() != 0 && op2Array.length() != 0) {
             long[] op1shape = op1Array.shape();
@@ -1654,6 +1673,21 @@ public class IntervalAnalysis {
             else
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
             return op1Array.broadcast(outShape).add(op2Array.broadcast(outShape));
+        } else {
+            return Nd4j.empty();
+        }
+    }
+
+    private INDArray getMinusNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+            return op1Array.broadcast(outShape).sub(op2Array.broadcast(outShape));
         } else {
             return Nd4j.empty();
         }
@@ -1795,6 +1829,8 @@ public class IntervalAnalysis {
 
     private void getDiscretePriorsSingleSplit(double[] single, double[] prob1, double[] prob2,
                                          AbstractRealDistribution normal, AbstractRealDistribution splitDistr, double pi) {
+        if (splitDistr instanceof NormalDistribution)
+            splitDistr = new UniformRealDistribution(splitDistr.inverseCumulativeProbability(0.05), splitDistr.inverseCumulativeProbability(0.95));
         if (pi >= 0) {
             single[0] = splitDistr.inverseCumulativeProbability(0.05);
             single[single.length - 1] = splitDistr.inverseCumulativeProbability(0.95);
@@ -1950,6 +1986,10 @@ public class IntervalAnalysis {
                             normal = new UniformRealDistribution(funcParams.get(0), funcParams.get(1));
                             splitDistr = new NormalDistribution(meanSd[2],meanSd[3]);
                             break;
+                        case "student_t":
+                            normal = new NormalDistribution(funcParams.get(1), funcParams.get(2));
+                            splitDistr = new NormalDistribution(meanSd[2],meanSd[3]);
+                            break;
                     }
                     getDiscretePriorsSingleSplit(single, prob1, prob2, normal, splitDistr, pi);
                 }
@@ -1974,10 +2014,13 @@ public class IntervalAnalysis {
                             limits[0] = Double.valueOf(aaLimits.lower.toString());
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
-                        if(declStatement.id.id.contains("robust_local_tau"))
-                            limits[1] = 2.0;
-                        if(declStatement.id.id.contains("robust_weight"))
-                            limits[1] = 0.5;
+                        if(declStatement.id.id.contains("robust_local_tau")) {
+                            limits[1] = 1.0;
+                        }
+                        if(declStatement.id.id.contains("robust_weight")) {
+                            limits[1] = 1.0;
+                            limits[0] = 0.01;
+                        }
                     }
                 }
             }
