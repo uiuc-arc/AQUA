@@ -734,10 +734,10 @@ public class IntervalAnalysis {
         int[] sortedIndices = IntStream.range(0, size)
                 .boxed().sorted(Comparator.comparing(i -> orgDataValue[i]))
                 .mapToInt(ele -> ele).toArray();
-        for(int i = 0; i < size * 20 / 100; i++){
+        for(int i = 0; i < size * 10 / 100; i++){
             newDataValueU[sortedIndices[i]] -= 6 * sd;
         }
-        for(int i = size * 80 / 100; i < size; i++){
+        for(int i = size * 90 / 100; i < size; i++){
             newDataValueU[sortedIndices[i]] += 6 * sd;
         }
     }

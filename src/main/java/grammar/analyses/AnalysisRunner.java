@@ -1,23 +1,15 @@
 package grammar.analyses;
 
-import grammar.AST;
 import grammar.cfg.CFGBuilder;
 import grammar.cfg.Section;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.transforms.custom.CumSum;
-import org.nd4j.linalg.factory.NDArrayFactory;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.NDArrayIndex;
-import org.nd4j.linalg.indexing.conditions.Conditions;
 import translators.Stan2IRTranslator;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class AnalysisRunner {
     private static List<String> hierModels = Arrays.asList("anova_radon_nopred_chr", "anova_radon_nopred", "electric_chr", "hiv", "pilots", "radon.1", "radon_no_pool_chr", "radon_no_pool", "radon_vary_inter_slope_17.1", "radon_vary_si_chr", "radon_vary_si");
@@ -34,8 +26,10 @@ public class AnalysisRunner {
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
+        Map<String, String> TruthSummary = getMeanFromTruth(localDir + stanPath + "/" + "truth_file_w");
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
+
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         String tempFileName = stanfile.replace(".stan", "");
         String templateCode = stan2IRTranslator.getCode();
@@ -48,7 +42,10 @@ public class AnalysisRunner {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
         long startTime = System.nanoTime();
+        /*
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
@@ -60,18 +57,23 @@ public class AnalysisRunner {
         intervalAnalyzer.setPath(filePath);
         intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
-        double[] avgMetrics = FindMetrics(filePath);
+        */
+        //===========Find Metrics================
+        double[] avgMetrics = FindMetrics(filePath, TruthSummary);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
+
+
         System.out.println("Analysis Time: " + duration);
         System.out.println("Total Variation Distance:" + avgMetrics[0]);
         System.out.println("K-S Distance:" + avgMetrics[1]);
         System.out.println("Exp Change:" + avgMetrics[2]);
         System.out.println("MSE Change:" + avgMetrics[3]);
+        System.out.println("True Change:" + avgMetrics[4]);
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter(filePath + "/output0117.txt", "UTF-8");
-            writer.println(String.valueOf(duration) + "," + Arrays.toString(avgMetrics).replace("[","").replace("]","").replace(" ",""));
+            writer = new PrintWriter(filePath + "/output0124.txt", "UTF-8");
+            writer.println(String.valueOf(duration) + "," + Arrays.toString(avgMetrics).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(avgMetrics[4]));
             writer.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,12 +82,14 @@ public class AnalysisRunner {
 
 
     // if the original is best, remove the first & last block to try again
-    public static double[] FindMetrics(String path) {
+    public static double[] FindMetrics(String path, Map<String, String> TruthSummary) {
         double avgTVD = 0;
         double avgKS = 0;
         double avgExp = 0;
         double avgMSE = 0;
+        double avgTrue = 0;
         int count = 0;
+        int countT = 0;
         File dir = new File(path);
         File fileList[] = dir.listFiles();
         for (File file : fileList) {
@@ -108,9 +112,14 @@ public class AnalysisRunner {
                 double expDist = MSE(currParam);
                 avgExp += expDist;
                 avgMSE += Math.pow(expDist, 2);
+                String paramName = fileName.replace("analysis_","").replace(".txt","");
+                if (TruthSummary.containsKey(paramName)) {
+                    avgTrue += Math.pow(expDist - Double.valueOf(TruthSummary.get(paramName)), 2);
+                    countT += 1;
+                }
             }
         }
-        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) count, avgMSE/(double) count};
+        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) count, avgMSE/(double) count, avgTrue/(double) count};
     }
 
     public static double MSE(INDArray param) {
@@ -119,6 +128,27 @@ public class AnalysisRunner {
         double[] pdfu = param.slice(2).toDoubleVector();
         return Math.abs(getE(value, pdfl) - getE(value, pdfu));
     }
+
+
+    private static Map<String, String> getMeanFromTruth(String TruthSummary) {
+        Map<String, String> records = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(TruthSummary))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                if (line.startsWith("#"))
+                    continue;
+                String[] values = line.split(",");
+                if (values[0].contains("__"))
+                    continue;
+                records.put(values[0].replace("\"", ""), values[1]);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return records;
+    }
+
+
 
     public static double getE(double[] value, double[] prob) {
         double expectation = 0;
@@ -132,12 +162,18 @@ public class AnalysisRunner {
         double TVDret = 0;
         double KSret = 0;
         double[] value = param.slice(0).toDoubleVector();
-        INDArray pdfl = param.slice(1).get(NDArrayIndex.interval(1,value.length - 1));
-        INDArray pdfu = param.slice(2).get(NDArrayIndex.interval(1,value.length - 1));
+        INDArray pdfl = param.slice(1).get(NDArrayIndex.interval(0,value.length ));
+        INDArray pdfu = param.slice(2).get(NDArrayIndex.interval(0,value.length ));
         double[] pdflo = pdfl.toDoubleVector();
         double[] pdfuo = pdfu.toDoubleVector();
-        pdfl = pdfl.div(pdfl.sumNumber());
-        pdfu = pdfu.div(pdfu.sumNumber());
+        if (pdfl.sumNumber().doubleValue() != 0)
+            pdfl = pdfl.div(pdfl.sumNumber());
+        else
+            pdfl = Nd4j.ones(pdfl.shape());
+        if (pdfu.sumNumber().doubleValue() != 0)
+            pdfu = pdfu.div(pdfu.sumNumber());
+        else
+            pdfu = Nd4j.ones(pdfu.shape());
         double[] probl = Nd4j.cumsum(pdfl).toDoubleVector();
         double[] probu = Nd4j.cumsum(pdfu).toDoubleVector();
         double[] probll =  new double[probl.length + 1];
