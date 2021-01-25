@@ -109,11 +109,11 @@ public class AnalysisRunner {
                 // System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
                 avgTVD += ret[0];
                 avgKS += ret[1];
-                double expDist = MSE(currParam);
-                avgExp += expDist;
-                avgMSE += Math.pow(expDist, 2);
                 String paramName = fileName.replace("analysis_","").replace(".txt","");
                 if (TruthSummary.containsKey(paramName) && !paramName.contains("sigma[1]") && !paramName.contains("sigma[2]") ) {
+                    double expDist = MSE(currParam);
+                    avgExp += expDist;
+                    avgMSE += Math.pow(expDist, 2);
                     avgTrue += Math.pow(expDist - Double.valueOf(TruthSummary.get(paramName)), 2);
                     countT += 1;
                     System.out.println(paramName);
@@ -121,7 +121,7 @@ public class AnalysisRunner {
                 }
             }
         }
-        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) count, avgMSE/(double) count, avgTrue/(double) countT};
+        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) countT, avgMSE/(double) countT, avgTrue/(double) countT};
     }
 
     public static double MSE(INDArray param) {
