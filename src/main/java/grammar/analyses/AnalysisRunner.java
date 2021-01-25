@@ -45,7 +45,7 @@ public class AnalysisRunner {
 
 
         long startTime = System.nanoTime();
-        /*
+        ///*
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
@@ -57,7 +57,7 @@ public class AnalysisRunner {
         intervalAnalyzer.setPath(filePath);
         intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
-        */
+        //*/
         //===========Find Metrics================
         double[] avgMetrics = FindMetrics(filePath, TruthSummary);
         long endTime = System.nanoTime();
@@ -113,7 +113,7 @@ public class AnalysisRunner {
                 avgExp += expDist;
                 avgMSE += Math.pow(expDist, 2);
                 String paramName = fileName.replace("analysis_","").replace(".txt","");
-                if (TruthSummary.containsKey(paramName) && !paramName.contains("sigma")) {
+                if (TruthSummary.containsKey(paramName) && !paramName.contains("sigma[1]") && !paramName.contains("sigma[2]") ) {
                     avgTrue += Math.pow(expDist - Double.valueOf(TruthSummary.get(paramName)), 2);
                     countT += 1;
                     System.out.println(paramName);
