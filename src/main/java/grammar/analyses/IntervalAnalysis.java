@@ -48,7 +48,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 21;
+    private int maxCounts = 41;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack;
@@ -90,7 +90,7 @@ public class IntervalAnalysis {
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 21);
+                paramDivs.put(kk, 41);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
@@ -1624,7 +1624,7 @@ public class IntervalAnalysis {
                 // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
                 // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
                 // Equiv-interval
-                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 3 *limitsMeanSd[3], limitsMeanSd[2] + 3 *limitsMeanSd[3]);
+                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 6 *limitsMeanSd[3], limitsMeanSd[2] + 6 *limitsMeanSd[3]);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");
@@ -2015,7 +2015,7 @@ public class IntervalAnalysis {
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
                         if(declStatement.id.id.contains("robust_local_tau")) {
-                            limits[1] = 1.0;
+                            limits[1] = 3.0;
                         }
                         if(declStatement.id.id.contains("robust_weight")) {
                             limits[1] = 1.0;

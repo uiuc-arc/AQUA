@@ -77,8 +77,8 @@ public class IntervalState extends AbstractState{
         if (currDim == 1) {
             paramValues.put(paramName, new Pair<>(currDim, splits.reshape(1,splits.length())));
             dimSize.add(newSplitLen);
-            probCube[0] = (probLower.reshape(1,newSplitLen));
-            probCube[1] = (probUpper.reshape(1, newSplitLen));
+            probCube[0] = (log(probLower).reshape(1,newSplitLen));
+            probCube[1] = (log(probUpper).reshape(1, newSplitLen));
         }
         else {
             INDArray oldProbLower = probCube[0];
