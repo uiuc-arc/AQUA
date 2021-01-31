@@ -225,8 +225,8 @@ public class AnalysisRunner {
 
 
     public static void main (String[] args) {
-        String localDir = "/home/zixin/analysis_progs/progs/";
-        // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/progs/";
+        // String localDir = "/home/zixin/analysis_progs/progs/";
+        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         AnalysisRunner.analyzeProgram(localDir, args[0]);
     }
 }

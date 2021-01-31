@@ -136,36 +136,18 @@ public class IntervalState extends AbstractState{
             return;
         INDArray logLower = probCube[0];
         INDArray logUpper = probCube[1];
-        BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
-        BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
-        BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
-        BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
+        // BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        // BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        // BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
+        // BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.maxNumber()))); //
         INDArray upper = exp(logUpper.subi((logUpper.maxNumber()))); //
-        BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
-        BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
-        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
-        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
-        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
-        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
-        Integer nDim = lower.shape().length;
-        int[] numbers = new int[nDim - 1];
-        for(int i = 1; i < nDim; i++){
-            numbers[i - 1] = i;
-        }
-        Double fullLower = null;
-        Double fullUpper = null;
-        String[] pathSplits = path.split("/");
-        FileWriter mathOut = null;
-        BufferedWriter bw;
-        PrintWriter pw = null;
-        try {
-            mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
-            bw = new BufferedWriter(mathOut);
-            pw = new PrintWriter(bw);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
+        // BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
+        // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
+        // BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
+        // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
+        // BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // Numerical Integration for Equi-Prob Intervals
         // for (Pair<Integer, INDArray> pv: paramValues.values()) {
         //     Integer dim = pv.getKey();
@@ -184,10 +166,29 @@ public class IntervalState extends AbstractState{
         //     upper.muli(vvdiff.reshape(IntervalAnalysis.getReshape(vvdiff.shape(),
         //             lower.shape())).broadcast(lower.shape()));
         // }
+        lower = lower.addi(upper).divi(2);
+        upper = lower;
+        Integer nDim = lower.shape().length;
+        int[] numbers = new int[nDim - 1];
+        for(int i = 1; i < nDim; i++){
+            numbers[i - 1] = i;
+        }
+        String[] pathSplits = path.split("/");
+        FileWriter mathOut = null;
+        BufferedWriter bw;
+        PrintWriter pw = null;
+        try {
+            mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
+            bw = new BufferedWriter(mathOut);
+            pw = new PrintWriter(bw);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         int j = 0;
+        Double fullLower = null;
+        // Double fullUpper = null;
         for (String ss: strings) {
             j++;
-            // System.out.println(ss);
             if (ss.contains("robust_")) {
                 continue;
             }
@@ -204,50 +205,55 @@ public class IntervalState extends AbstractState{
                 paramvalue = paramvalue.tensorAlongDimension(0,paramDimIdx);
             }
             INDArray currsumLower = lower.sum(numbersCopy);
-            INDArray currsumUpper = upper.sum(numbersCopy);
+            // INDArray currsumUpper = upper.sum(numbersCopy);
             if (fullLower == null) {
                 fullLower = currsumLower.sumNumber().doubleValue();
-                fullUpper = currsumUpper.sumNumber().doubleValue();
+            //    fullUpper = currsumUpper.sumNumber().doubleValue();
             }
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
-                    Nd4j.toFlattened(currsumLower).div(fullLower),
-                    Nd4j.toFlattened(currsumUpper).div(fullUpper));
-            String outputFile = path + "/analysis_" + ss + ".txt";
-            File file = new File(outputFile);
-            if (!file.exists()) {
-                Nd4j.writeTxt(outMatrix, outputFile);
-                pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
-                pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
-                pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
-                        " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
-                        " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
-                pw.println(String.format("Graphics[{Orange, \n" +
-                        "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
-                        " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
-                        " PlotLabel -> \"%s\"]", j, ss));
-                pw.flush();
-            }
-            else {
-                INDArray lastOut = null;
-                try {
-                    lastOut = Nd4j.readTxt(outputFile);
-                    lastOut.slice(1).mul(outMatrix.slice(1));
-                    lastOut.slice(2).mul(outMatrix.slice(2));
-                    Nd4j.writeTxt(lastOut,outputFile);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
-            // System.out.println(intervalState.probCube.get(0));
-            // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
+                    Nd4j.toFlattened(currsumLower).div(fullLower));
+            writeToFile(path, pw, j, ss, outMatrix);
         }
         try {
             mathOut.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void writeToFile(String path, PrintWriter pw, int j, String ss, INDArray outMatrix) {
+        String outputFile = path + "/analysis_" + ss + ".txt";
+        File file = new File(outputFile);
+        if (!file.exists()) {
+            Nd4j.writeTxt(outMatrix, outputFile);
+            pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
+            pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
+            pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
+                    " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
+                    " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
+            pw.println(String.format("Graphics[{Orange, \n" +
+                    "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
+                    " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
+                    " PlotLabel -> \"%s\"]", j, ss));
+            pw.flush();
+        }
+        else {
+            INDArray lastOut = null;
+            try {
+                lastOut = Nd4j.readTxt(outputFile);
+                INDArray goodProb=outMatrix.slice(1);
+                lastOut = Nd4j.vstack(lastOut,goodProb.reshape(new long[]{1,goodProb.length()}));
+                //lastOut.slice(1).mul(outMatrix.slice(1));
+                //lastOut.slice(2).mul(outMatrix.slice(2));
+                Nd4j.writeTxt(lastOut,outputFile);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
+        // System.out.println(intervalState.probCube.get(0));
+        // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");
     }
 
     public static void deleteAnalysisOutputs(String path) {

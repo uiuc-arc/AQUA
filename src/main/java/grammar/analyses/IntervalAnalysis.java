@@ -4,7 +4,6 @@ import grammar.AST;
 import grammar.cfg.*;
 import grammar.cfg.BasicBlock;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.math.MathException;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.distribution.AbstractRealDistribution;
 import org.apache.commons.math3.distribution.UniformRealDistribution;
@@ -15,7 +14,6 @@ import org.apache.commons.math3.distribution.GammaDistribution;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.random.impl.UniformDistribution;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
@@ -25,14 +23,8 @@ import org.renjin.repackaged.guava.collect.Sets;
 import utils.Utils;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.*;
@@ -51,7 +43,7 @@ public class IntervalAnalysis {
     private int maxCounts = 41;
     private int minCounts = 0;
     private int PACounts = 1;
-    private Boolean toAttack;
+    private Boolean toAttack=true;
     private String path;
     private Boolean addPrior = true;
     private String stansummary;
@@ -60,6 +52,7 @@ public class IntervalAnalysis {
     private Set<String> innerIntParams = new HashSet<>();
     private Stack<String> integrateStack = new Stack<>();
     HashSet<String> majorParam = new HashSet<>();
+    private String dataYNameGlobal;
 
     @Deprecated
     private double maxProb = 1.0 / (maxCounts - 1);
@@ -80,13 +73,13 @@ public class IntervalAnalysis {
 
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
-        InitWorklist(cfgSections);
-        getMeanFromMCMC();
         IntervalState endFacts;
         IntervalState.deleteAnalysisOutputs(path);
-        toAttack = true;
+        InitWorklist(cfgSections);
+        getMeanFromMCMC();
         addPrior = true;
         no_tau = true;
+        toAttack = true;
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
@@ -112,6 +105,22 @@ public class IntervalAnalysis {
             System.out.println(path);
         } else
             System.out.println("Prob Cube Empty!");
+        endFacts.writeResults(majorParam, path);
+        // repeat
+
+        for (BasicBlock bb: worklistAll) {
+            bb.dataflowFacts = null;
+        }
+        scalarParam.clear();
+        System.gc();
+        toAttack = false;
+        Pair<AST.Data, double[]> dataYGood = dataList.get(dataYNameGlobal + "_good");
+        if (!toAttack) {
+            dataList.put(dataYNameGlobal, dataYGood);
+            dataList.put(dataYNameGlobal + "_corrupted", dataYGood);
+        }
+        worklist.add(worklistAll.peek());
+        endFacts = WorklistIter(worklist);
         endFacts.writeResults(majorParam, path);
     }
 
@@ -715,15 +724,17 @@ public class IntervalAnalysis {
         }
     }
 
-    private void attackDataY(String dataYName) {
+    private void attackDataY(String dataYName){
         obsDataList.add(dataYName);
         Pair<AST.Data, double[]> orgDataPair = dataList.get(dataYName);
         double[] newDataValueL = orgDataPair.getValue().clone();
         double[] newDataValueU = orgDataPair.getValue().clone();
         // Attack
         getAttackLU(newDataValueL, newDataValueU);
+        dataYNameGlobal = dataYName;
         dataList.put(dataYName, new Pair<>(orgDataPair.getKey(), newDataValueL));
         dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValueU));
+        dataList.put(dataYName + "_good", new Pair<>(orgDataPair.getKey(), orgDataPair.getValue()));
     }
 
     private void getAttackLU(double[] newDataValueL, double[] newDataValueU) {
@@ -735,7 +746,7 @@ public class IntervalAnalysis {
                 .boxed().sorted(Comparator.comparing(i -> orgDataValue[i]))
                 .mapToInt(ele -> ele).toArray();
         for(int i = 0; i < size * 10 / 100; i++){
-            newDataValueU[sortedIndices[i]] -= 6 * sd;
+            newDataValueL[sortedIndices[i]] -= 6 * sd;
         }
         for(int i = size * 90 / 100; i < size; i++){
             newDataValueU[sortedIndices[i]] += 6 * sd;
@@ -1245,7 +1256,6 @@ public class IntervalAnalysis {
             INDArray sigma = params[2].dup();
             if (nu.getDouble(10) <0 )
                 assert false;
-            // likeCube = Transforms.log(nu.mul(0.39226).sub(Transforms.pow(nu,2)).muli(0.016215)).subi(Transforms.log(nu).muli(-0.5));
             likeCube = Transforms.log(nu.mul(0.39226).sub(Transforms.pow(nu,2).muli(0.016215))).subi(Transforms.log(nu).muli(-0.5));
             likeCube = likeCube.addi(Transforms.log((Transforms.pow((yNDArray.subi(mu)).divi(sigma),2).divi(nu)).add(1.0)).muli((nu.addi(1)).muli(-0.5)));
             // System.out.println(likeCube);
@@ -1605,6 +1615,8 @@ public class IntervalAnalysis {
             else
                 pi = -1;
             if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
+                if (limitsMeanSd[1] > 50)
+                    limitsMeanSd[1] = limitsMeanSd[0] + 10;
                 UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[0], limitsMeanSd[1]);
                 getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
             } else if (limitsMeanSd[0] != null) {
@@ -1624,7 +1636,7 @@ public class IntervalAnalysis {
                 // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
                 // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
                 // Equiv-interval
-                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 6 *limitsMeanSd[3], limitsMeanSd[2] + 6 *limitsMeanSd[3]);
+                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 9 *limitsMeanSd[3], limitsMeanSd[2] + 9 *limitsMeanSd[3]);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");

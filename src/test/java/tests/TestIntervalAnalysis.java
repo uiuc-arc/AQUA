@@ -33,7 +33,7 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_chr_robust_student");
+        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_chr_robust_reparam");
 
     }
 
