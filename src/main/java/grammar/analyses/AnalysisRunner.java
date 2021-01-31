@@ -60,9 +60,9 @@ public class AnalysisRunner {
         // */
         //===========Find Metrics================
         String outputName = "/output0131.txt";
-        double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
+        double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
 
 
         System.out.println("Analysis Time: " + duration);
@@ -74,7 +74,9 @@ public class AnalysisRunner {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(new FileWriter(filePath + outputName,true),true);
-            writer.println( "avg," +Arrays.toString(avgMetrics).replace("[","").replace("]","").replace(" ","") ); // String.valueOf(duration) + "," +
+            writer.println( "avg," +Arrays.toString(Arrays.copyOfRange(avgMetrics,0,5)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration)); //  + "," +
+            writer.println( "avgs," +Arrays.toString(Arrays.copyOfRange(avgMetrics, 5, 10)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration));
+            writer.println(duration);
             writer.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -90,7 +92,12 @@ public class AnalysisRunner {
         double avgMSE = 0;
         double avgTrue = 0;
         int count = 0;
-        int countT = 0;
+        double avgTVDs = 0;
+        double avgKSs = 0;
+        double avgExps = 0;
+        double avgMSEs = 0;
+        double avgTrues = 0;
+        int counts = 0;
         File dir = new File(filePath);
         File fileList[] = dir.listFiles();
         try {
@@ -98,41 +105,41 @@ public class AnalysisRunner {
             writer = new PrintWriter(new FileWriter(filePath + outputName),true);
             for (File file : fileList) {
                 String fileName = file.getName();
+                String paramName = fileName.replace("analysis_","").replace(".txt","");
                 if (fileName.endsWith(".txt") && fileName.startsWith("analysis")
-                        && (!fileName.contains("robust_"))) {
+                        && (!fileName.contains("robust_"))
+                        && TruthSummary.containsKey(paramName)) {
                     INDArray currParam = Nd4j.readTxt(file.getPath());
-                    // INDArray nanMatrix = currParam.dup();
-                    // BooleanIndexing.replaceWhere(nanMatrix,0, Conditions.equals(Double.NaN));
-                    // BooleanIndexing.replaceWhere(nanMatrix,1, Conditions.isNan());
-                    // if (nanMatrix.sum().getDouble() > 1) {
-                    //     System.out.println(fileName + " contains NaN");
-                    // }
                     count += 1;
                     double[] ret = TVD_KS(currParam);
-                    // System.out.println(fileName);
-                    // System.out.println(String.format("TVD: %s, KS: %s", ret[0], ret[1]));
+                    double expDist = MSE(currParam);
+                    double truthDist = MSETruth(currParam, Double.valueOf(TruthSummary.get(paramName)));
                     avgTVD += ret[0];
                     avgKS += ret[1];
-                    String paramName = fileName.replace("analysis_","").replace(".txt","");
-                    if (TruthSummary.containsKey(paramName)) { // && !paramName.contains("sigma") && !paramName.contains("sigma[2]") ) {
-                        double expDist = MSE(currParam);
-                        double truthDist = MSETruth(currParam, Double.valueOf(TruthSummary.get(paramName)));
-                        avgExp += expDist;
-                        avgMSE += Math.pow(expDist, 2);
-                        avgTrue += truthDist;
-                        countT += 1;
-                        System.out.println(paramName);
-                        System.out.println(truthDist);
-                        double[] paramMetrics = new double[]{ret[0],ret[1],expDist,Math.pow(expDist,2),truthDist};
-                        writer.println( paramName + "," +Arrays.toString(paramMetrics).replace("[","").replace("]","").replace(" ","")); // String.valueOf(duration) + "," +
+                    avgExp += expDist;
+                    avgMSE += Math.pow(expDist, 2);
+                    avgTrue += truthDist;
+                    if (!paramName.contains("sigma")) {
+                        avgTVDs += ret[0];
+                        avgKSs += ret[1];
+                        avgExps += expDist;
+                        avgMSEs += Math.pow(expDist, 2);
+                        avgTrues += truthDist;
+                        counts +=1;
+
                     }
+                    System.out.println(paramName);
+                    System.out.println(truthDist);
+                    double[] paramMetrics = new double[]{ret[0],ret[1],expDist,Math.pow(expDist,2),truthDist};
+                    writer.println( paramName + "," +Arrays.toString(paramMetrics).replace("[","").replace("]","").replace(" ",""));
                 }
             }
             writer.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) countT, avgMSE/(double) countT, avgTrue/(double) countT};
+        return new double[]{avgTVD/(double) count, avgKS/(double) count, avgExp/(double) count, avgMSE/(double) count, avgTrue/(double) count,
+                            avgTVDs/(double) counts, avgKSs/(double) counts, avgExps/(double) counts, avgMSEs/(double) counts, avgTrues/(double) counts};
     }
 
     public static double MSE(INDArray param) {
