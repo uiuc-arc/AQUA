@@ -59,7 +59,7 @@ public class AnalysisRunner {
         intervalAnalyzer.forwardAnalysis(CFG);
         // */
         //===========Find Metrics================
-        String outputName = "/output0127.txt";
+        String outputName = "/output0131.txt";
         double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
