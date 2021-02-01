@@ -59,24 +59,22 @@ public class AnalysisRunner {
         intervalAnalyzer.forwardAnalysis(CFG);
         // */
         //===========Find Metrics================
-        String outputName = "/output0131.txt";
+        String outputName = "/output0132.txt";
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
         double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
 
 
         System.out.println("Analysis Time: " + duration);
-        System.out.println("Total Variation Distance:" + avgMetrics[0]);
-        System.out.println("K-S Distance:" + avgMetrics[1]);
-        System.out.println("Exp Change:" + avgMetrics[2]);
         System.out.println("MSE Change:" + avgMetrics[3]);
         System.out.println("True Change:" + avgMetrics[4]);
+        System.out.println("MSE Change:" + avgMetrics[8]);
+        System.out.println("True Change:" + avgMetrics[9]);
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(new FileWriter(filePath + outputName,true),true);
             writer.println( "avg," +Arrays.toString(Arrays.copyOfRange(avgMetrics,0,5)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration)); //  + "," +
             writer.println( "avgs," +Arrays.toString(Arrays.copyOfRange(avgMetrics, 5, 10)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration));
-            writer.println(duration);
             writer.close();
         } catch (Exception e) {
             e.printStackTrace();

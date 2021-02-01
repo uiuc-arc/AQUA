@@ -131,6 +131,42 @@ public class IntervalState extends AbstractState{
         return (lowerMax + upperMax) /2;
     }
 
+    public void writeToPython(Set<String> strings, String path, Boolean toAttack) {
+        if (toAttack) {
+            INDArray logLower = probCube[0];
+            INDArray logUpper = probCube[1];
+            File lower_numpy = new File(path + "/cube_lower.npy");
+            File upper_numpy = new File(path + "/cube_upper.npy");
+            try {
+                Nd4j.writeAsNumpy(logLower, lower_numpy);
+                Nd4j.writeAsNumpy(logUpper, upper_numpy);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            for (String ss: strings) {
+                if (ss.contains("robust_")) {
+                    continue;
+                }
+                Pair<Integer, INDArray> paramPair = paramValues.get(ss);
+                File ss_numpy = new File(path + "/" + ss + "_" + String.valueOf(paramPair.getKey()) + ".npy");
+                try {
+                    Nd4j.writeAsNumpy(paramPair.getValue(), ss_numpy);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        else {
+            INDArray logLower = probCube[0];
+            File lower_numpy = new File(path + "/cube_good.npy");
+            try {
+                Nd4j.writeAsNumpy(logLower, lower_numpy);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public void writeResults(Set<String> strings, String path) {
         if (probCube[0] == null || paramValues.size() == 1)
             return;
@@ -142,10 +178,10 @@ public class IntervalState extends AbstractState{
         // BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.maxNumber()))); //
         INDArray upper = exp(logUpper.subi((logUpper.maxNumber()))); //
-        // BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
-        // BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
-        // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
-        // BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
+        BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
+        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
+        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
         // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // Numerical Integration for Equi-Prob Intervals
@@ -168,6 +204,7 @@ public class IntervalState extends AbstractState{
         // }
         lower = lower.addi(upper).divi(2);
         upper = lower;
+
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
         for(int i = 1; i < nDim; i++){

@@ -13,6 +13,8 @@ import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.indexing.BooleanIndexing;
+import org.nd4j.linalg.indexing.conditions.GreaterThan;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import translators.Stan2IRTranslator;
 
@@ -33,7 +35,9 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_chr_robust_reparam");
+        String[] tt = new String[]{"","_robust_student","_robust_reparam","_robust_reweight"};
+        for (String ttt: tt)
+            AnalysisRunner.analyzeProgram(localDir, "radon_vary_si_chr" + ttt);
 
     }
 
@@ -91,7 +95,9 @@ public class TestIntervalAnalysis {
         System.out.println("==========");
         INDArray[] newarray = new INDArray[2];
         newarray[0] = Nd4j.arange(36).reshape(2,3,6);
-        System.out.println(Transforms.exp(Nd4j.createFromArray(-746.0)));
+        newarray[1] = Nd4j.arange(15, 51).reshape(2,3,6);
+        // BooleanIndexing.chooseFrom(newarray[0],newarray[1],new GreaterThan());
+
 
 
     }

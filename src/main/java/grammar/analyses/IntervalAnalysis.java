@@ -40,7 +40,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 41;
+    private int maxCounts = 21;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack=true;
@@ -83,7 +83,7 @@ public class IntervalAnalysis {
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 41);
+                paramDivs.put(kk, 21);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
@@ -1258,7 +1258,6 @@ public class IntervalAnalysis {
                 assert false;
             likeCube = Transforms.log(nu.mul(0.39226).sub(Transforms.pow(nu,2).muli(0.016215))).subi(Transforms.log(nu).muli(-0.5));
             likeCube = likeCube.addi(Transforms.log((Transforms.pow((yNDArray.subi(mu)).divi(sigma),2).divi(nu)).add(1.0)).muli((nu.addi(1)).muli(-0.5)));
-            // System.out.println(likeCube);
 
 
             // for (long ii = 0; ii < likeCube.length(); ii++) {
@@ -2027,11 +2026,15 @@ public class IntervalAnalysis {
                         if(aaLimits.upper != null)
                             limits[1] = Double.valueOf(aaLimits.upper.toString());
                         if(declStatement.id.id.contains("robust_local_tau")) {
-                            limits[1] = 3.0;
+                            limits[1] = 10.0;
                         }
                         if(declStatement.id.id.contains("robust_weight")) {
-                            limits[1] = 1.0;
                             limits[0] = 0.01;
+                            limits[1] = 0.3;
+                        }
+                        if(declStatement.id.id.contains("robust_t_nu")) {
+                            limits[0] = 5.0;
+                            limits[1] = 10.0;
                         }
                     }
                 }
