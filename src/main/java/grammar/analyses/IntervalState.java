@@ -202,8 +202,8 @@ public class IntervalState extends AbstractState{
         //     upper.muli(vvdiff.reshape(IntervalAnalysis.getReshape(vvdiff.shape(),
         //             lower.shape())).broadcast(lower.shape()));
         // }
-        lower = lower.addi(upper).divi(2);
-        upper = lower;
+        // lower = lower.addi(upper).divi(2);
+        // upper = lower;
 
         Integer nDim = lower.shape().length;
         int[] numbers = new int[nDim - 1];
@@ -223,7 +223,7 @@ public class IntervalState extends AbstractState{
         }
         int j = 0;
         Double fullLower = null;
-        // Double fullUpper = null;
+        Double fullUpper = null;
         for (String ss: strings) {
             j++;
             if (ss.contains("robust_")) {
@@ -242,13 +242,14 @@ public class IntervalState extends AbstractState{
                 paramvalue = paramvalue.tensorAlongDimension(0,paramDimIdx);
             }
             INDArray currsumLower = lower.sum(numbersCopy);
-            // INDArray currsumUpper = upper.sum(numbersCopy);
+            INDArray currsumUpper = upper.sum(numbersCopy);
             if (fullLower == null) {
                 fullLower = currsumLower.sumNumber().doubleValue();
-            //    fullUpper = currsumUpper.sumNumber().doubleValue();
+                fullUpper = currsumUpper.sumNumber().doubleValue();
             }
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
-                    Nd4j.toFlattened(currsumLower).div(fullLower));
+                    Nd4j.toFlattened(currsumLower).div(fullLower),
+                    Nd4j.toFlattened(currsumUpper).div(fullUpper));
             writeToFile(path, pw, j, ss, outMatrix);
         }
         try {

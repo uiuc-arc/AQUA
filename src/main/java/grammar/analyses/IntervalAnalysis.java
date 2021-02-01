@@ -40,7 +40,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 21;
+    private int maxCounts = 41;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack=true;
@@ -83,7 +83,7 @@ public class IntervalAnalysis {
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 21);
+                paramDivs.put(kk, 41);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
@@ -108,20 +108,20 @@ public class IntervalAnalysis {
         endFacts.writeResults(majorParam, path);
         // repeat
 
-        for (BasicBlock bb: worklistAll) {
-            bb.dataflowFacts = null;
-        }
-        scalarParam.clear();
-        System.gc();
-        toAttack = false;
-        Pair<AST.Data, double[]> dataYGood = dataList.get(dataYNameGlobal + "_good");
-        if (!toAttack) {
-            dataList.put(dataYNameGlobal, dataYGood);
-            dataList.put(dataYNameGlobal + "_corrupted", dataYGood);
-        }
-        worklist.add(worklistAll.peek());
-        endFacts = WorklistIter(worklist);
-        endFacts.writeResults(majorParam, path);
+        // for (BasicBlock bb: worklistAll) {
+        //     bb.dataflowFacts = null;
+        // }
+        // scalarParam.clear();
+        // System.gc();
+        // toAttack = false;
+        // Pair<AST.Data, double[]> dataYGood = dataList.get(dataYNameGlobal + "_good");
+        // if (!toAttack) {
+        //     dataList.put(dataYNameGlobal, dataYGood);
+        //     dataList.put(dataYNameGlobal + "_corrupted", dataYGood);
+        // }
+        // worklist.add(worklistAll.peek());
+        // endFacts = WorklistIter(worklist);
+        // endFacts.writeResults(majorParam, path);
     }
 
     public void forwardAnalysisByGroups(ArrayList<Section> cfgSections) {
@@ -1614,8 +1614,8 @@ public class IntervalAnalysis {
             else
                 pi = -1;
             if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
-                if (limitsMeanSd[1] > 50)
-                    limitsMeanSd[1] = limitsMeanSd[0] + 10;
+                if (limitsMeanSd[1] > 5 && limitsMeanSd[0] == 0)
+                    limitsMeanSd[1] = limitsMeanSd[0] + 5;
                 UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[0], limitsMeanSd[1]);
                 getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
             } else if (limitsMeanSd[0] != null) {

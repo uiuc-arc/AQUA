@@ -37,7 +37,7 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{"","_robust_student","_robust_reparam","_robust_reweight"};
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "radon_vary_si_chr" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "unemployment" + ttt);
 
     }
 
