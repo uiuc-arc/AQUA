@@ -34,7 +34,7 @@ import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 public class IntervalAnalysis {
     private Map<String, Pair<Double[], ArrayList<Integer>>> paramMap = new HashMap<>();
-    private Map<String, ArrayList<String>> transParamMap = new HashMap<>();
+    // private Map<String, ArrayList<String>> transParamMap = new HashMap<>();
     private Map<String, Integer> paramDivs = new HashMap<>();
     private Map<String, Pair<AST.Data, double[]>> dataList = new HashMap<>();
     private Set<String> obsDataList = new HashSet<>();
@@ -48,7 +48,7 @@ public class IntervalAnalysis {
     private Boolean addPrior = true;
     private String stansummary;
     private Boolean no_tau = false;
-    public Boolean no_prior = true;
+    public Boolean no_prior = false;
     private Set<String> innerIntParams = new HashSet<>();
     private Stack<String> integrateStack = new Stack<>();
     HashSet<String> majorParam = new HashSet<>();
@@ -105,7 +105,9 @@ public class IntervalAnalysis {
             System.out.println(path);
         } else
             System.out.println("Prob Cube Empty!");
-        endFacts.writeResults(majorParam, path);
+        // endFacts.writeResults(majorParam, path);
+        endFacts.writeToPython(majorParam, path, toAttack);
+        endFacts.writeMathe(majorParam, path);
         // repeat
 
         // for (BasicBlock bb: worklistAll) {
@@ -124,6 +126,8 @@ public class IntervalAnalysis {
         // endFacts.writeResults(majorParam, path);
     }
 
+    /*
+    @Deprecated
     public void forwardAnalysisByGroups(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         InitWorklist(cfgSections);
@@ -250,6 +254,7 @@ public class IntervalAnalysis {
         //     endFacts.writeResults(new HashSet<>(Collections.singletonList(kk)));
         // }
     }
+    */
 
     private void getMeanFromMCMC() {
         Map<String, String[]> records = new HashMap<>();
@@ -273,12 +278,14 @@ public class IntervalAnalysis {
             String strMeanSd[] = records.get(pp.getKey());
             if (strMeanSd != null) {
                 paramLimits[2] = Double.valueOf(strMeanSd[0]);
-                paramLimits[3] = max(Double.valueOf(strMeanSd[1]), 0.5);
+                paramLimits[3] = Double.valueOf(strMeanSd[1]); // max(Double.valueOf(strMeanSd[1]), 0.5);
                 // System.out.println(pp.getKey() + " " + strMeanSd[0] + " " + strMeanSd[1]);
             }
         }
     }
 
+    /*
+    @Deprecated
     private ArrayList<Set<String>> GroupParams(ArrayList<Section> cfgSections) {
         ArrayList<Set<String>> groups = new ArrayList<>();
         for (Section section : cfgSections) {
@@ -333,7 +340,10 @@ public class IntervalAnalysis {
         // }
         return groups;
     }
+    */
 
+    /*
+    @Deprecated
     private void addRobustToGroups(ArrayList<Set<String>> groups) {
         if (paramMap.containsKey("robust_local_nu")) {
             ArrayList<Set<String>> newGroups = new ArrayList<>();
@@ -371,6 +381,7 @@ public class IntervalAnalysis {
             innerIntParams.add("robust_weight");
         }
     }
+    */
 
     // private void addRobustToGroups(ArrayList<Set<String>> groups) {
     //     System.out.println(groups);
@@ -405,6 +416,7 @@ public class IntervalAnalysis {
 
     // }
 
+    /*
     private void addGroupsFromAssignment(ArrayList<Set<String>> groups, AST.AssignmentStatement assignment) {
         ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
         rhsParams.removeAll(Collections.singleton("robust_local_tau"));
@@ -526,7 +538,9 @@ public class IntervalAnalysis {
             }
         }
     }
+    */
 
+    /*
     private boolean isGroupOverlaping(Set<String> oldGroup, Set<String> currGroup) {
         return !Sets.intersection(oldGroup, currGroup).isEmpty();
     }
@@ -585,6 +599,7 @@ public class IntervalAnalysis {
         }
         return retParams;
     }
+    */
 
     private IntervalState WorklistIter(ArrayList<BasicBlock> worklist) {
         IntervalState endFacts = null;
@@ -674,28 +689,30 @@ public class IntervalAnalysis {
                             }
                             if (statement.statement instanceof AST.AssignmentStatement) {
                                 AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
-                                if (! (assignment.rhs instanceof AST.FunctionCall)) {
-                                    ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
-                                    String lhsParam = assignment.lhs.toString();
-                                    transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
-                                }/* else {
-                                    ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
-                                    String lhsParam = assignment.lhs.toString().split("\\[")[0];
-                                    if (rhsParams.size() > 0 && !lhsParam.equals("target")) {
-                                        rhsParams.add(lhsParam);
-                                        transParamMap.put(lhsParam, rhsParams);
-                                    }
-                                } */
+                                // if (! (assignment.rhs instanceof AST.FunctionCall)) {
+                                //     // ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                                //    //  String lhsParam = assignment.lhs.toString();
+                                //    // transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                                // }/* else {
+                                //     ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                                //     String lhsParam = assignment.lhs.toString().split("\\[")[0];
+                                //     if (rhsParams.size() > 0 && !lhsParam.equals("target")) {
+                                //         rhsParams.add(lhsParam);
+                                //         transParamMap.put(lhsParam, rhsParams);
+                                //     }
+                                // } */
 
                                 if (assignment.lhs.toString().equals("target")) {
                                     String rhs = assignment.rhs.toString();
                                     if (rhs.contains("_lpdf(")) {
                                         String dataYName = rhs.split("_lpdf\\(")[1].split(",")[0];
-                                        attackDataY(dataYName.split("\\[")[0]);
+                                        if (dataList.containsKey(dataYName))
+                                            attackDataY(dataYName.split("\\[")[0]);
                                     }
                                     else if (rhs.contains("_lpmf(")) {
                                         String dataYName = rhs.split("_lpmf\\(")[1].split(",")[0];
-                                        attackDataY(dataYName.split("\\[")[0]);
+                                        if (dataList.containsKey(dataYName))
+                                            attackDataY(dataYName.split("\\[")[0]);
                                     }
                                     else
                                         attackDataY("y");
@@ -705,22 +722,22 @@ public class IntervalAnalysis {
                     }
                 }
 
-            } else if(section.sectionType == SectionType.QUERIES) {
+            } // else if(section.sectionType == SectionType.QUERIES) {
                 // for (BasicBlock basicBlock: section.basicBlocks)
                     // for (Statement statement : basicBlock.getStatements());
                         // System.out.println(statement.statement.toString());
-            } else if (section.sectionName.equals("transformedparam")) {
-                for (BasicBlock basicBlock : section.basicBlocks) {
-                    for (Statement statement : basicBlock.getStatements()) {
-                        if (statement.statement instanceof AST.AssignmentStatement) {
-                            AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
-                            ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
-                            String lhsParam = assignment.lhs.toString();
-                            transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
-                        }
-                    }
-                }
-            }
+            // } else if (section.sectionName.equals("transformedparam")) {
+              //  for (BasicBlock basicBlock : section.basicBlocks) {
+                   //  for (Statement statement : basicBlock.getStatements()) {
+                        // if (statement.statement instanceof AST.AssignmentStatement) {
+                            // AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+                            // ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
+                           //  String lhsParam = assignment.lhs.toString();
+                            // transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
+                       //  }
+                   //  }
+              //  }
+           //  }
         }
     }
 
@@ -738,21 +755,42 @@ public class IntervalAnalysis {
     }
 
     private void getAttackLU(double[] newDataValueL, double[] newDataValueU) {
-        double sd = getSd(newDataValueL);
+        double sd = getStdDev(newDataValueL);
 
         Double[] orgDataValue = ArrayUtils.toObject(newDataValueL);
         int size = orgDataValue.length;
         int[] sortedIndices = IntStream.range(0, size)
                 .boxed().sorted(Comparator.comparing(i -> orgDataValue[i]))
                 .mapToInt(ele -> ele).toArray();
-        for(int i = 0; i < size * 10 / 100; i++){
-            newDataValueL[sortedIndices[i]] -= 6 * sd;
-        }
-        for(int i = size * 90 / 100; i < size; i++){
-            newDataValueU[sortedIndices[i]] += 6 * sd;
-        }
+        newDataValueU[sortedIndices[0]] -= 6 * sd;
+        newDataValueU[sortedIndices[size - 1]] += 6 * sd;
+        // for(int i = 0; i < size * 0.01; i++){
+        //     newDataValueU[sortedIndices[i]] -= 3 * sd;
+        // }
+        // for(int i = (int) (size * (0.99)); i < size; i++){
+        //     newDataValueU[sortedIndices[i]] += 3 * sd;
+        // }
+        System.out.println(Nd4j.createFromArray(newDataValueU));
     }
 
+    double getMean(double[] data) {
+        double sum = 0.0;
+        for(double a : data)
+            sum += a;
+        return sum/data.length;
+    }
+
+    double getVariance(double[] data) {
+        double mean = getMean(data);
+        double temp = 0;
+        for(double a :data)
+            temp += (a-mean)*(a-mean);
+        return temp/(data.length-1);
+    }
+
+    double getStdDev(double[] data) {
+        return Math.sqrt(getVariance(data));
+    }
 
     private void getAttack(double[] newDataValue) {
         double sd = getSd(newDataValue);
@@ -768,6 +806,7 @@ public class IntervalAnalysis {
             sum += newDataValue[i];
         }
         sum = sum / (double) newDataValue.length;
+        System.out.println(sum);
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
@@ -826,8 +865,9 @@ public class IntervalAnalysis {
                 String newParamID = paramID;
                 Pair<Double[], ArrayList<Integer>> paramInfo = paramMap.get(paramID);
                 // no multi dim prior
-                if (paramInfo == null && no_prior)
-                        return true;
+                if (paramInfo == null && no_prior) {
+                    return true;
+                }
                 if (paramInfo == null) {
                     paramInfo = paramMap.get(paramID + "[1]");
                     newParamID = paramID + "[1]";
@@ -1243,7 +1283,7 @@ public class IntervalAnalysis {
     private INDArray getLogSum(INDArray[] params, INDArray yNDArray, INDArray likeCube, String distrId) {
         INDArray logSum;
         if (distrId.equals("normal")) {
-            likeCube = Transforms.log(params[1]).neg().subi(
+            likeCube = Transforms.log(params[1].mul(Math.sqrt(2*PI))).neg().subi(
                     Transforms.pow(yNDArray.sub(params[0]),2).divi(Transforms.pow(params[1],2)).muli(0.5));
             // return -Math.log(sigma) - 0.5*((y - mu)*(y - mu)/(sigma*sigma));
             // for (long ii = 0; ii < likeCube.length(); ii++) {
@@ -1256,15 +1296,18 @@ public class IntervalAnalysis {
             INDArray sigma = params[2].dup();
             if (nu.getDouble(10) <0 )
                 assert false;
-            likeCube = Transforms.log(nu.mul(0.39226).sub(Transforms.pow(nu,2).muli(0.016215))).subi(Transforms.log(nu).muli(-0.5));
-            likeCube = likeCube.addi(Transforms.log((Transforms.pow((yNDArray.subi(mu)).divi(sigma),2).divi(nu)).add(1.0)).muli((nu.addi(1)).muli(-0.5)));
+            // -0.846574 + (0.5 - 0.5 nu) Log[nu] + 0.5 nu Log[1. + 1. nu]
+            // INDArray nud2 = nu.div(2);
+            // likeCube = (((Transforms.log(nud2).muli(nu.sub(1).neg())).addi(Transforms.log(nud2.add(0.5)).subi(1))).divi(2.0)).subi(Transforms.log(nu).muli(0.5))
+            //         .subi(Transforms.log(sigma));
+            // likeCube = likeCube.addi(Transforms.log((Transforms.pow((yNDArray.sub(mu)).divi(sigma),2).divi(nu)).addi(1.0)).muli((nu.addi(1)).muli(-0.5)));
 
 
-            // for (long ii = 0; ii < likeCube.length(); ii++) {
-            //     double yiiL = student_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii),  // first param is nu
-            //             params[1].getDouble(ii), params[2].getDouble(ii));
-            //     likeCube.putScalar(ii, yiiL);
-            // }
+            for (long ii = 0; ii < likeCube.length(); ii++) {
+                double yiiL = student_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii),  // first param is nu
+                        params[1].getDouble(ii), params[2].getDouble(ii));
+                likeCube.putScalar(ii, yiiL);
+            }
             // INDArray gammaDiv = params[0].dup();
             // if
             // likeCube.replaceWhere()
@@ -1377,7 +1420,7 @@ public class IntervalAnalysis {
                     return null;
             }
             INDArray theta = params[0];
-            INDArray omtheta = theta.subi(1).negi();
+            INDArray omtheta = theta.sub(1).neg();
             long[] keepShape = params[1].shape().clone();
             keepShape[0] = 1;
             INDArray tLowerlog = params[1].slice(0);
@@ -1614,8 +1657,8 @@ public class IntervalAnalysis {
             else
                 pi = -1;
             if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
-                if (limitsMeanSd[1] > 5 && limitsMeanSd[0] == 0)
-                    limitsMeanSd[1] = limitsMeanSd[0] + 5;
+                if (limitsMeanSd[1] > 10 && limitsMeanSd[0] == 0)
+                    limitsMeanSd[1] = limitsMeanSd[0] + 10;
                 UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[0], limitsMeanSd[1]);
                 getDiscretePriorsSingleUnif(single, probLower, probUpper, unif, pi);
             } else if (limitsMeanSd[0] != null) {
@@ -1624,7 +1667,12 @@ public class IntervalAnalysis {
                     // GammaDistribution gamma = new GammaDistribution(limitsMeanSd[2]*limitsMeanSd[2]/(limitsMeanSd[3]*limitsMeanSd[3]), (limitsMeanSd[3]*limitsMeanSd[3])/limitsMeanSd[2]);
                     // getDiscretePriorsSingleUn(single, probLower, probUpper, gamma, pi);
                     // Equiv-interval
-                    UniformRealDistribution unif = new UniformRealDistribution(0.1,  10);
+                    // UniformRealDistribution unif = new UniformRealDistribution(0.1,  10);
+                    UniformRealDistribution unif;
+                    if (limitsMeanSd[3] != null)
+                        unif = new UniformRealDistribution(0,  30*limitsMeanSd[3]);
+                    else
+                        unif = new UniformRealDistribution(0,  30);
                     getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
                 } else {
                     UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[0], limitsMeanSd[0] + 5);
@@ -1635,7 +1683,7 @@ public class IntervalAnalysis {
                 // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
                 // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
                 // Equiv-interval
-                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 9 *limitsMeanSd[3], limitsMeanSd[2] + 9 *limitsMeanSd[3]);
+                UniformRealDistribution unif = new UniformRealDistribution(limitsMeanSd[2] - 12 *limitsMeanSd[3], limitsMeanSd[2] + 12 *limitsMeanSd[3]);
                 getDiscretePriorsSingleUn(single, probLower, probUpper, unif, pi);
             } else { // all are null
                 // System.out.println("Prior: Normal");
@@ -2033,7 +2081,7 @@ public class IntervalAnalysis {
                             limits[1] = 0.3;
                         }
                         if(declStatement.id.id.contains("robust_t_nu")) {
-                            limits[0] = 5.0;
+                            limits[0] = 0.0000001;
                             limits[1] = 10.0;
                         }
                     }
@@ -2108,7 +2156,7 @@ public class IntervalAnalysis {
         if (nu <= pow(10, -16) || sigma <= pow(10, -16))// || sigma>20)
             return -pow(10, 16);
         TDistribution studT = new TDistribution(nu);
-        return studT.logDensity((y - mu)/sigma);
+        return studT.logDensity((y - mu)/sigma) - Math.log(sigma);
     }
 
     private static double bernoulli_logit_LPDF(double y, double x) {

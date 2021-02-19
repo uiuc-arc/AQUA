@@ -35,9 +35,9 @@ public class TestIntervalAnalysis {
     public void Test5() throws IOException {
 
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        String[] tt = new String[]{"","_robust_student","_robust_reparam","_robust_reweight"};
+        String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "unemployment" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "gauss_mix_asym_prior" + ttt);
 
     }
 

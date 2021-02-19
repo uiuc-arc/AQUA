@@ -44,10 +44,10 @@ public class AnalysisRunner {
         }
 
 
-        long startTime = System.nanoTime();
         // /*
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
+        long startTime = System.nanoTime();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         // if (hierModels.contains(stanName)) {
         //     intervalAnalyzer.no_prior = true;
@@ -57,10 +57,24 @@ public class AnalysisRunner {
         intervalAnalyzer.setPath(filePath);
         intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
-        // */
         //===========Find Metrics================
-        String outputName = "/output0201.txt";
+        // */
+        String outputName = "/output0202.txt";
         long endTime = System.nanoTime();
+        try {
+            Process p = Runtime.getRuntime().exec(localDir.replace("progs/all/","") + "integrate.py " + filePath);
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            String s;
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+            stdError = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         double duration = (endTime - startTime)/1000000000.0;
         double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
 
@@ -126,8 +140,6 @@ public class AnalysisRunner {
                         counts +=1;
 
                     }
-                    System.out.println(paramName);
-                    System.out.println(truthDist);
                     double[] paramMetrics = new double[]{ret[0],ret[1],expDist,Math.pow(expDist,2),truthDist};
                     writer.println( paramName + "," +Arrays.toString(paramMetrics).replace("[","").replace("]","").replace(" ",""));
                 }
@@ -166,6 +178,8 @@ public class AnalysisRunner {
                 String[] values = line.split(",");
                 if (values[0].contains("__"))
                     continue;
+                if (line.equals(""))
+                    continue;
                 records.put(values[0].replace("\"", ""), values[1]);
             }
         } catch (Exception e) {
@@ -178,9 +192,12 @@ public class AnalysisRunner {
 
     public static double getE(double[] value, double[] prob) {
         double expectation = 0;
+        double sump = 0;
         for (int i =0; i< value.length; i++) {
             expectation += value[i] * prob[i];
+            sump += prob[i];
         }
+        System.out.println((expectation));
         return expectation;
     }
 

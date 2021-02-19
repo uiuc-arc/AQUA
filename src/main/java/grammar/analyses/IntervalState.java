@@ -144,11 +144,11 @@ public class IntervalState extends AbstractState{
                 e.printStackTrace();
             }
             for (String ss: strings) {
-                if (ss.contains("robust_")) {
-                    continue;
-                }
+                // if (ss.contains("robust_")) {
+                //     continue;
+                // }
                 Pair<Integer, INDArray> paramPair = paramValues.get(ss);
-                File ss_numpy = new File(path + "/" + ss + "_" + String.valueOf(paramPair.getKey()) + ".npy");
+                File ss_numpy = new File(path + "/param_" + ss + "_dim_" + String.valueOf(paramPair.getKey()) + ".npy");
                 try {
                     Nd4j.writeAsNumpy(paramPair.getValue(), ss_numpy);
                 } catch (IOException e) {
@@ -259,6 +259,43 @@ public class IntervalState extends AbstractState{
         }
     }
 
+    public void writeMathe(Set<String> strings, String path) {
+        String[] pathSplits = path.split("/");
+        FileWriter mathOut = null;
+        BufferedWriter bw;
+        PrintWriter pw = null;
+        try {
+            mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
+            bw = new BufferedWriter(mathOut);
+            pw = new PrintWriter(bw);
+            int j = 0;
+            for (String ss: strings) {
+                // if (ss.contains("robust")) {
+                //     continue;
+                // }
+                j++;
+                String outputFile = path + "/analysis_" + ss + ".txt";
+                File file = new File(outputFile);
+                if (!file.exists()) {
+                    pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
+                    pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
+                    pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
+                            " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
+                            " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
+                    pw.println(String.format("Graphics[{Orange, \n" +
+                            "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
+                            " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
+                            " PlotLabel -> \"%s\"]", j, ss));
+                    pw.flush();
+                }
+            }
+            mathOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void writeToFile(String path, PrintWriter pw, int j, String ss, INDArray outMatrix) {
         String outputFile = path + "/analysis_" + ss + ".txt";
         File file = new File(outputFile);
@@ -300,6 +337,10 @@ public class IntervalState extends AbstractState{
         for (File file: fileList) {
             String fileName = file.getName();
             if (fileName.endsWith(".txt") && fileName.startsWith("analysis"))
+                file.delete();
+            if (fileName.endsWith(".npy") && fileName.startsWith("param"))
+                file.delete();
+            if (fileName.endsWith(".npy") && fileName.startsWith("cube"))
                 file.delete();
 
         }
