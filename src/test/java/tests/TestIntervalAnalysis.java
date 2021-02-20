@@ -37,7 +37,8 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "gauss_mix_asym_prior" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "lightspeed" + ttt);
+        // gauss_mix_asym_prior
 
     }
 

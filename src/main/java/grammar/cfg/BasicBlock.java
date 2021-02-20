@@ -1,13 +1,13 @@
 package grammar.cfg;
 import grammar.AST;
-import grammar.analyses.IntervalState;
+import grammar.analyses.GridState;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BasicBlock {
-    public IntervalState dataflowFacts = null;
+    public GridState dataflowFacts = null;
     public ArrayList<Statement> getStatements() {
         return statements;
     }

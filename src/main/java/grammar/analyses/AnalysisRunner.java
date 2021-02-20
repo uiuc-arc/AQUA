@@ -60,7 +60,6 @@ public class AnalysisRunner {
         //===========Find Metrics================
         // */
         String outputName = "/output0202.txt";
-        long endTime = System.nanoTime();
         try {
             Process p = Runtime.getRuntime().exec(localDir.replace("progs/all/","") + "integrate.py " + filePath);
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
@@ -75,11 +74,13 @@ public class AnalysisRunner {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
-        double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
-
-
         System.out.println("Analysis Time: " + duration);
+
+
+        /*
+        double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
         System.out.println("MSE Change:" + avgMetrics[3]);
         System.out.println("True Change:" + avgMetrics[4]);
         System.out.println("MSE Change:" + avgMetrics[8]);
@@ -93,6 +94,7 @@ public class AnalysisRunner {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        */
     }
 
 
