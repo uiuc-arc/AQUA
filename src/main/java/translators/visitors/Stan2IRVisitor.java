@@ -46,8 +46,18 @@ public class Stan2IRVisitor extends StanBaseVisitor<String> {
     }
 
     @Override
+    public String visitLt(StanParser.LtContext ctx) {
+        return visit(ctx.expression(0)) + "<" + visit(ctx.expression(1));
+    }
+
+    @Override
+    public String visitGt(StanParser.GtContext ctx) {
+        return visit(ctx.expression(0)) + ">" + visit(ctx.expression(1));
+    }
+
+    @Override
     public String visitTernary_if(StanParser.Ternary_ifContext ctx) {
-        return visit(ctx.expression(0)) + "?" + visit(ctx.expression(1)) + ":" + visit(ctx.expression(2));
+        return "((" + visit(ctx.expression(0)) + ")?" + visit(ctx.expression(1)) + ":" + visit(ctx.expression(2)) + ")";
     }
 
     @Override

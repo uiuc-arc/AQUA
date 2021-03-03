@@ -26,15 +26,15 @@ public class AnalysisRunner {
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
-        Map<String, String> TruthSummary = getMeanFromTruth(localDir + stanPath + "/" + "truth_file_w");
+        // Map<String, String> TruthSummary = getMeanFromTruth(localDir + stanPath + "/" + "truth_file_w");
         int index=stanfile.lastIndexOf('/');
         String filePath = stanfile.substring(0,index);
 
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         String tempFileName = stanfile.replace(".stan", "");
         String templateCode = stan2IRTranslator.getCode();
-        // System.out.println("========Stan Code to Template=======");
-        // System.out.println(templateCode);
+        System.out.println("========Stan Code to Template=======");
+        System.out.println(templateCode);
         File tempfile = null;
         try {
             tempfile = File.createTempFile(tempFileName, ".template");
@@ -45,9 +45,9 @@ public class AnalysisRunner {
 
 
         // /*
+        long startTime = System.nanoTime();
         CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
         ArrayList<Section> CFG = cfgBuilder.getSections();
-        long startTime = System.nanoTime();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         // if (hierModels.contains(stanName)) {
         //     intervalAnalyzer.no_prior = true;

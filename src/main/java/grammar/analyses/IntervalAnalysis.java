@@ -948,7 +948,7 @@ public class IntervalAnalysis {
     private void analyzeTarget(GridState intervalState, AST.Expression rhs) {
         AST.AddOp plusRhs = (AST.AddOp) rhs;
         if (plusRhs.op2 instanceof AST.FunctionCall
-                || plusRhs.op2 instanceof AST.MulOp) {
+                || plusRhs.op2 instanceof AST.MulOp || plusRhs.op2 instanceof AST.Braces) {
             INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
             if(probLUcat == null || probLUcat.length() == 0)
                 return;
@@ -1459,8 +1459,23 @@ public class IntervalAnalysis {
         else if (pp instanceof AST.UnaryExpression) {
             return DistrCube((AST.UnaryExpression) pp, intervalState);
         }
-        System.out.println("Expression " + pp.toString() + " not supported!");
-        return null;
+        else if (pp instanceof AST.TernaryIf) {
+            return DistrCube((AST.TernaryIf) pp, intervalState);
+        }
+        else if (pp instanceof AST.LtOp) {
+            return DistrCube((AST.LtOp) pp, intervalState);
+        }
+        else if (pp instanceof AST.GtOp) {
+            return DistrCube((AST.GtOp) pp, intervalState);
+        }
+        else if (pp instanceof AST.EqOp) {
+            return DistrCube((AST.EqOp) pp, intervalState);
+        }
+        else {
+            System.out.println("Expression " + pp.toString() + " not supported!");
+            assert false;
+            return null;
+        }
     }
 
 
@@ -1468,6 +1483,68 @@ public class IntervalAnalysis {
         INDArray four = DistrCube(pp.expression,intervalState);
         return four.neg();
     }
+
+
+    private INDArray DistrCube(AST.TernaryIf pp, GridState intervalState) {
+        System.out.println(pp.condition.toString());
+        AST.Expression condExp;
+        INDArray condArray = DistrCube(pp.condition, intervalState);
+        Double trueValue = Double.valueOf(pp.trueExpression.toString()) + 1234;
+        Double falseValue = Double.valueOf(pp.falseExpression.toString()) + 1234;
+        BooleanIndexing.replaceWhere(condArray, trueValue, Conditions.equals(1));
+        BooleanIndexing.replaceWhere(condArray, falseValue, Conditions.equals(0));
+        condArray = condArray.subi(1234);
+        return condArray;
+        /*
+        if (pp.condition instanceof AST.Braces)
+            condExp = ((AST.Braces) pp.condition).expression;
+        else
+            condExp = pp.condition;
+        INDArray  ret = null;
+        if (condExp instanceof AST.LtOp) { // only works for < 0 (const)
+            AST.LtOp cond = (AST.LtOp) condExp;
+            INDArray condL = DistrCube(cond.op1, intervalState);
+            System.out.println(Nd4j.createFromArray(condL.shape()));
+            Double compZero = Double.valueOf(cond.op2.toString());
+            Double trueValue = Double.valueOf(pp.trueExpression.toString());
+            Double falseValue = Double.valueOf(pp.falseExpression.toString());
+            ret = condL.dup();
+            BooleanIndexing.replaceWhere(ret, trueValue, Conditions.lessThan(compZero));
+            BooleanIndexing.replaceWhere(ret, falseValue, Conditions.greaterThanOrEqual(compZero));
+        }
+        else if (condExp instanceof AST.GtOp) {
+            AST.GtOp cond = (AST.GtOp) condExp;
+            INDArray condL = DistrCube(cond.op1, intervalState);
+            System.out.println("========================" + cond.op1.toString());
+            System.out.println(Nd4j.createFromArray(condL.shape()));
+            Double compZero = Double.valueOf(cond.op2.toString());
+            Double trueValue = Double.valueOf(pp.trueExpression.toString());
+            Double falseValue = Double.valueOf(pp.falseExpression.toString());
+            ret = Nd4j.ones(condL.shape()).muli(0.5*(trueValue + falseValue));
+            BooleanIndexing.replaceWhere(ret, trueValue, Conditions.greaterThan(compZero));
+            BooleanIndexing.replaceWhere(ret, falseValue, Conditions.notEquals(trueValue));
+        }
+        else if (condExp instanceof AST.EqOp) {
+            AST.EqOp cond = (AST.EqOp) condExp;
+            INDArray condL = DistrCube(cond.op1, intervalState);
+            System.out.println("========================" + cond.op1.toString());
+            System.out.println(Nd4j.createFromArray(condL.shape()));
+            INDArray condR = DistrCube(cond.op2, intervalState);
+            double compZero = condR.getDouble(0);
+            Double trueValue = Double.valueOf(pp.trueExpression.toString());
+            Double falseValue = Double.valueOf(pp.falseExpression.toString());
+            ret = Nd4j.ones(condL.shape()).muli(0.5*(trueValue + falseValue));
+            BooleanIndexing.replaceWhere(ret, trueValue, Conditions.equals(compZero));
+            BooleanIndexing.replaceWhere(ret, falseValue, Conditions.notEquals(trueValue));
+        }
+
+        System.out.println("========================" + condExp.toString());
+        assert ret != null;
+        return ret;
+        */
+    }
+
+
 
     private INDArray DistrCube(AST.FunctionCall pp, GridState intervalState) {
         // System.out.println("Distr Func=================");
@@ -1518,6 +1595,12 @@ public class IntervalAnalysis {
             if (param0 == null || param0.length() == 0)
                 return param0;
             ret = Transforms.sqrt(param0);
+        }
+        else if (pp.id.id.equals("abs")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length() == 0)
+                return param0;
+            ret = Transforms.abs(param0);
         }
         else if (pp.id.id.equals("inv")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
@@ -1689,14 +1772,15 @@ public class IntervalAnalysis {
             double dataElement = xArray[dims.get(0) - 1]; // TODO: support 2D array access
             // System.out.println("To Attack: " + toAttack);
             // System.out.println(obsDataList);
-            if ((!toAttack) || (!obsDataList.contains(pp.id.id)))
-                return Nd4j.createFromArray(dataElement); //.reshape(intervalState.getNewDim(1));
-            else {
-                xDataPair = dataList.get(pp.id.id + "_corrupted");
-                xArray = xDataPair.getValue();
-                double dataElement2 = xArray[dims.get(0) - 1]; // TODO: support 2D array access
-                return Nd4j.createFromArray(dataElement, dataElement2); //.reshape(intervalState.getNewDim(1));
-            }
+            return Nd4j.createFromArray(dataElement); //.reshape(intervalState.getNewDim(1));
+            // if ((!toAttack) || (!obsDataList.contains(pp.id.id)))
+            //     return Nd4j.createFromArray(dataElement); //.reshape(intervalState.getNewDim(1));
+            // else {
+            //     xDataPair = dataList.get(pp.id.id + "_corrupted");
+            //     xArray = xDataPair.getValue();
+            //     double dataElement2 = xArray[dims.get(0) - 1]; // TODO: support 2D array access
+            //     return Nd4j.createFromArray(dataElement, dataElement2); //.reshape(intervalState.getNewDim(1));
+            // }
         }
         else { // id is param. uninitialized param on RHS,
             // TODO: support 2D array access
@@ -1754,8 +1838,8 @@ public class IntervalAnalysis {
         double lower;
         double upper;
         if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
-            if (limitsMeanSd[1] > 10 && limitsMeanSd[0] == 0) {
-                limitsMeanSd[1] = limitsMeanSd[0] + 10;
+            if (limitsMeanSd[1] > 20 && limitsMeanSd[0] == 0) {
+                limitsMeanSd[1] = limitsMeanSd[0] + 20;
                 limitsMeanSd[0] = 0.000000001;
             }
             lower = limitsMeanSd[0];
@@ -1888,6 +1972,82 @@ public class IntervalAnalysis {
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
 
             return op1Array.broadcast(outShape).div(op2Array.broadcast(outShape));
+        }
+        else {
+            return Nd4j.empty();
+        }
+    }
+
+
+    private INDArray DistrCube(AST.LtOp pp, GridState intervalState) {
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getLtNDArray(op1Array, op2Array);
+    }
+
+    private INDArray DistrCube(AST.GtOp pp, GridState intervalState) {
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getGtNDArray(op1Array, op2Array);
+    }
+
+
+    private INDArray DistrCube(AST.EqOp pp, GridState intervalState) {
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getEqNDArray(op1Array, op2Array);
+    }
+
+    private INDArray getLtNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+            INDArray good = op1Array.broadcast(outShape).lt(op2Array.broadcast(outShape));
+            good = good.castTo(DataType.DOUBLE);
+            return good;
+        }
+        else {
+            return Nd4j.empty();
+        }
+    }
+
+
+    private INDArray getGtNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+            INDArray good = op1Array.broadcast(outShape).gt(op2Array.broadcast(outShape));
+            good = good.castTo(DataType.DOUBLE);
+            return good;
+        }
+        else {
+            return Nd4j.empty();
+        }
+    }
+
+
+    private INDArray getEqNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+            INDArray good = op1Array.broadcast(outShape).eq(op2Array.broadcast(outShape));
+            good = good.castTo(DataType.DOUBLE);
+            return good;
         }
         else {
             return Nd4j.empty();

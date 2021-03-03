@@ -14,6 +14,7 @@ import org.nd4j.linalg.cpu.nativecpu.NDArray;
 import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
+import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.indexing.conditions.GreaterThan;
 import org.nd4j.linalg.ops.transforms.Transforms;
 import translators.Stan2IRTranslator;
@@ -37,7 +38,7 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "lightspeed" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "neural" + ttt);
         // gauss_mix_asym_prior
 
     }
@@ -95,9 +96,17 @@ public class TestIntervalAnalysis {
         Nd4j.setDataType(DataType.DOUBLE);
         System.out.println("==========");
         INDArray[] newarray = new INDArray[2];
-        newarray[0] = Nd4j.arange(36).reshape(2,3,6);
-        newarray[1] = Nd4j.arange(15, 51).reshape(2,3,6);
-        // BooleanIndexing.chooseFrom(newarray[0],newarray[1],new GreaterThan());
+        newarray[0] = Nd4j.arange(0, 72, 2).reshape(2,3,6);
+        newarray[1] = Nd4j.arange(5, 36+5).reshape(2,3,6);
+        System.out.println(newarray[0]);
+        System.out.println(newarray[1]);
+        INDArray good;
+
+        good = newarray[0].gt( newarray[1]);
+        good = good.castTo(DataType.DOUBLE);
+        System.out.println(good);
+        BooleanIndexing.replaceWhere(good,1+1234, Conditions.equals(1));
+        System.out.println(good);
 
 
 
