@@ -12,6 +12,8 @@ package grammar.analyses;
         import org.nd4j.linalg.indexing.BooleanIndexing;
         import org.nd4j.linalg.indexing.conditions.Condition;
         import org.nd4j.linalg.indexing.conditions.Conditions;
+        import org.nd4j.linalg.ops.transforms.Transforms;
+        import org.nd4j.linalg.util.ArrayUtil;
 
         import java.io.*;
         import java.nio.file.Files;
@@ -20,6 +22,7 @@ package grammar.analyses;
 
         import static org.nd4j.linalg.ops.transforms.Transforms.exp;
         import static org.nd4j.linalg.ops.transforms.Transforms.log;
+        import static org.nd4j.linalg.ops.transforms.Transforms.or;
 
 
 public class GridState extends AbstractState{
@@ -63,10 +66,37 @@ public class GridState extends AbstractState{
     }
 
     public void addDepParamCube(String paramName, INDArray splits) {
-        paramValues.put(paramName, new Pair<>(null,splits));
+        if (!paramValues.containsKey(paramName) || paramValues.get(paramName).getKey() == null)
+            paramValues.put(paramName, new Pair<>(null,splits));
+        else {
+            Pair<Integer, INDArray> currValue = paramValues.get(paramName);
+            paramValues.put(paramName, new Pair<>(currValue.getKey(),splits));
+
+        }
     }
 
     public void addParamCube(String paramName, INDArray splits, INDArray probUpper) {
+        // rewrite the current param values
+        System.out.println(paramValues.keySet());
+        if (paramValues.containsKey(paramName) && paramValues.get(paramName).getKey() != null) {
+            Pair<Integer, INDArray> curr = paramValues.get(paramName);
+            long[] currBroad = new long[probCube.shape().length];
+            Arrays.fill(currBroad, 1);
+            if (currBroad.length <= curr.getKey()) {
+                currBroad = new long[curr.getKey() + 1];
+                Arrays.fill(currBroad, 1);
+                currBroad[curr.getKey()] = probUpper.length();
+                long[] maxshape = IntervalAnalysis.getMaxShape(currBroad, probCube.shape());
+                long[] orgshape = new long[curr.getKey() + 1];
+                Arrays.fill(orgshape, 1);
+                System.arraycopy(probCube.shape(), 0, orgshape, 0, probCube.shape().length);
+                probCube = probCube.reshape(orgshape).broadcast(maxshape);
+            }
+            currBroad[curr.getKey()] = probUpper.length();
+            probCube.addi(log(probUpper).reshape(currBroad).broadcast(probCube.shape()));
+            return;
+        }
+
         if (splits.shape().length == 0) {
             addDepParamCube(paramName, Nd4j.empty());
             return;
@@ -131,10 +161,12 @@ public class GridState extends AbstractState{
             e.printStackTrace();
         }
         for (String ss: strings) {
-            // if (ss.contains("robust_")) {
-            //     continue;
-            // }
+            if (ss.contains("robust_")) {
+                continue;
+            }
             Pair<Integer, INDArray> paramPair = paramValues.get(ss);
+            if (paramPair.getKey() == null)
+                continue;
             File ss_numpy = new File(path + "/param_" + ss + "_dim_" + String.valueOf(paramPair.getKey()) + ".npy");
             try {
                 Nd4j.writeAsNumpy(paramPair.getValue(), ss_numpy);
@@ -355,9 +387,8 @@ public class GridState extends AbstractState{
     public void addProb(INDArray likeProbUpper) {
         // System.out.println("Add Prob");
         INDArray upper = probCube;
-        BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
-        BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isInfinite());
-        // BooleanIndexing.replaceWhere(upper, -Math.pow(1,16), Conditions.isInfinite());
+        // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
+        // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isInfinite());
         // System.out.println("likelihood:" + likeProbLower);
         probCube = upper.add(likeProbUpper.broadcast(upper.shape()));
     }
@@ -439,4 +470,33 @@ public class GridState extends AbstractState{
         // System.out.println(String.format("%d,%d",intervalProbPairs.shape()[0], intervalProbPairs.shape()[1]));
     }
 
+    public void join(INDArray dfFCube) {
+        // System.out.println("=================True");
+        // System.out.println(probCube);
+        // System.out.println("=================False");
+        // System.out.println(dfFCube);
+        probCube = Transforms.log(Transforms.exp(dfFCube).addi(Transforms.exp(probCube)));
+    }
+
+    public void meet(INDArray condCube, boolean cond) {
+        INDArray logCondCube;
+        if (cond) {
+            logCondCube = Transforms.log(condCube);
+        }
+        else {
+            logCondCube = Transforms.log(condCube.sub(1).negi());
+        }
+        long[] newshape = IntervalAnalysis.getMaxShape(logCondCube.shape(), probCube.shape());
+        probCube = probCube.broadcast(newshape).addi(logCondCube.broadcast(newshape));
+        // System.out.println("=================probCube" + String.valueOf(cond));
+        // System.out.println(probCube);
+    }
+
+    public GridState clone() {
+        GridState cloned = new GridState();
+        cloned.probCube = probCube.dup();
+        cloned.paramValues = paramValues;
+        cloned.dimSize = dimSize;
+        return cloned;
+    }
 }

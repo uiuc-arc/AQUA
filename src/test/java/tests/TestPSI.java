@@ -4,12 +4,10 @@ import grammar.cfg.CFGBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
-import translators.PsiMatheTranslator;
 import translators.PsiTranslator;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.ArrayList;
 
 public class TestPSI {
     @Test
@@ -19,13 +17,6 @@ public class TestPSI {
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
-        try{
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-        } catch(Exception e){
-            e.printStackTrace();
-            return;
-        }
         try {
             trans.translate(cfgBuilder.getSections());
             Pair results = trans.run(outputFile);
@@ -47,12 +38,6 @@ public class TestPSI {
                 String outputFile = filename.substring(0, filename.length()-9) + ".psi";
 
                 PsiTranslator trans = new PsiTranslator();
-                try{
-                    FileOutputStream out = new FileOutputStream(outputFile);
-                    trans.setOut(out);
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
                     trans.translate(cfgBuilder.getSections());
@@ -77,12 +62,6 @@ public class TestPSI {
                 String outputFile = filename.substring(0, filename.length()-9) + ".psi";
 
                 PsiTranslator trans = new PsiTranslator();
-                try{
-                    FileOutputStream out = new FileOutputStream(outputFile);
-                    trans.setOut(out);
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
                 CFGBuilder cfgBuilder = new CFGBuilder(filename, outputFile, false);
                 try {
                     trans.translate(cfgBuilder.getSections());
@@ -102,17 +81,10 @@ public class TestPSI {
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
-        try{
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-        } catch(Exception e){
-            e.printStackTrace();
-            return;
-        }
         try {
             trans.translate(cfgBuilder.getSections());
-            // Pair results = trans.run(outputFile);
-            // Assert.assertTrue(results.getRight().toString().length() == 0);
+            Pair results = trans.run(outputFile);
+            Assert.assertTrue(results.getRight().toString().length() == 0);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -125,13 +97,6 @@ public class TestPSI {
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
-        try{
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-        } catch(Exception e){
-            e.printStackTrace();
-            return;
-        }
         try {
             trans.translate(cfgBuilder.getSections());
             Pair results = trans.run(outputFile);
@@ -148,13 +113,7 @@ public class TestPSI {
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
-        try {
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+
         try {
             trans.translate(cfgBuilder.getSections());
             Pair results = trans.run(outputFile);
@@ -170,15 +129,10 @@ public class TestPSI {
 
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
-        try {
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-            Pair results = trans.run(outputFile);
-            Assert.assertTrue(results.getRight().toString().length() == 0);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+
+        Pair results = trans.run(outputFile);
+        Assert.assertTrue(results.getRight().toString().length() == 0);
+
         try {
             trans.translate(cfgBuilder.getSections());
             trans.run(outputFile);
@@ -194,13 +148,6 @@ public class TestPSI {
         CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
         PsiTranslator trans = new PsiTranslator();
         try {
-            FileOutputStream out = new FileOutputStream(outputFile);
-            trans.setOut(out);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
-        try {
             trans.translate(cfgBuilder.getSections());
             Pair results = trans.run(outputFile);
             Assert.assertTrue(results.getRight().toString().length() == 0);
@@ -209,46 +156,4 @@ public class TestPSI {
         }
     }
 
-    @Test
-    public void testHiv() {
-        File folder = new File("../PPVM/autotemp/newtrans1114/");
-        File[] listOfFiles = folder.listFiles();
-        ArrayList<String> restFiles=new ArrayList<>();
-        for (File orgProgDir : listOfFiles) {
-            if (!orgProgDir.isDirectory())
-                continue;
-            if (!(orgProgDir.getName().contains("flight")
-                    || orgProgDir.getName().contains("kidscore_momwork")
-                    || orgProgDir.getName().contains("radon_no_pool")))
-                continue;
-            // if ((orgProgDir.getName().contains("hiv") && (!orgProgDir.getName().contains("chr")))
-            //         || orgProgDir.getName().contains("radon")
-            //         || orgProgDir.getName().contains("electric")
-            //         || orgProgDir.getName().contains("flight_simulator_17.3")
-            //         || orgProgDir.getName().contains("mix"))
-            //     continue;
-            // if (!orgProgDir.getName().contains("gp-fit"))
-            //    continueuuu;
-            System.out.println(orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
-            String filePath = (orgProgDir.getAbsolutePath() + "/" + orgProgDir.getName() + ".template");
-            String outputFile = filePath.substring(0, filePath.length() - 9) + "_Org.psi";
-
-            CFGBuilder cfgBuilder = new CFGBuilder(filePath, outputFile, false);
-            PsiMatheTranslator trans = new PsiMatheTranslator();
-            trans.setPath(filePath.replaceAll("/[a-zA-Z_0-9\\.\\-]+\\.template", ""));
-            try {
-                FileOutputStream out = new FileOutputStream(outputFile);
-                trans.setOut(out);
-                String MatheOutputFile = filePath.substring(0, filePath.length() - 9) + "_analysis.m";
-                FileOutputStream MatheOut = new FileOutputStream(MatheOutputFile);
-                trans.setMatheOut(MatheOut);
-                trans.translate(cfgBuilder.getSections());
-                out.close();
-            } catch (Exception e) {
-                restFiles.add(orgProgDir.getName());
-                e.printStackTrace();
-            }
-        }
-        System.out.println(restFiles);
-    }
 }

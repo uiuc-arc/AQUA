@@ -3,24 +3,25 @@ package translators;
 import grammar.AST;
 import grammar.cfg.*;
 import org.apache.commons.lang3.tuple.Pair;
-import utils.Utils;
+import utils.CommonUtils;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
+
+import static tool.probfuzz.Utils.runPsi;
 
 public class PsiTranslator implements ITranslator{
 
     private String defaultIndent = "\t";
-    private OutputStream out;
+    //private OutputStream out;
     private Set<BasicBlock> visited;
     private StringBuilder stringBuilder;
-    private StringBuilder output;
+    private String code;
 
-    public void setOut(OutputStream o){
-        out = o;
-    }
+//    public void setOut(OutputStream o){
+//        out = o;
+//    }
 
     public void parseBlock(BasicBlock block){
 
@@ -48,7 +49,7 @@ public class PsiTranslator implements ITranslator{
         stringWriter = new StringWriter();
 
         for (AST.Data data : dataSets) {
-            String dataString = Utils.parseData(data, 'f');
+            String dataString = CommonUtils.parseData(data, 'f');
             String dimsString = "";
             if (data.decl.dtype.dims != null && data.decl.dtype.dims.dims.size() > 0) {
                 dimsString += data.decl.dtype.dims.toString();
@@ -97,9 +98,6 @@ public class PsiTranslator implements ITranslator{
         return stringWriter.toString();
     }
 
-
-
-
     private String translate_block(BasicBlock bBlock) {
         String output = "";
         if (bBlock.getStatements().size() == 0)
@@ -117,7 +115,7 @@ public class PsiTranslator implements ITranslator{
                 output += assignStr + ";\n";
             } else if (statement.statement instanceof AST.ForLoop) {
                 AST.ForLoop loop = (AST.ForLoop) statement.statement;
-                output += "for " + loop.loopVar + " in [" + loop.range.start + ".." + loop.range.end + "+1) \n";
+                output += "for " + loop.loopVar + " in [" + loop.range.start + ".." + loop.range.end + ") \n";
             } else if (statement.statement instanceof AST.Decl) {
                 AST.Decl declaration = (AST.Decl) statement.statement;
                 output += declaration.id + " := 0;\n";
@@ -129,6 +127,7 @@ public class PsiTranslator implements ITranslator{
         }
         return output;
     }
+
     @Override
     public void translate(ArrayList<Section> sections) throws Exception {
         stringBuilder = new StringBuilder();
@@ -197,7 +196,7 @@ public class PsiTranslator implements ITranslator{
     }
 
     public Pair run(String codeFileName){
-        Pair results = Utils.runPsi(codeFileName);
+        Pair results = runPsi(codeFileName);
         return results;
     }
 
@@ -223,19 +222,19 @@ public class PsiTranslator implements ITranslator{
 
 
     public void dump(String str){
-        try {
-           out.write(str.getBytes());
-        } catch (Exception e){
-            e.printStackTrace();
-        }
-
+        this.code += str;
     }
+
     public void dump(String str, String indent){
         dump(str + indent);
     }
 
     public String parse(Statement s){
         return parse(s.statement);
+    }
+
+    public String getCode(){
+        return this.code;
     }
 
     public boolean observe(AST.Statement s, StringBuilder sb){

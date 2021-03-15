@@ -46,9 +46,30 @@
             <version>5.13.0.0</version>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>LATEST</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
+            <!--<scope>test</scope>-->
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-ext</artifactId>
             <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.unix4j</groupId>
+            <artifactId>unix4j-command</artifactId>
+            <version>0.4</version>
         </dependency>
         <dependency>
             <groupId>org.renjin</groupId>
@@ -81,14 +102,7 @@
                     <exclude>cmdstan-2.19.1/**</exclude>
                     <exclude>cmdstan-2.16.0/**</exclude>
                 </excludes>
-			</resource>
-			<resource>
-				<directory>src/main/resources</directory>
-				<includes>
-					<include>**/*.properties</include>
-					<include>**/*.json</include>
-				</includes>
-			</resource>
+            </resource>
         </resources>
         <testResources>
             <testResource>
@@ -105,13 +119,26 @@
         </testResources>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>4.7.1</version>
                 <executions>
                     <execution>
                         <phase>generate-sources</phase>
-                        <id>antlr</id>
+                        <id>antlr-template3</id>
                         <configuration>
                             <arguments>
                                 <argument>-package</argument>
@@ -126,7 +153,24 @@
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
-
+                    </execution>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <id>antlr-template2</id>
+                        <configuration>
+                            <arguments>
+                                <argument>-package</argument>
+                                <argument>grammar</argument>
+                            </arguments>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
+                            <includes>Template2.g4</includes>
+                            <sourceDirectory>template/</sourceDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                        </configuration>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
                     </execution>
                     <execution>
                         <phase>generate-sources</phase>
@@ -164,23 +208,26 @@
                         <goals>
                             <goal>antlr4</goal>
                         </goals>
-
+                    </execution>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <id>antlr-python</id>
+                        <configuration>
+                            <arguments>
+                                <argument>-package</argument>
+                                <argument>grammar</argument>
+                            </arguments>
+                            <includes>Python3.g4</includes>
+                            <visitor>true</visitor>
+                            <listener>true</listener>
+                            <sourceDirectory>python3/</sourceDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                        </configuration>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-
-                    <archive>
-                        <index>true</index>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <mainClass>grammar.transformations.TransformerRunner</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
             </plugin>
         </plugins>
 

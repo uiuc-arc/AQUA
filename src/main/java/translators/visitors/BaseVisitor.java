@@ -31,6 +31,14 @@ public abstract class BaseVisitor {
         return evaluate(divOp.op1) + "/" + evaluate(divOp.op2);
     }
 
+    public  String evaluate(AST.AndOp andOp){
+        return evaluate(andOp.op1) + "&&" + evaluate(andOp.op2);
+    }
+
+    public  String evaluate(AST.OrOp orOp){
+        return evaluate(orOp.op1) + "||" + evaluate(orOp.op2);
+    }
+
     public  String evaluate(AST.ExponOp exponOp){
         return evaluate(exponOp.base) + "^" + evaluate(exponOp.power);
     }
@@ -102,6 +110,12 @@ public abstract class BaseVisitor {
         }
         else if(expression instanceof AST.VecDivOp){
             return evaluate((AST.VecDivOp)expression);
+        }
+        else if(expression instanceof AST.AndOp){
+            return evaluate((AST.AndOp)expression);
+        }
+        else if(expression instanceof AST.OrOp){
+            return evaluate((AST.OrOp)expression);
         }
         else{
             return expression.toString();

@@ -35,6 +35,7 @@ public class AnalysisRunner {
         String templateCode = stan2IRTranslator.getCode();
         System.out.println("========Stan Code to Template=======");
         System.out.println(templateCode);
+
         File tempfile = null;
         try {
             tempfile = File.createTempFile(tempFileName, ".template");
@@ -44,39 +45,10 @@ public class AnalysisRunner {
         }
 
 
-        // /*
-        long startTime = System.nanoTime();
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        ArrayList<Section> CFG = cfgBuilder.getSections();
-        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
-        // if (hierModels.contains(stanName)) {
-        //     intervalAnalyzer.no_prior = true;
-        // } else {
-        //     intervalAnalyzer.no_prior = false;
-        // }
-        intervalAnalyzer.setPath(filePath);
-        intervalAnalyzer.setSummaryFile(stansummary);
-        intervalAnalyzer.forwardAnalysis(CFG);
-        //===========Find Metrics================
-        // */
-        String outputName = "/output0202.txt";
-        try {
-            Process p = Runtime.getRuntime().exec(localDir.replace("progs/all/","") + "integrate.py " + filePath);
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            String s;
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
-            stdError = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        long endTime = System.nanoTime();
-        double duration = (endTime - startTime)/1000000000.0;
-        System.out.println("Analysis Time: " + duration);
+        anaTempFile(localDir, stansummary, filePath, tempfile.getAbsolutePath());
+
+
+
 
 
         /*
@@ -95,6 +67,46 @@ public class AnalysisRunner {
             e.printStackTrace();
         }
         */
+    }
+    public static void analyzeTemplate (String localDir, String tempfilePath) {
+        String filePath = localDir + tempfilePath.substring(0, tempfilePath.length() - 9);
+        anaTempFile(localDir, null, filePath, filePath + "/" + tempfilePath);
+    }
+
+    private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath) {
+        // /*
+        long startTime = System.nanoTime();
+        CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, true);
+        ArrayList<Section> CFG = cfgBuilder.getSections();
+        IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        // if (hierModels.contains(stanName)) {
+        //     intervalAnalyzer.no_prior = true;
+        // } else {
+        //     intervalAnalyzer.no_prior = false;
+        // }
+        intervalAnalyzer.setPath(filePath);
+        intervalAnalyzer.setSummaryFile(stansummary);
+        intervalAnalyzer.forwardAnalysis(CFG);
+        //===========Find Metrics================
+        // */
+        String outputName = "/output0202.txt";
+        try {
+            Process p = Runtime.getRuntime().exec(localDir.replaceAll("progs/.../","") + "integrate.py " + filePath);
+            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            String s;
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+            stdError = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        long endTime = System.nanoTime();
+        double duration = (endTime - startTime)/1000000000.0;
+        System.out.println("Analysis Time: " + duration);
     }
 
 

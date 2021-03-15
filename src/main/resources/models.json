@@ -3,7 +3,7 @@
         {
             "name": "normal",
             "stan": "normal",
-            "psiname": "gauss",
+            "psi": "gauss",
             "edward": "ed.models.Normal",
             "edward2" : "ed.Normal",
             "pyro": "dist.Normal",
@@ -27,6 +27,7 @@
             "name": "pareto",
             "stan": "pareto",
             "pyro" : "dist.Pareto",
+            "edward2" : "ed.Pareto",
             "args": [
                 {
                     "name": "ymin",
@@ -45,6 +46,7 @@
             "stan": "student_t",
             "venture": "student_t",
             "pyro" : "dist.StudentT",
+            "edward2" : "ed.StudentT",
             "pyro_args": [
                 {
                     "name": "df"
@@ -79,8 +81,9 @@
         {
             "name": "cauchy",
             "stan": "cauchy",
-            "psiname": "cauchy",
+            "psi": "cauchy",
             "edward": "ed.models.Cauchy",
+            "edward2" : "ed.Cauchy",
             "pyro": "dist.Cauchy",
             "pyro012" : "dist.Cauchy",
             "scipy": "st.cauchy.mean({0}, {1})",
@@ -103,6 +106,7 @@
             "stan": "double_exponential",
             "venture": "laplace",
             "edward": "ed.models.Laplace",
+            "edward2" : "ed.Laplace",
             "args": [
                 {
                     "name": "mu",
@@ -120,6 +124,7 @@
             "name": "logistic",
             "stan": "logistic",
             "edward": "ed.models.Logistic",
+            "edward2" : "ed.Logistic",
             "args": [
                 {
                     "name": "mu",
@@ -136,6 +141,7 @@
         {
             "name": "gumbel",
             "stan": "gumbel",
+            "edward2" : "ed.Gumbel",
             "args": [
                 {
                     "name": "mu",
@@ -155,6 +161,7 @@
             "stan": "lognormal",
             "pyro": "dist.LogNormal",
             "pyro012": "dist.LogNormal",
+            "edward2" : "ed.LogNormal",
             "scipy": "st.lognorm.mean({0}, {1})",
             "args": [
                 {
@@ -173,8 +180,9 @@
         {
             "name": "chi_square",
             "stan": "chi_square",
-            "psiname": "chiSquared",
+            "psi": "chiSquared",
             "edward": "ed.models.Chi2",
+            "edward2" : "ed.Chi2",
             "args": [
                 {
                     "name": "nu",
@@ -202,8 +210,9 @@
             "name": "exponential",
             "stan": "exponential",
             "venture": "expon",
-            "psiname": "exponential",
+            "psi": "exponential",
             "edward": "ed.models.Exponential",
+            "edward2" : "ed.Exponential",
             "pyro": "dist.Exponential",
             "pyro012": "dist.Exponential",
             "scipy": "st.expon.mean({0})",
@@ -220,7 +229,7 @@
         {
             "name": "gamma",
             "stan": "gamma",
-            "psiname": "gamma",
+            "psi": "gamma",
             "edward": "ed.models.Gamma",
             "edward2" : "ed.Gamma",
             "pyro": "dist.Gamma",
@@ -257,6 +266,7 @@
             "stan": "inv_gamma",
             "edward": "ed.models.InverseGamma",
             "edward1": "ed.stats.invgamma",
+            "edward2": "ed.InverseGamma",
             "pyro" : "dist.Gamma",
             "venture": "inv_gamma",
             "args": [
@@ -275,8 +285,9 @@
         {
             "name": "weibull",
             "stan": "weibull",
-            "psiname": "weibull",
+            "psi": "weibull",
             "pyro": "dist.Weibull",
+            "edward2" : "ed.Weibull",
             "args": [
                 {
                     "name": "alpha",
@@ -293,7 +304,7 @@
         {
             "name": "beta",
             "stan": "beta",
-            "psiname": "beta",
+            "psi": "beta",
             "edward": "ed.models.Beta",
             "edward2" : "ed.Beta",
             "pyro": "dist.Beta",
@@ -316,8 +327,9 @@
         {
             "name": "uniform",
             "stan": "uniform",
-            "psiname": "uniform",
+            "psi": "uniform",
             "edward": "ed.models.Uniform",
+            "edward2" : "ed.Uniform",
             "pyro": "dist.Uniform",
             "pyro012": "dist.Uniform",
             "venture": "uniform_continuous",
@@ -435,7 +447,7 @@
             "stan": "bernoulli",
             "edward": "ed.models.BernoulliWithSigmoidProbs",
             "edward2" : "ed.Bernoulli",
-            "psiname": "flip",
+            "psi": "flip",
             "pyro": "dist.Bernoulli",
             "pyro012" : "dist.Bernoulli",
             "edward1": "ed.stats.bernoulli",
@@ -453,6 +465,7 @@
         {
             "name": "multinomial",
             "stan": "multinomial",
+            "edward2": "ed.Multinomial",
             "args": [
                 {
                     "name": "mu",
@@ -561,8 +574,9 @@
         {
             "name": "binomial",
             "stan": "binomial",
-            "psiname": "binomial",
+            "psi": "binomial",
             "edward": "ed.models.Binomial",
+            "edward2" : "ed.Binomial",
             "venture": "binomial",
             "pyro": "dist.Binomial",
             "args": [
@@ -582,6 +596,7 @@
         {
             "name": "beta_binomial",
             "stan": "beta_binomial",
+            "edward2": "ed.BetaBinomial",
             "args": [
                 {
                     "name": "N",
@@ -621,8 +636,9 @@
         {
             "name": "poisson",
             "stan": "poisson",
-            "psiname": "poisson",
+            "psi": "poisson",
             "edward": "ed.models.Poisson",
+            "edward2" : "ed.Poisson",
             "pyro": "dist.Poisson",
             "pyro012": "dist.Poisson",
             "venture": "poisson",
@@ -654,6 +670,7 @@
             "stan": "dirichlet",
             "edward" : "ed.models.Dirichlet",
             "pyro" : "dist.Dirichlet",
+            "edward2" : "ed.Dirichlet",
             "args": [
                 {
                     "name": "theta",
@@ -670,6 +687,7 @@
             "edward" : "ed.models.Categorical",
             "pyro" : "dist.Categorical",
             "pyro012" : "dist.Categorical",
+            "edward2" : "ed.Categorical",
             "args" : [
                 {
                     "name" : "cat",

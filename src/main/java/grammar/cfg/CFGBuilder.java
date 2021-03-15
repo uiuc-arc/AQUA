@@ -172,13 +172,13 @@ public class CFGBuilder{
                 BasicBlock newblock = createBasicBlock(section);
                 if(ifStmt.elseBlock != null){
                     BasicBlock falseBlock = buildBasicBlock(ifStmt.elseBlock.statements, section, curBlock, "false");
-                    addEdge(falseBlock, newblock, "meet");
+                    addEdge(falseBlock, newblock, "meetF");
                 }
                 else{
                     addEdge(curBlock, newblock, "false");
                 }
 
-                addEdge(trueBlock, newblock, "meet");
+                addEdge(trueBlock, newblock, "meetT");
 
 //                curBlock.edges.add(new Edge(trueBlock, "true"));
 //                curBlock.edges.add(new Edge(falseBlock, "false"));

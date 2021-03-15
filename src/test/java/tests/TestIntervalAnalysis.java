@@ -17,6 +17,7 @@ import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.indexing.conditions.GreaterThan;
 import org.nd4j.linalg.ops.transforms.Transforms;
+import translators.PyroTranslator;
 import translators.Stan2IRTranslator;
 
 import java.io.File;
@@ -38,9 +39,43 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "neural" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "lightspeed_robust_reparam" + ttt);
         // gauss_mix_asym_prior
 
+    }
+
+
+    @Test
+    public void Test4() throws IOException {
+        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
+        AnalysisRunner.analyzeTemplate(localDir, "survey.template");
+
+    }
+
+    @Test
+    public void testPyroCond(){
+        String stanfile = "src/test/resources/stan/stan1610.stan";
+        String standata = "src/test/resources/stan/stan1610.data";
+        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
+        String tempFileName = stanfile.replace(".stan", "");
+        String templateCode = stan2IRTranslator.getCode();
+        File tempfile = null;
+        try {
+            tempfile = File.createTempFile(tempFileName, ".template");
+            FileUtils.writeStringToFile(tempfile, templateCode);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null, false);
+        PyroTranslator pyroTranslator = new PyroTranslator();
+        try {
+            pyroTranslator.translate(cfgBuilder.getSections());
+            System.out.println(pyroTranslator.getCode());
+            //Pair results = pyroTranslator.run();
+            //Assert.assertTrue(results.getRight().toString().length() == 0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     ///
