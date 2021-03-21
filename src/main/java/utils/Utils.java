@@ -280,13 +280,9 @@ public class Utils {
         return new Template3Parser(tokens);
     }
 
-    public static DataParser readDataFile(String path){
+    public static DataParser readDataFile(String path) throws IOException {
         CharStream stream = null;
-        try {
             stream = CharStreams.fromFileName(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         DataLexer dataLexer = new DataLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(dataLexer);
         DataParser dataParser = new DataParser(tokens);
