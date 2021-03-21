@@ -640,7 +640,7 @@ public class IntervalAnalysis {
                 dfT.join(dfF.probCube);
                 currBlock.dataflowFacts = dfT;
             }
-            System.out.println("//////////// Analyze block: " + currBlock.getId());
+            // System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
             endFacts = currBlock.dataflowFacts;
             // Get marginal changes
@@ -649,6 +649,7 @@ public class IntervalAnalysis {
             // for (int tt=2; tt < tmpint.length + 1; tt++)
             //     tmpint[tt-1] = tt;
             // tmpint[0] = 0;
+            // System.out.println(Nd4j.createFromArray(tmpint));
             // System.out.println(tmp.sum(tmpint));
             Map<String, BasicBlock> succs = currBlock.getOutgoingEdges();
             if (succs.containsKey("true") && succs.containsKey("false") && (!currBlock.getIncomingEdges().containsKey("back"))) {
@@ -953,7 +954,7 @@ public class IntervalAnalysis {
             ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
         } else {
-            System.out.println("Assignment: " + statement.statement.toString());
+            // System.out.println("Assignment: " + statement.statement.toString());
             String paramID = assignment.lhs.toString().split("\\[")[0];
             if (no_tau && paramID.contains("robust_local_tau")) // Don't consider nu
                 return true;
@@ -997,7 +998,7 @@ public class IntervalAnalysis {
                             initIndParamAllDimsPA(intervalState, assignment, paramID, paramLimits, paramDims);
                         }
                     }
-                    intervalState.printAbsState();
+                    // intervalState.printAbsState();
                 }
                 else { // transformed parameters, completely dependent on other params
                     if (!(assignment.rhs instanceof AST.FunctionCall)) { // TODO: cond: not a distr
@@ -2822,7 +2823,7 @@ public class IntervalAnalysis {
                         } else if (paramDims.size() == 0)
                             intervalState.addIndParam(paramID,
                                     distrArray[0], distrArray[1], distrArray[2]);
-                        intervalState.printAbsState();
+                        // intervalState.printAbsState();
                     }
                     // TODO: dependent
                 }
