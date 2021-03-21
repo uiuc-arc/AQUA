@@ -61,7 +61,12 @@ public class TestStan2IRTranslation {
 
     @Test
     public void test3(){
-        DataParser parser = Utils.readDataFile("src/test/resources/stan/electric_1c_chr.data.R");
+        DataParser parser = null;
+        try {
+            parser = Utils.readDataFile("src/test/resources/stan/electric_1c_chr.data.R");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         ParseTreeWalker walker = new ParseTreeWalker();
         DataReader dataReader = new DataReader();
         walker.walk(dataReader, parser.datafile());
@@ -71,7 +76,12 @@ public class TestStan2IRTranslation {
     @Test
     public void test4(){
 
-        DataParser parser = Utils.readDataFile("/home/saikat/projects/c4pp/programs/templates/stan_con/activation-based_h/activation-based_h.data.R");
+        DataParser parser = null;
+        try {
+            parser = Utils.readDataFile("/home/saikat/projects/c4pp/programs/templates/stan_con/activation-based_h/activation-based_h.data.R");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         ParseTreeWalker walker = new ParseTreeWalker();
         DataReader dataReader = new DataReader();
         walker.walk(dataReader, parser.datafile());
