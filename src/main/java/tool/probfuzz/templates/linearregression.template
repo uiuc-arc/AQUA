@@ -1,0 +1,19 @@
+@limits <lower=1>
+int N : 100
+vector[N] x : float [100]
+vector[N] y : float [100]
+
+@prior
+float w
+@prior
+float b
+
+@prior
+@limits <lower=0>
+float sigma
+w = DISTX
+b = DISTX
+sigma = DISTX
+
+@observe
+y = DIST(w * x + b, sigma)
