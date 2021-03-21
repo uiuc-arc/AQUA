@@ -264,9 +264,13 @@ public class AnalysisRunner {
         String localDir = "/home/zixin/Documents/are/analysis_progs/progs/all/";
         String localDirPSI = "/home/zixin/Documents/are/analysis_progs/progs/psi/";
         // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        if (args[0].endsWith("template"))
+        if (args[0].endsWith("template")) {
+            System.out.println(localDirPSI + args[0]);
             AnalysisRunner.analyzeTemplate(localDirPSI, args[0]);
-        else
+        }
+        else {
+            System.out.println(localDir + args[0]);
             AnalysisRunner.analyzeProgram(localDir, args[0]);
+        }
     }
 }
