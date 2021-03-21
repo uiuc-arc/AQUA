@@ -1,0 +1,21 @@
+import pyro, numpy as np, torch, pyro.distributions as dist, torch.nn as nn
+from torch import sqrt
+import pyro.contrib.autoguide as ag
+from pyro.optim import Adam
+from pyro.infer import SVI, Trace_ELBO
+from torch.autograd import Variable
+import torch.distributions.constraints as constraints
+
+$(data)
+$(model)
+
+guide = ag.AutoDiagonalNormal(model)
+pyro.clear_param_store()
+optim = Adam({'lr': $(lr)})
+svi = SVI(model, guide, optim, loss=Trace_ELBO())
+for i in range($(iter)):
+    loss = svi.step(data)
+    if ((i % 100) == 0):
+        print(loss)
+for name in pyro.get_param_store().get_all_param_names():
+    print(name, pyro.param(name).data.numpy())

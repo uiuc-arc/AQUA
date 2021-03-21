@@ -1,0 +1,106 @@
+[
+  {
+    "file": "bugs/templates/probfuzz/pyro875/pyro875.template",
+    "dir": "bugs/templates/probfuzz/pyro875/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/probfuzz/pyro876/pyro876.template",
+    "dir": "bugs/templates/probfuzz/pyro876/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/probfuzz/pyro_b39/pyro_b39.template",
+    "dir": "bugs/templates/probfuzz/pyro_b39/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/probfuzz/pyro_b141753_1/pyro_b141753_1.template",
+    "dir": "bugs/templates/probfuzz/pyro_b141753_1/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/probfuzz/pyro_b141753_2/pyro_b141753_2.template",
+    "dir": "bugs/templates/probfuzz/pyro_b141753_2/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/probfuzz/pyro_b171608_2/pyro_b171608_2.template",
+    "dir": "bugs/templates/probfuzz/pyro_b171608_2/",
+    "type": "variational",
+    "pps": "pyro012",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/dyes/dyes.template",
+    "dir": "bugs/templates/pyro/dyes/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/dyes_020/dyes_020.template",
+    "dir": "bugs/templates/pyro/dyes_020/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/eight_schools/eight_schools.template",
+    "dir": "bugs/templates/pyro/eight_schools/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/eight_schools_020/eight_schools_020.template",
+    "dir": "bugs/templates/pyro/eight_schools_020/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/GLMM_Poisson2/GLMM_Poisson2.template",
+    "dir": "bugs/templates/pyro/GLMM_Poisson2/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/GLMM_Poisson2_020/GLMM_Poisson2_020.template",
+    "dir": "bugs/templates/pyro/GLMM_Poisson2_020/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/pyro/radon_1/radon_1.template",
+    "dir": "bugs/templates/pyro/radon_1/",
+    "type": "variational",
+    "pps": "pyro",
+    "iter": 4000,
+    "skip": false
+  }
+]

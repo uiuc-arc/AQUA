@@ -1,0 +1,186 @@
+[
+  {
+    "file": "bugs/templates/stan240/stan240.template",
+    "dir": "bugs/templates/stan240/",
+    "data": "bugs/templates/stan240/stan240.json",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan499/stan499.template",
+    "dir": "bugs/templates/stan499/",
+    "data": "bugs/templates/stan499/stan499.json",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan543/stan543.template",
+    "dir": "bugs/templates/stan543/",
+    "data": "bugs/templates/stan543/stan543.json",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan674/stan674.template",
+    "dir": "bugs/templates/stan674/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan685/stan685.template",
+    "dir": "bugs/templates/stan685/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan723/stan723.template",
+    "dir": "bugs/templates/stan723/",
+    "type": "compile"
+  },
+  {
+    "file": "bugs/templates/stan734/stan734.template",
+    "dir": "bugs/templates/stan734/",
+    "type": "compile",
+    "skip": true
+  },
+  {
+    "file": "bugs/templates/stan737/stan737.template",
+    "dir": "bugs/templates/stan737/",
+    "data": "bugs/templates/stan737/stan737.data.R",
+    "type": "sampling",
+    "skip": true
+  },
+  {
+    "file": "bugs/templates/stan866/stan866_wrong.template",
+    "dir": "bugs/templates/stan866/",
+    "skip": true
+  },
+  {
+    "file": "bugs/templates/stan1053/stan1053.template",
+    "dir": "bugs/templates/stan1053/",
+    "type": "sampling",
+    "default": 10000
+  },
+  {
+    "file": "bugs/templates/stan1121/stan1121.template",
+    "dir": "bugs/templates/stan1121/",
+    "data": "bugs/templates/stan1121/stan1121.data.R",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1131/stan1131.template",
+    "dir": "bugs/templates/stan1131/",
+    "skip": true,
+    "comment": "parsing issue"
+  },
+  {
+    "file": "bugs/templates/stan1142/stan1142.template",
+    "dir": "bugs/templates/stan1142/",
+    "skip": true,
+    "type": "acc"
+  },
+  {
+    "file": "bugs/templates/stan1194/stan1194.template",
+    "dir": "bugs/templates/stan1194/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1200/stan1200.template",
+    "dir": "bugs/templates/stan1200/",
+    "data": "bugs/templates/stan1200/stan1200.data.R",
+    "type": "optimize",
+    "skip" : false
+
+  },
+  {
+    "file": "bugs/templates/stan1241/stan1241.template",
+    "dir": "bugs/templates/stan1241/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1308/stan1308.template",
+    "dir": "bugs/templates/stan1308/",
+    "data": "bugs/templates/stan1308/stan1308.data.R",
+    "type": "diagnose",
+    "skip" : false
+  },
+  {
+    "file": "bugs/templates/stan1366/stan1366.template",
+    "dir": "bugs/templates/stan1366/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1435/stan1435.template",
+    "dir": "bugs/templates/stan1435/",
+    "data": "bugs/templates/stan1435/stan1435.data.R",
+    "type": "optimize"
+  },
+  {
+    "file": "bugs/templates/stan1443/stan1443.template",
+    "dir": "bugs/templates/stan1443/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1474/stan1474.template",
+    "dir": "bugs/templates/stan1474/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1601/stan1601.template",
+    "dir": "bugs/templates/stan1601/",
+    "data": "bugs/templates/stan1601/stan1601.data",
+    "type": "variational",
+    "skip" : false
+  },
+  {
+    "file": "bugs/templates/stan1789/stan1789.template",
+    "dir": "bugs/templates/stan1789/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan1974/stan1974.template",
+    "dir": "bugs/templates/stan1974/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan2101/stan2101.template",
+    "dir": "bugs/templates/stan2101/",
+    "skip": true
+  },
+  {
+    "file": "bugs/templates/stan2179/stan2179.template",
+    "dir": "bugs/templates/stan2179/",
+    "skip": true,
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan2188/stan2188.template",
+    "dir": "bugs/templates/stan2188/",
+    "type": "variational"
+  },
+  {
+    "file": "bugs/templates/stan2237/stan2237.template",
+    "dir": "bugs/templates/stan2237/",
+    "data": "bugs/templates/stan2237/stan2237.data.R",
+    "init": "bugs/templates/stan2237/stan2237.init.R",
+    "type": "sampling",
+    "default": 1000
+  },
+  {
+    "file": "bugs/templates/stan2294/stan2294.template",
+    "dir": "bugs/templates/stan2294/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan2311/stan2311.template",
+    "dir": "bugs/templates/stan2311/",
+    "type": "sampling"
+  },
+  {
+    "file": "bugs/templates/stan2365/stan2365.template",
+    "dir": "bugs/templates/stan2365/",
+    "type": "sampling",
+    "skip": true,
+    "comment": "revisit"
+  },
+  {
+    "file": "bugs/templates/stan2410/stan2410.template",
+    "dir": "bugs/templates/stan2410/",
+    "skip": true
+  }
+]

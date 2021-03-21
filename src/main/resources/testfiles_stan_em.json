@@ -1,0 +1,107 @@
+[
+  {
+    "file": "bugs/templates/stan_arma11_270/stan_arma11_270.template",
+    "dir": "bugs/templates/stan_arma11_270/",
+    "data": "bugs/templates/stan_arma11_270/stan_arma11_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_arma11_alt_270/stan_arma11_alt_270.template",
+    "dir": "bugs/templates/stan_arma11_alt_270/",
+    "data": "bugs/templates/stan_arma11_alt_270/stan_arma11_alt_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_dogs_log_290/stan_dogs_log_290.template",
+    "dir": "bugs/templates/stan_dogs_log_290/",
+    "data": "bugs/templates/stan_dogs_log_290/stan_dogs_log_290.data.R",
+    "type": "variational",
+    "new": false,
+    "skip" : false
+
+  },
+  {
+    "file": "bugs/templates/stan_rate_1_2140/stan_rate_1_2140.template",
+    "dir": "bugs/templates/stan_rate_1_2140/",
+    "data": "bugs/templates/stan_rate_1_2140/stan_rate_1_2140.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_rate_5_290/stan_rate_5_290.template",
+    "dir": "bugs/templates/stan_rate_5_290/",
+    "data": "bugs/templates/stan_rate_5_290/stan_rate_5_290.data.R",
+    "type": "variational",
+    "new": true,
+    "skip":false
+  },
+  {
+    "file": "bugs/templates/stan_roaches_290/stan_roaches_290.template",
+    "dir": "bugs/templates/stan_roaches_290/",
+    "data": "bugs/templates/stan_roaches_290/stan_roaches_290.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_roaches_overdispersion_270/stan_roaches_overdispersion_270.template",
+    "dir": "bugs/templates/stan_roaches_overdispersion_270/",
+    "data": "bugs/templates/stan_roaches_overdispersion_270/stan_roaches_overdispersion_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_roaches_overdispersion_2140/stan_roaches_overdispersion_2140.template",
+    "dir": "bugs/templates/stan_roaches_overdispersion_2140/",
+    "data": "bugs/templates/stan_roaches_overdispersion_2140/stan_roaches_overdispersion_2140.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_salm2_270/stan_salm2_270.template",
+    "dir": "bugs/templates/stan_salm2_270/",
+    "data": "bugs/templates/stan_salm2_270/stan_salm2_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_salm2_2140/stan_salm2_2140.template",
+    "dir": "bugs/templates/stan_salm2_2140/",
+    "data": "bugs/templates/stan_salm2_2140/stan_salm2_2140.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_salm_270/stan_salm_270.template",
+    "dir": "bugs/templates/stan_salm_270/",
+    "data": "bugs/templates/stan_salm_270/stan_salm_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_stagnant_270/stan_stagnant_270.template",
+    "dir": "bugs/templates/stan_stagnant_270/",
+    "data": "bugs/templates/stan_stagnant_270/stan_stagnant_270.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  },
+  {
+    "file": "bugs/templates/stan_survey_290/stan_survey_290.template",
+    "dir": "bugs/templates/stan_survey_290/",
+    "data": "bugs/templates/stan_survey_290/stan_survey_290.data.R",
+    "type": "variational",
+    "new": true,
+    "skip": false
+  }
+]
