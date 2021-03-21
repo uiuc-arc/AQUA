@@ -106,7 +106,7 @@ public class AnalysisRunner {
         }
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
-        System.out.println("Analysis Time: " + duration);
+        System.out.println("Analysis Time: " + filePath + "," + duration);
     }
 
 
@@ -262,7 +262,11 @@ public class AnalysisRunner {
 
     public static void main (String[] args) {
         String localDir = "/home/zixin/analysis_progs/progs/all/";
+        String localDirPSI = "/home/zixin/analysis_progs/progs/psi/";
         // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        AnalysisRunner.analyzeProgram(localDir, args[0]);
+        if (args[0].endsWith("template"))
+            AnalysisRunner.analyzeTemplate(localDirPSI, args[0]);
+        else
+            AnalysisRunner.analyzeProgram(localDir, args[0]);
     }
 }

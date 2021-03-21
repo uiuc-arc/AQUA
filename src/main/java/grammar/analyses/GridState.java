@@ -3,6 +3,7 @@ package grammar.analyses;
         import com.google.common.primitives.Ints;
         import grammar.AST;
         import org.apache.commons.lang3.ArrayUtils;
+        import org.nd4j.linalg.api.buffer.DataType;
         import org.nd4j.linalg.api.ndarray.BaseNDArray;
         import org.nd4j.linalg.api.ndarray.INDArray;
         import org.nd4j.linalg.api.ops.impl.transforms.strict.Log;
@@ -77,7 +78,6 @@ public class GridState extends AbstractState{
 
     public void addParamCube(String paramName, INDArray splits, INDArray probUpper) {
         // rewrite the current param values
-        System.out.println(paramValues.keySet());
         if (paramValues.containsKey(paramName) && paramValues.get(paramName).getKey() != null) {
             Pair<Integer, INDArray> curr = paramValues.get(paramName);
             long[] currBroad = new long[probCube.shape().length];
@@ -92,9 +92,23 @@ public class GridState extends AbstractState{
                 System.arraycopy(probCube.shape(), 0, orgshape, 0, probCube.shape().length);
                 probCube = probCube.reshape(orgshape).broadcast(maxshape);
             }
-            currBroad[curr.getKey()] = probUpper.length();
-            probCube.addi(log(probUpper).reshape(currBroad).broadcast(probCube.shape()));
-            return;
+            if (probCube.shape()[curr.getKey()] <= probUpper.length()) { // do not merge all support
+                currBroad[curr.getKey()] = probUpper.length();
+                probCube.addi(log(probUpper).reshape(currBroad).broadcast(probCube.shape()));
+                return;
+            } else { // for atom or smaller intervals
+                INDArray oldSingle = curr.getValue().castTo(DataType.DOUBLE);
+                INDArray newUpper = Nd4j.zeros(oldSingle.shape());
+                for (int ssi = 0; ssi < splits.length(); ssi++) {
+                    Double ss = splits.getDouble(ssi);
+                    INDArray diff = oldSingle.sub(ss);
+                    INDArray ssId = BooleanIndexing.firstIndex(diff, Conditions.absLessThan(0.000000001));
+                    newUpper.putScalar(ssId.getLong(), probUpper.getDouble(ssi));
+                }
+                currBroad[curr.getKey()] = newUpper.length();
+                probCube.addi(log(newUpper).reshape(currBroad).broadcast(probCube.shape()));
+                return;
+            }
         }
 
         if (splits.shape().length == 0) {

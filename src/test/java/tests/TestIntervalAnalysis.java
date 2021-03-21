@@ -48,7 +48,7 @@ public class TestIntervalAnalysis {
     @Test
     public void Test4() throws IOException {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
-        AnalysisRunner.analyzeTemplate(localDir, "survey.template");
+        AnalysisRunner.analyzeTemplate(localDir, "GPA.template");
 
     }
 
@@ -130,18 +130,10 @@ public class TestIntervalAnalysis {
     public void TestNd4j() {
         Nd4j.setDataType(DataType.DOUBLE);
         System.out.println("==========");
-        INDArray[] newarray = new INDArray[2];
-        newarray[0] = Nd4j.arange(0, 72, 2).reshape(2,3,6);
-        newarray[1] = Nd4j.arange(5, 36+5).reshape(2,3,6);
-        System.out.println(newarray[0]);
-        System.out.println(newarray[1]);
-        INDArray good;
-
-        good = newarray[0].gt( newarray[1]);
-        good = good.castTo(DataType.DOUBLE);
-        System.out.println(good);
-        BooleanIndexing.replaceWhere(good,1+1234, Conditions.equals(1));
-        System.out.println(good);
+        INDArray newarray;
+        newarray = Nd4j.arange(0, 10, 2).reshape(new long[]{1,5});
+        System.out.println(newarray.putScalar(2, 100));
+        System.out.println(newarray);
 
 
 

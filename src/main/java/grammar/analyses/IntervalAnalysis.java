@@ -53,7 +53,7 @@ public class IntervalAnalysis {
     private Stack<String> integrateStack = new Stack<>();
     HashSet<String> majorParam = new HashSet<>();
     private String dataYNameGlobal;
-    HashSet<String> discreteDist = new HashSet<>(Arrays.asList("bernoulli","flip","categorical"));
+    HashSet<String> discreteDist = new HashSet<>(Arrays.asList("bernoulli","flip","categorical","binomial","poisson","atom","uniformClose"));
 
     @Deprecated
     private double maxProb = 1.0 / (maxCounts - 1);
@@ -916,9 +916,10 @@ public class IntervalAnalysis {
                 // changed always true
                 changed = analyzeAssignment(intervalState, statement);
             } else if (statement.statement instanceof AST.FunctionCallStatement) {
-                if (statement.statement.toString().startsWith("hardObserve"))
-                analyzeObserve(intervalState, statement);
-                changed = true;
+                if (statement.statement.toString().startsWith("hardObserve")) {
+                    analyzeObserve(intervalState, statement);
+                    changed = true;
+                }
 
             } else if (statement.statement instanceof AST.IfStmt) {
                 AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
@@ -937,9 +938,7 @@ public class IntervalAnalysis {
     private void analyzeObserve(GridState intervalState, Statement statement) {
         AST.FunctionCall funcStat = ((AST.FunctionCallStatement) statement.statement).functionCall;
         INDArray hardCond = DistrCube(funcStat.parameters.get(0), intervalState);
-        System.out.println(hardCond);
         INDArray loghardCond  = Transforms.log(hardCond);
-        System.out.println(loghardCond);
         intervalState.addProb(loghardCond);
     }
 
@@ -1574,6 +1573,9 @@ public class IntervalAnalysis {
         else if (pp instanceof AST.GeqOp) {
             return DistrCube((AST.GeqOp) pp, intervalState);
         }
+        else if (pp instanceof AST.LeqOp) {
+            return DistrCube((AST.LeqOp) pp, intervalState);
+        }
         else if (pp instanceof AST.EqOp) {
             return DistrCube((AST.EqOp) pp, intervalState);
         }
@@ -1713,6 +1715,18 @@ public class IntervalAnalysis {
             if (param0 == null || param0.length() == 0)
                 return param0;
             ret = Transforms.abs(param0);
+        }
+        else if (pp.id.id.equals("log")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length() == 0)
+                return param0;
+            ret = Transforms.log(param0);
+        }
+        else if (pp.id.id.equals("exp")) {
+            INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
+            if (param0 == null || param0.length() == 0)
+                return param0;
+            ret = Transforms.exp(param0);
         }
         else if (pp.id.id.equals("fmax")) {
             INDArray param0 = DistrCube(pp.parameters.get(0), intervalState);
@@ -2126,6 +2140,12 @@ public class IntervalAnalysis {
         return getGeqNDArray(op1Array, op2Array);
     }
 
+    private INDArray DistrCube(AST.LeqOp pp, GridState intervalState) {
+        INDArray op1Array = DistrCube(pp.op1, intervalState);
+        INDArray op2Array = DistrCube(pp.op2, intervalState);
+        return getLeqNDArray(op1Array, op2Array);
+    }
+
     private INDArray DistrCube(AST.AndOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
@@ -2244,6 +2264,27 @@ public class IntervalAnalysis {
             INDArray goodgt = op1Array.broadcast(outShape).gt(op2Array.broadcast(outShape));
             INDArray goodeq = op1Array.broadcast(outShape).eq(op2Array.broadcast(outShape));
             INDArray good = Transforms.or(goodgt, goodeq);
+            good = good.castTo(DataType.DOUBLE);
+            return good;
+        }
+        else {
+            return Nd4j.empty();
+        }
+    }
+
+
+    private INDArray getLeqNDArray(INDArray op1Array, INDArray op2Array) {
+        if (op1Array.length() != 0 && op2Array.length() != 0) {
+            long[] op1shape = op1Array.shape();
+            long[] op2shape = op2Array.shape();
+            long[] outShape = getMaxShape(op1shape, op2shape);
+            if (outShape.length > op1shape.length)
+                op1Array = op1Array.reshape(getReshape(op1shape, outShape));
+            else
+                op2Array = op2Array.reshape(getReshape(op2shape, outShape));
+            INDArray goodlt = op1Array.broadcast(outShape).lt(op2Array.broadcast(outShape));
+            INDArray goodeq = op1Array.broadcast(outShape).eq(op2Array.broadcast(outShape));
+            INDArray good = Transforms.or(goodlt, goodeq);
             good = good.castTo(DataType.DOUBLE);
             return good;
         }
@@ -2483,12 +2524,51 @@ public class IntervalAnalysis {
                 single = new double[] {0.0,1.0};
                 prob2 = new double[] {1-funcParams.get(0), funcParams.get(0)};
                 break;
+            case "atom": // full range must be defined
+                single = new double[] {funcParams.get(0)};
+                prob2 = new double[] {1};
+                break;
+            case "uniformClose":
+                single = new double[piCounts];
+                prob2 = new double[piCounts];
+                double inc = (funcParams.get(1) - funcParams.get(0))/(piCounts - 1);
+                double ss = funcParams.get(0);
+                for (int ii = 0; ii < piCounts; ii ++) {
+                    single[ii] = ss;
+                    ss += inc;
+                }
+                Arrays.fill(prob2, 1.0/piCounts);
+                break;
             case "categorical":
                 single = new double[funcParams.size()];
                 prob2 = new double[funcParams.size()];
                 for (int ii =0; ii < single.length; ii ++ ) {
                     single[ii] = ii;
                     prob2[ii] = funcParams.get(ii);
+                }
+                break;
+            case "binomial":
+                Double trials = funcParams.get(0);
+                Double prob = funcParams.get(1);
+                BinomialDistributionImpl binomialDistribution = new BinomialDistributionImpl(trials.intValue(), prob);
+                single = new double[(int) (trials + 1)];
+                prob2 = new double[(int) (trials + 1)];
+                for (int ii =0; ii < single.length; ii ++ ) {
+                    single[ii] = ii;
+                    prob2[ii] = binomialDistribution.probability(ii);
+                }
+                break;
+            case "poisson":
+                Double ll = funcParams.get(0);
+                PoissonDistributionImpl poissonDistribution = new PoissonDistributionImpl(ll);
+                double sqrt5 = sqrt(ll)*5;
+                int posLower = max(0, (int) (ll - sqrt5));
+                int posUpper =(int) (ll + sqrt5);
+                single = new double[posUpper - posLower + 1];
+                prob2 = new double[posUpper - posLower + 1];
+                for (int ii = 0; ii < single.length; ii ++ ) {
+                    single[ii] = posLower + ii;
+                    prob2[ii] = poissonDistribution.probability(posLower + ii);
                 }
                 break;
 
