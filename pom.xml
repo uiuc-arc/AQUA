@@ -50,12 +50,12 @@
             <artifactId>commons-math3</artifactId>
             <version>LATEST</version>
         </dependency>
-        <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.5</version>
-            <!--<scope>test</scope>-->
-        </dependency>
+	<dependency>
+		<groupId>commons-io</groupId>
+		<artifactId>commons-io</artifactId>
+		<version>2.5</version>
+		<!-- <scope>test</scope> -->
+	</dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
@@ -94,30 +94,38 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/test/resources/scripts</directory>
-                <excludes>
-                    <exclude>cmdstan/**</exclude>
-                    <exclude>cmdstan-2.19.1/**</exclude>
-                    <exclude>cmdstan-2.16.0/**</exclude>
-                </excludes>
-            </resource>
-        </resources>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources/scripts/cmdstan*</directory>
-                <excludes>
-                    <exclude>
-                        **
-                    </exclude>
-                    <exclude>
-                        *
-                    </exclude>
-                </excludes>
-            </testResource>
-        </testResources>
-        <plugins>
+	    <resources>
+		    <resource>
+			    <directory>src/test/resources/scripts</directory>
+			    <excludes>
+				    <exclude>cmdstan/**</exclude>
+				    <exclude>cmdstan-2.19.1/**</exclude>
+				    <exclude>cmdstan-2.16.0/**</exclude>
+			    </excludes>
+		    </resource>
+		    <resource>
+			    <directory>src/main/resources</directory>
+			    <includes>
+				    <include>**/*.properties</include>
+				    <include>**/*.json</include>
+			    </includes>
+		    </resource>
+	    </resources>
+    <testResources>
+	    <testResource>
+		    <directory>src/test/resources/scripts/cmdstan*</directory>
+		    <excludes>
+			    <exclude>
+				    **
+			    </exclude>
+			    <exclude>
+				    *
+			    </exclude>
+		    </excludes>
+	    </testResource>
+    </testResources>
+    <plugins>
+		<!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -131,6 +139,7 @@
                     </execution>
                 </executions>
             </plugin>
+-->
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
@@ -228,7 +237,21 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
+	</plugin>
+	<plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-jar-plugin</artifactId>
+		<configuration>
+
+			<archive>
+				<index>true</index>
+				<manifest>
+					<addClasspath>true</addClasspath>
+					<mainClass>grammar.transformations.TransformerRunner</mainClass>
+				</manifest>
+			</archive>
+		</configuration>
+	</plugin>
         </plugins>
 
 
