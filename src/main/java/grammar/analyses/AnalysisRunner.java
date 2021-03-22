@@ -33,8 +33,8 @@ public class AnalysisRunner {
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         String tempFileName = stanfile.replace(".stan", "");
         String templateCode = stan2IRTranslator.getCode();
-        System.out.println("========Stan Code to Template=======");
-        System.out.println(templateCode);
+        // System.out.println("========Stan Code to Template=======");
+        // System.out.println(templateCode);
 
         File tempfile = null;
         try {
