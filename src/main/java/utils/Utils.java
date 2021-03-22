@@ -282,7 +282,7 @@ public class Utils {
 
     public static DataParser readDataFile(String path) throws IOException {
         CharStream stream = null;
-            stream = CharStreams.fromFileName(path);
+        stream = CharStreams.fromFileName(path);
         DataLexer dataLexer = new DataLexer(stream);
         CommonTokenStream tokens = new CommonTokenStream(dataLexer);
         DataParser dataParser = new DataParser(tokens);
