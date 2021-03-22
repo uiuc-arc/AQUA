@@ -1,29 +1,17 @@
 package grammar.analyses;
 
         import com.google.common.primitives.Ints;
-        import grammar.AST;
-        import org.apache.commons.lang3.ArrayUtils;
         import org.nd4j.linalg.api.buffer.DataType;
-        import org.nd4j.linalg.api.ndarray.BaseNDArray;
         import org.nd4j.linalg.api.ndarray.INDArray;
-        import org.nd4j.linalg.api.ops.impl.transforms.strict.Log;
-        import org.nd4j.linalg.api.shape.Shape;
-        import org.nd4j.linalg.cpu.nativecpu.NDArray;
         import org.nd4j.linalg.factory.Nd4j;
         import org.nd4j.linalg.indexing.BooleanIndexing;
-        import org.nd4j.linalg.indexing.conditions.Condition;
         import org.nd4j.linalg.indexing.conditions.Conditions;
         import org.nd4j.linalg.ops.transforms.Transforms;
-        import org.nd4j.linalg.util.ArrayUtil;
 
         import java.io.*;
-        import java.nio.file.Files;
-        import java.nio.file.StandardOpenOption;
         import java.util.*;
 
-        import static org.nd4j.linalg.ops.transforms.Transforms.exp;
         import static org.nd4j.linalg.ops.transforms.Transforms.log;
-        import static org.nd4j.linalg.ops.transforms.Transforms.or;
 
 
 public class GridState extends AbstractState{
@@ -404,6 +392,8 @@ public class GridState extends AbstractState{
         // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
         // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isInfinite());
         // System.out.println("likelihood:" + likeProbLower);
+        // System.out.println(Nd4j.createFromArray(upper.shape()));
+        // System.out.println(Nd4j.createFromArray(likeProbUpper.shape()));
         probCube = upper.add(likeProbUpper.broadcast(upper.shape()));
     }
 

@@ -1,22 +1,12 @@
 package tests;
 
-import grammar.AST;
 import grammar.analyses.*;
 import grammar.cfg.*;
 import org.apache.commons.io.FileUtils;
-import org.jgrapht.Graph;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.shape.Shape;
-import org.nd4j.linalg.cpu.nativecpu.NDArray;
-import org.nd4j.linalg.factory.Broadcast;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.BooleanIndexing;
-import org.nd4j.linalg.indexing.conditions.Conditions;
-import org.nd4j.linalg.indexing.conditions.GreaterThan;
-import org.nd4j.linalg.ops.transforms.Transforms;
 import translators.PyroTranslator;
 import translators.Stan2IRTranslator;
 
@@ -25,8 +15,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
-
-import static grammar.analyses.Utilities.printStamentAttributes;
 
 public class TestIntervalAnalysis {
 
@@ -39,7 +27,7 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "unemployment" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_robust_reparam" + ttt);
         // gauss_mix_asym_prior
 
     }

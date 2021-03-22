@@ -75,12 +75,12 @@ public class IntervalAnalysis {
         Nd4j.setDataType(DataType.DOUBLE);
         GridState endFacts;
         GridState.deleteAnalysisOutputs(path);
-        InitWorklist(cfgSections);
+        ArrayList<BasicBlock> worklist = new ArrayList<>();
+        InitWorklist(cfgSections, worklist);
         getMeanFromMCMC();
         addPrior = true;
         no_tau = true;
         toAttack = true;
-        ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
                 paramDivs.put(kk, 41);
@@ -97,7 +97,7 @@ public class IntervalAnalysis {
                     majorParam.add(kk);
             }
         }
-        worklist.add(worklistAll.peek());
+        // worklist.add(worklistAll.peek());
         endFacts = WorklistIter(worklist);
         if (endFacts.probCube == null) {
             System.out.println("Prob Cube Empty!");
@@ -108,7 +108,7 @@ public class IntervalAnalysis {
         // }
         // endFacts.writeResults(majorParam, path);
         endFacts.writeToPython(majorParam, path, toAttack);
-        endFacts.writeMathe(majorParam, path);
+        // endFacts.writeMathe(majorParam, path);
         // repeat
 
         // for (BasicBlock bb: worklistAll) {
@@ -734,7 +734,7 @@ public class IntervalAnalysis {
     //     return endFacts;
     // }
 
-    private void InitWorklist(ArrayList<Section> cfgSections) {
+    private void InitWorklist(ArrayList<Section> cfgSections, ArrayList<BasicBlock> worklist) {
         for (Section section : cfgSections) {
             // System.out.println(section.sectionType);
             if (section.sectionType == SectionType.DATA) {
@@ -757,8 +757,9 @@ public class IntervalAnalysis {
             } else if(section.sectionType == SectionType.FUNCTION) {
                 // System.out.println(section.sectionName);
                 if (section.sectionName.equals("main")) {
+                    worklist.add(section.basicBlocks.get(0));
                     for (BasicBlock basicBlock: section.basicBlocks) {
-                        worklistAll.add(basicBlock);
+                        //worklistAll.add(basicBlock);
                         // If no attack!!!
                         for (Statement statement : basicBlock.getStatements()) {
                             if (statement.statement instanceof AST.Decl) {
@@ -1336,7 +1337,7 @@ public class IntervalAnalysis {
         //     System.out.println("Obs param1 shape: " + Nd4j.createFromArray(params[1].shape()));
         INDArray sumExpUpper =  getProbLogUpper(yArray, params, distrExpr.id.id);
         if (!integrateStack.empty())
-            intOutRobustUpper(sumExpUpper, intervalState);
+            sumExpUpper = intOutRobustUpper(sumExpUpper, intervalState);
             //intOutRobust(sumExpLowerUpper, intervalState);
         intervalState.addProb(sumExpUpper);
         // intervalState.addProb(sumExpLowerUpper[0], sumExpLowerUpper[1]);
@@ -1359,8 +1360,6 @@ public class IntervalAnalysis {
         while(!integrateStack.empty()) {
             String intName = integrateStack.pop();
             Integer intIdx = intervalState.intOut(intName);
-            // System.out.println(intName);
-            // System.out.println(Nd4j.createFromArray(sumExpLowerUpper[0].shape()));
             sumExpUpper = log(exp(sumExpUpper).sum(intIdx));
         }
         return sumExpUpper;
