@@ -891,7 +891,6 @@ public class IntervalAnalysis {
             sum += newDataValue[i];
         }
         sum = sum / (double) newDataValue.length;
-        System.out.println(sum);
         for (int i=0; i<newDataValue.length;i++) {
             sd = sd + Math.pow(newDataValue[i] - sum, 2);
         }
@@ -1600,7 +1599,7 @@ public class IntervalAnalysis {
 
 
     private INDArray DistrCube(AST.TernaryIf pp, GridState intervalState) {
-        System.out.println(pp.condition.toString());
+        // System.out.println(pp.condition.toString());
         AST.Expression condExp;
         INDArray condArray = DistrCube(pp.condition, intervalState);
         Double trueValue = Double.valueOf(pp.trueExpression.toString()) + 1234;
@@ -2480,8 +2479,8 @@ public class IntervalAnalysis {
                 single[ii] = single[ii - 1] + inc;
             }
             Arrays.fill(prob1, 1);
-            System.out.println("============lower" + String.valueOf(lower) + " " + String.valueOf(upper));
-            System.out.println(Nd4j.createFromArray(single));
+            // System.out.println("============lower" + String.valueOf(lower) + " " + String.valueOf(upper));
+            // System.out.println(Nd4j.createFromArray(single));
         }else {
             single[0] = (lower + upper)/2;
             prob1[0] = 1;
@@ -2832,7 +2831,7 @@ public class IntervalAnalysis {
                         ObsDistr(yArray, assignment, intervalState);
                     }
                 } else {
-                    System.out.println("Assignment: " + statement.statement.toString());
+                    // System.out.println("Assignment: " + statement.statement.toString());
                     String paramID = assignment.lhs.toString().split("\\[")[0];
                     if (!paramMap.containsKey(paramID)) {
                         addParams(statement);
