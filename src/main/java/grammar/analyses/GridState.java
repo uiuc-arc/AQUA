@@ -87,11 +87,19 @@ public class GridState extends AbstractState{
             } else { // for atom or smaller intervals
                 INDArray oldSingle = curr.getValue().castTo(DataType.DOUBLE);
                 INDArray newUpper = Nd4j.zeros(oldSingle.shape());
-                for (int ssi = 0; ssi < splits.length(); ssi++) {
-                    Double ss = splits.getDouble(ssi);
-                    INDArray diff = oldSingle.sub(ss);
-                    INDArray ssId = BooleanIndexing.firstIndex(diff, Conditions.absLessThan(0.000000001));
-                    newUpper.putScalar(ssId.getLong(), probUpper.getDouble(ssi));
+                Double ss = splits.getDouble(0);
+                INDArray diff = oldSingle.sub(ss);
+                INDArray ssId = BooleanIndexing.firstIndex(diff, Conditions.absLessThan(0.000000001));
+                if (splits.length()==1) {
+                    newUpper.putScalar(ssId.getLong(), probUpper.getDouble(0) * (oldSingle.getDouble(1) - oldSingle.getDouble(0)));
+                }
+                else {
+                    for (int ssi = 1; ssi < splits.length(); ssi++) {
+                        ss = splits.getDouble(ssi);
+                        diff = oldSingle.sub(ss);
+                        ssId = BooleanIndexing.firstIndex(diff, Conditions.absLessThan(0.000000001));
+                        newUpper.putScalar(ssId.getLong(), probUpper.getDouble(ssi));
+                    }
                 }
                 currBroad[curr.getKey()] = newUpper.length();
                 probCube.addi(log(newUpper).reshape(currBroad).broadcast(probCube.shape()));

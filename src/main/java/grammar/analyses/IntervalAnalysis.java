@@ -38,7 +38,7 @@ public class IntervalAnalysis {
     private Map<String, Pair<AST.Data, double[]>> dataList = new HashMap<>();
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
-    private Queue<BasicBlock> worklistAll = new LinkedList<>();
+    // private Queue<BasicBlock> worklistAll = new LinkedList<>();
     private int maxCounts = 61;
     private int minCounts = 0;
     private int PACounts = 1;
@@ -2551,7 +2551,7 @@ public class IntervalAnalysis {
                     int to = 0;
                     for (int ii=0; ii < single.length; ii++) {
                         double ss = single[ii];
-                        if (unifLower+0.000000001 < ss && ss < unifUpper -0.000000001) {
+                        if (unifLower - 0.000000001 <= ss && ss <= unifUpper + 0.000000001) {
                             in_count++;
                             if (from > ii)
                                 from = ii;
@@ -2696,11 +2696,11 @@ public class IntervalAnalysis {
                             limits[1] = 10.0;
                         }
                         if(declStatement.id.id.contains("robust_weight")) {
-                            limits[0] = 0.01;
-                            limits[1] = 0.3;
+                            limits[0] = 0.000000001;
+                            limits[1] = 1.0;
                         }
                         if(declStatement.id.id.contains("robust_t_nu")) {
-                            limits[0] = 0.0000001;
+                            limits[0] = 0.000000001;
                             limits[1] = 10.0;
                         }
                     }
