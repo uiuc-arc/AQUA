@@ -1973,7 +1973,7 @@ public class IntervalAnalysis {
         double upper;
         if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
             if (limitsMeanSd[1] > 20 && limitsMeanSd[0] == 0) {
-                limitsMeanSd[1] = limitsMeanSd[0] + 20;
+                limitsMeanSd[1] = limitsMeanSd[0] + 3;
                 limitsMeanSd[0] = 0.000000001;
             }
             lower = limitsMeanSd[0];
