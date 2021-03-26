@@ -1988,11 +1988,11 @@ public class IntervalAnalysis {
                 // UniformRealDistribution unif = new UniformRealDistribution(0.1,  10);
                 if (limitsMeanSd[3] != null) {
                     lower = 0.000000001;
-                    upper = 30*limitsMeanSd[3];
+                    upper = 10*limitsMeanSd[3];
                 }
                 else {
                     lower = 0.000000001;
-                    upper = 30;
+                    upper = 20;
                 }
             } else {
                 lower = limitsMeanSd[0];
