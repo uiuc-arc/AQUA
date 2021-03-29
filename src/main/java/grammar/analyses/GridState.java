@@ -397,7 +397,7 @@ public class GridState extends AbstractState{
     public void addProb(INDArray likeProbUpper) {
         // System.out.println("Add Prob");
         INDArray upper = probCube;
-        // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isNan());
+        BooleanIndexing.replaceWhere(likeProbUpper, -10^32, Conditions.isNan());
         // BooleanIndexing.replaceWhere(likeProbUpper, -Math.pow(1,16), Conditions.isInfinite());
         // System.out.println("likelihood:" + likeProbLower);
         // System.out.println(Nd4j.createFromArray(upper.shape()));

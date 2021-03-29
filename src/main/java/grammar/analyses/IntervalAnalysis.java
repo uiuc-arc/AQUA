@@ -648,8 +648,8 @@ public class IntervalAnalysis {
             // int[] tmpint = new int[tmp.shape().length - 1];
             // for (int tt=2; tt < tmpint.length + 1; tt++)
             //     tmpint[tt-1] = tt;
-            // tmpint[0] = 1;
-            // tmpint[1] = 0;
+            // //tmpint[0] = 1;
+            // tmpint[tmpint.length -1] = 2;
             // System.out.println(Nd4j.createFromArray(tmpint));
             // System.out.println(tmp.sum(tmpint));
             Map<String, BasicBlock> succs = currBlock.getOutgoingEdges();
@@ -1792,7 +1792,8 @@ public class IntervalAnalysis {
         INDArray thetaOmtUpper = getMulNDArray(omtheta, omtUpper);
         // BooleanIndexing.replaceWhere(likeLower,-746,Conditions.isInfinite());
         // BooleanIndexing.replaceWhere(likeUpper,-746,Conditions.isInfinite());
-        return log(getAddNDArray(thetaTUpper, thetaOmtUpper));
+        INDArray addArray = getAddNDArray(thetaTUpper, thetaOmtUpper);
+        return log(addArray);
     }
 
     /*
@@ -2168,7 +2169,7 @@ public class IntervalAnalysis {
             }
             else {
                 if (op2Array.length() == 1)
-                    op2Array.subi(0.000000001);
+                    op2Array.addi(0.000000001); // At Zero ?
                 op2Array = op2Array.reshape(getReshape(op2shape, outShape));
             }
             INDArray good = op1Array.broadcast(outShape).lt(op2Array.broadcast(outShape));
