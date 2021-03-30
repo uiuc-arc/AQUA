@@ -83,7 +83,7 @@ public class IntervalAnalysis {
         toAttack = true;
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 151);
+                paramDivs.put(kk, 41);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
