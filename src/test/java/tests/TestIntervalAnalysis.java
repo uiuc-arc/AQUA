@@ -27,7 +27,7 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_robust_reparam" + ttt);
+            AnalysisRunner.analyzeProgram(localDir, "anova_radon_nopred_robust_reparam" + ttt, "41");
         // gauss_mix_asym_prior
 
     }
@@ -36,7 +36,7 @@ public class TestIntervalAnalysis {
     @Test
     public void Test4() throws IOException {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
-        AnalysisRunner.analyzeTemplate(localDir, "noisyOr.template");
+        AnalysisRunner.analyzeTemplate(localDir, "noisyOr.template", "61");
 
     }
 

@@ -14,7 +14,7 @@ import java.util.*;
 public class AnalysisRunner {
     private static List<String> hierModels = Arrays.asList("anova_radon_nopred_chr", "anova_radon_nopred", "electric_chr", "hiv", "pilots", "radon.1", "radon_no_pool_chr", "radon_no_pool", "radon_vary_inter_slope_17.1", "radon_vary_si_chr", "radon_vary_si");
 
-    public static void analyzeProgram (String localDir, String stanPath) {
+    public static void analyzeProgram (String localDir, String stanPath, String splits) {
         int index0=stanPath.lastIndexOf('/');
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
@@ -45,7 +45,7 @@ public class AnalysisRunner {
         }
 
 
-        anaTempFile(localDir, stansummary, filePath, tempfile.getAbsolutePath());
+        anaTempFile(localDir, stansummary, filePath, tempfile.getAbsolutePath(), splits);
 
 
 
@@ -68,12 +68,12 @@ public class AnalysisRunner {
         }
         */
     }
-    public static void analyzeTemplate (String localDir, String tempfilePath) {
+    public static void analyzeTemplate (String localDir, String tempfilePath, String splits) {
         String filePath = localDir + tempfilePath.substring(0, tempfilePath.length() - 9);
-        anaTempFile(localDir, null, filePath, filePath + "/" + tempfilePath);
+        anaTempFile(localDir, null, filePath, filePath + "/" + tempfilePath, splits);
     }
 
-    private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath) {
+    private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) {
         // /*
         long startTime = System.nanoTime();
         CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, true);
@@ -87,12 +87,13 @@ public class AnalysisRunner {
         // } else {
         //     intervalAnalyzer.no_prior = false;
         // }
+        intervalAnalyzer.maxCounts = Integer.valueOf(splits);
         intervalAnalyzer.forwardAnalysis(CFG);
         //===========Find Metrics================
         // */
         // String outputName = "/output0202.txt";
         try {
-            Process p = Runtime.getRuntime().exec(localDir.replaceAll("progs/.../","") + "integrate.py " + filePath);
+            Process p = Runtime.getRuntime().exec(localDir.replaceAll("progs/.../","") + "integrate.py " + filePath + " " + splits);
             // BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
             // String s;
             // while ((s = stdError.readLine()) != null) {
@@ -268,11 +269,11 @@ public class AnalysisRunner {
         // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         if (args[0].endsWith("template")) {
             System.out.println(localDirPSI + args[0]);
-            AnalysisRunner.analyzeTemplate(localDirPSI, args[0]);
+            AnalysisRunner.analyzeTemplate(localDirPSI, args[0],args[1]);
         }
         else {
             System.out.println(localDir + args[0]);
-            AnalysisRunner.analyzeProgram(localDir, args[0]);
+            AnalysisRunner.analyzeProgram(localDir, args[0],args[1]);
         }
     }
 }

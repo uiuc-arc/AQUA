@@ -39,7 +39,7 @@ public class IntervalAnalysis {
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
     // private Queue<BasicBlock> worklistAll = new LinkedList<>();
-    private int maxCounts = 61;
+    public int maxCounts;
     private int minCounts = 0;
     private int PACounts = 1;
     private Boolean toAttack=false;
@@ -74,7 +74,7 @@ public class IntervalAnalysis {
     public void forwardAnalysis(ArrayList<Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         GridState endFacts;
-        GridState.deleteAnalysisOutputs(path);
+        // GridState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         InitWorklist(cfgSections, worklist);
         getMeanFromMCMC();
@@ -83,7 +83,7 @@ public class IntervalAnalysis {
         toAttack = true;
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
-                paramDivs.put(kk, 41);
+                paramDivs.put(kk, maxCounts);
                 if (!(kk.contains("robust_local") || kk.contains("robust_weight")))
                     majorParam.add(kk);
             }
