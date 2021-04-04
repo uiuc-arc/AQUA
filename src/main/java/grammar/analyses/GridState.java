@@ -11,6 +11,7 @@ package grammar.analyses;
         import java.io.*;
         import java.util.*;
 
+        import static org.nd4j.linalg.ops.transforms.Transforms.exp;
         import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
@@ -186,22 +187,17 @@ public class GridState extends AbstractState{
         }
     }
 
-    /*
     public void writeResults(Set<String> strings, String path) {
-        if (probCube[0] == null || paramValues.size() == 1)
+        if (probCube == null || paramValues.size() == 1)
             return;
-        INDArray logLower = probCube[0];
-        INDArray logUpper = probCube[1];
+        INDArray logLower = probCube;
         // BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // BooleanIndexing.replaceWhere(logUpper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // BooleanIndexing.replaceWhere(logLower, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         // BooleanIndexing.replaceWhere(logUpper, -Math.pow(10,16), Conditions.lessThan(-Math.pow(10,16)));
         INDArray lower = exp(logLower.subi((logLower.maxNumber()))); //
-        INDArray upper = exp(logUpper.subi((logUpper.maxNumber()))); //
-        BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
-        BooleanIndexing.replaceWhere(upper, 0, Conditions.isNan());
-        BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
-        BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.isInfinite());
+        // BooleanIndexing.replaceWhere(lower, 0, Conditions.isNan());
+        // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.isInfinite());
         // BooleanIndexing.replaceWhere(lower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // BooleanIndexing.replaceWhere(upper, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
         // Numerical Integration for Equi-Prob Intervals
@@ -230,20 +226,19 @@ public class GridState extends AbstractState{
         for(int i = 1; i < nDim; i++){
             numbers[i - 1] = i;
         }
-        String[] pathSplits = path.split("/");
-        FileWriter mathOut = null;
-        BufferedWriter bw;
-        PrintWriter pw = null;
-        try {
-            mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
-            bw = new BufferedWriter(mathOut);
-            pw = new PrintWriter(bw);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // String[] pathSplits = path.split("/");
+        // FileWriter mathOut = null;
+        // BufferedWriter bw;
+        // PrintWriter pw = null;
+        // try {
+        //     mathOut = new FileWriter(path + "/" + pathSplits[pathSplits.length - 1] + ".m", true);
+        //     bw = new BufferedWriter(mathOut);
+        //     pw = new PrintWriter(bw);
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
         int j = 0;
         Double fullLower = null;
-        Double fullUpper = null;
         for (String ss: strings) {
             j++;
             if (ss.contains("robust_")) {
@@ -262,23 +257,19 @@ public class GridState extends AbstractState{
                 paramvalue = paramvalue.tensorAlongDimension(0,paramDimIdx);
             }
             INDArray currsumLower = lower.sum(numbersCopy);
-            INDArray currsumUpper = upper.sum(numbersCopy);
             if (fullLower == null) {
                 fullLower = currsumLower.sumNumber().doubleValue();
-                fullUpper = currsumUpper.sumNumber().doubleValue();
             }
             INDArray outMatrix = Nd4j.vstack(Nd4j.toFlattened(paramvalue),
-                    Nd4j.toFlattened(currsumLower).div(fullLower),
-                    Nd4j.toFlattened(currsumUpper).div(fullUpper));
-            writeToFile(path, pw, j, ss, outMatrix);
+                    Nd4j.toFlattened(currsumLower).div(fullLower));
+            writeToFile(path, j, ss, outMatrix);
         }
-        try {
-            mathOut.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     mathOut.close();
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
     }
-    */
 
     public void writeMathe(Set<String> strings, String path) {
         String[] pathSplits = path.split("/");
@@ -317,21 +308,21 @@ public class GridState extends AbstractState{
 
     }
 
-    private void writeToFile(String path, PrintWriter pw, int j, String ss, INDArray outMatrix) {
+    private void writeToFile(String path, int j, String ss, INDArray outMatrix) {
         String outputFile = path + "/analysis_" + ss + ".txt";
         File file = new File(outputFile);
         if (!file.exists()) {
             Nd4j.writeTxt(outMatrix, outputFile);
-            pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
-            pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
-            pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
-                    " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
-                    " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
-            pw.println(String.format("Graphics[{Orange, \n" +
-                    "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
-                    " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
-                    " PlotLabel -> \"%s\"]", j, ss));
-            pw.flush();
+            // pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
+            // pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
+            // pw.println(String.format("Graphics[{Orange, Table[Rectangle @@ nn, {nn, pairNewRect[data%s]}]}, \n" +
+            //         " Axes -> True, ImageSize -> Small, PlotRange -> {Automatic, All}, \n" +
+            //         " AspectRatio -> 1, PlotLabel -> \"%s\"] ", j, ss));
+            // pw.println(String.format("Graphics[{Orange, \n" +
+            //         "  Table[Rectangle @@ nn, {nn, pairNewRectCDF[data%s]}]}, Axes -> True, \n" +
+            //         " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
+            //         " PlotLabel -> \"%s\"]", j, ss));
+            // pw.flush();
         }
         else {
             INDArray lastOut = null;
@@ -487,7 +478,7 @@ public class GridState extends AbstractState{
         // System.out.println(probCube);
         // System.out.println("=================False");
         // System.out.println(dfFCube);
-        probCube = Transforms.log(Transforms.exp(dfFCube).addi(Transforms.exp(probCube)));
+        probCube = Transforms.log(exp(dfFCube).addi(exp(probCube)));
     }
 
     public void meet(INDArray condCube, boolean cond) {

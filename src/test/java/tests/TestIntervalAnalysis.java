@@ -36,7 +36,7 @@ public class TestIntervalAnalysis {
     @Test
     public void Test4() throws IOException {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
-        AnalysisRunner.analyzeTemplate(localDir, "gammaTransform.template");
+        AnalysisRunner.analyzeTemplate(localDir, "noisyOr.template");
 
     }
 

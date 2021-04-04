@@ -78,35 +78,37 @@ public class AnalysisRunner {
         long startTime = System.nanoTime();
         CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, true);
         ArrayList<Section> CFG = cfgBuilder.getSections();
+        long pureTime = System.nanoTime();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
+        intervalAnalyzer.setPath(filePath);
+        intervalAnalyzer.setSummaryFile(stansummary);
         // if (hierModels.contains(stanName)) {
         //     intervalAnalyzer.no_prior = true;
         // } else {
         //     intervalAnalyzer.no_prior = false;
         // }
-        intervalAnalyzer.setPath(filePath);
-        intervalAnalyzer.setSummaryFile(stansummary);
         intervalAnalyzer.forwardAnalysis(CFG);
         //===========Find Metrics================
         // */
-        String outputName = "/output0202.txt";
+        // String outputName = "/output0202.txt";
         try {
             Process p = Runtime.getRuntime().exec(localDir.replaceAll("progs/.../","") + "integrate.py " + filePath);
-            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            String s;
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
-            stdError = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
+            // BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            // String s;
+            // while ((s = stdError.readLine()) != null) {
+            //     System.out.println(s);
+            // }
+            // stdError = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            // while ((s = stdError.readLine()) != null) {
+            //     System.out.println(s);
+            // }
         } catch (IOException e) {
             e.printStackTrace();
         }
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
-        System.out.println("Analysis Time: " + filePath + "," + duration);
+        double puredur = (endTime - pureTime)/1000000000.0;
+        System.out.println("Analysis Time: " + filePath + "," + duration + "," + puredur);
     }
 
 
