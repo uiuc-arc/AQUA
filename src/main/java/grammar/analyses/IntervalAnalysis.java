@@ -137,6 +137,8 @@ public class IntervalAnalysis {
         boolean single = false;
         for (String paramName: majorParam) {
             String txt1File = path + "/analysis_" + paramName + ".txt";
+            if (paramName.equals("Y"))
+                break;
             INDArray lastOut = Nd4j.readTxt(txt1File);
             INDArray lastVal = lastOut.slice(0);
             INDArray lastProb = lastOut.slice(1);

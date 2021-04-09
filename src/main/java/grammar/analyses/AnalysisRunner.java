@@ -30,7 +30,7 @@ public class AnalysisRunner {
             "normal_mixture" ,
             "gauss_mix_asym_prior",
             "logistic",
-            "logistic_robust_reweight"
+            "gammaTransform"
             );
 
 
