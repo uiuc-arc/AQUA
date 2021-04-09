@@ -163,7 +163,7 @@ public class GridState extends AbstractState{
         return upperMax;
     }
 
-    public void writeToPython(Set<String> strings, String path, Boolean toAttack) {
+    public void writeToPython(Set<String> strings, String path) {
         INDArray logUpper = probCube;
         File upper_numpy = new File(path + "/cube_upper.npy");
         try {
@@ -310,8 +310,8 @@ public class GridState extends AbstractState{
 
     private void writeToFile(String path, int j, String ss, INDArray outMatrix) {
         String outputFile = path + "/analysis_" + ss + ".txt";
-        File file = new File(outputFile);
-        if (!file.exists()) {
+        // File file = new File(outputFile);
+        // if (!file.exists()) {
             Nd4j.writeTxt(outMatrix, outputFile);
             // pw.println(String.format("txt%s=Import[\"%s\"];", j, "./analysis_" + ss + ".txt"));
             // pw.println(String.format("data%s = getToData[txt%s][[4]];", j, j));
@@ -323,11 +323,12 @@ public class GridState extends AbstractState{
             //         " ImageSize -> Small, PlotRange -> {Automatic, All}, AspectRatio -> 1, \n" +
             //         " PlotLabel -> \"%s\"]", j, ss));
             // pw.flush();
-        }
+        // }
+        /*
         else {
             INDArray lastOut = null;
             try {
-                lastOut = Nd4j.readTxt(outputFile);
+                // lastOut = Nd4j.readTxt(outputFile);
                 INDArray goodProb=outMatrix.slice(1);
                 lastOut = Nd4j.vstack(lastOut,goodProb.reshape(new long[]{1,goodProb.length()}));
                 //lastOut.slice(1).mul(outMatrix.slice(1));
@@ -338,6 +339,7 @@ public class GridState extends AbstractState{
                 e.printStackTrace();
             }
         }
+        */
         // LinkedList<Integer> restDims = numbers.remove(paramDimIdx);
         // System.out.println(intervalState.probCube.get(0));
         // Nd4j.writeTxt(outputTable, "./analysis_" + ss + ".txt");

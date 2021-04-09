@@ -38,7 +38,7 @@ public class IntervalAnalysis {
     private Map<String, Pair<AST.Data, double[]>> dataList = new HashMap<>();
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
-    // private Queue<BasicBlock> worklistAll = new LinkedList<>();
+    private Queue<BasicBlock> worklistAll = new LinkedList<>();
     public int maxCounts;
     private int minCounts = 0;
     private int PACounts = 1;
@@ -77,10 +77,10 @@ public class IntervalAnalysis {
         // GridState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         InitWorklist(cfgSections, worklist);
-        getMeanFromMCMC();
+        // getMeanFromMCMC();
         addPrior = true;
         no_tau = true;
-        toAttack = true;
+        // toAttack = true;
         for (String kk : paramMap.keySet()) {
             if (kk.contains("robust")) {
                 paramDivs.put(kk, maxCounts);
@@ -107,24 +107,49 @@ public class IntervalAnalysis {
             // System.out.println(path);
         // }
         // endFacts.writeResults(majorParam, path);
-        endFacts.writeToPython(majorParam, path, toAttack);
+        endFacts.writeResults(majorParam, path);
         // endFacts.writeMathe(majorParam, path);
         // repeat
 
-        // for (BasicBlock bb: worklistAll) {
-        //     bb.dataflowFacts = null;
-        // }
-        // scalarParam.clear();
-        // System.gc();
+    }
+
+    public void repeatAna() {
+        for (String kk : paramMap.keySet()) {
+            paramDivs.put(kk, maxCounts);
+        }
+        ArrayList<BasicBlock> worklist = new ArrayList<>();
+        for (BasicBlock bb: worklistAll) {
+            bb.dataflowFacts = null;
+        }
+        scalarParam.clear();
         // toAttack = false;
         // Pair<AST.Data, double[]> dataYGood = dataList.get(dataYNameGlobal + "_good");
         // if (!toAttack) {
         //     dataList.put(dataYNameGlobal, dataYGood);
         //     dataList.put(dataYNameGlobal + "_corrupted", dataYGood);
         // }
-        // worklist.add(worklistAll.peek());
-        // endFacts = WorklistIter(worklist);
-        // endFacts.writeResults(majorParam, path);
+        worklist.add(worklistAll.peek());
+        GridState endFacts = WorklistIter(worklist);
+        endFacts.writeResults(majorParam, path);
+    }
+
+    public boolean getNewRange() {
+        boolean single = false;
+        for (String paramName: majorParam) {
+            String txt1File = path + "/analysis_" + paramName + ".txt";
+            INDArray lastOut = Nd4j.readTxt(txt1File);
+            INDArray lastVal = lastOut.slice(0);
+            INDArray lastProb = lastOut.slice(1);
+            Double lowProb = (double) lastProb.maxNumber() * 0.001;
+            Integer firstGt = BooleanIndexing.firstIndex(lastProb, Conditions.greaterThanOrEqual(lowProb)).getInt();
+            Integer lastGt = BooleanIndexing.lastIndex(lastProb, Conditions.greaterThanOrEqual(lowProb)).getInt();
+            if (abs(firstGt - lastGt) < 2)
+                single = true;
+            Double[] meanSd = paramMap.get(paramName).getKey();
+            meanSd[0] = lastVal.getDouble(max(firstGt-1, 0));
+            meanSd[1] = lastVal.getDouble(min(lastGt+1, lastVal.length() - 1));
+        }
+        return single;
     }
 
     /*
@@ -759,12 +784,13 @@ public class IntervalAnalysis {
                 if (section.sectionName.equals("main")) {
                     worklist.add(section.basicBlocks.get(0));
                     for (BasicBlock basicBlock: section.basicBlocks) {
-                        //worklistAll.add(basicBlock);
+                        worklistAll.add(basicBlock);
                         // If no attack!!!
                         for (Statement statement : basicBlock.getStatements()) {
                             if (statement.statement instanceof AST.Decl) {
                                 addParams(statement);
                             }
+                            /*
                             ArrayList<AST.Annotation> annotations = statement.statement.annotations;
                             if (annotations != null && !annotations.isEmpty() &&
                                     annotations.get(0).annotationType == AST.AnnotationType.Observe) {
@@ -780,14 +806,14 @@ public class IntervalAnalysis {
                                 //     // ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
                                 //    //  String lhsParam = assignment.lhs.toString();
                                 //    // transParamMap.put(lhsParam.split("\\[")[0], rhsParams);
-                                // }/* else {
+                                // }else {
                                 //     ArrayList<String> rhsParams = extractParamsFromExpr(assignment.rhs);
                                 //     String lhsParam = assignment.lhs.toString().split("\\[")[0];
                                 //     if (rhsParams.size() > 0 && !lhsParam.equals("target")) {
                                 //         rhsParams.add(lhsParam);
                                 //         transParamMap.put(lhsParam, rhsParams);
                                 //     }
-                                // } */
+                                // }
 
                                 if (assignment.lhs.toString().equals("target")) {
                                     String rhs = assignment.rhs.toString();
@@ -805,6 +831,7 @@ public class IntervalAnalysis {
                                         attackDataY("y");
                                 }
                             }
+                            */
                         }
                     }
                 }
@@ -828,18 +855,20 @@ public class IntervalAnalysis {
         }
     }
 
+    /*
     private void attackDataY(String dataYName){
         obsDataList.add(dataYName);
         Pair<AST.Data, double[]> orgDataPair = dataList.get(dataYName);
-        double[] newDataValueL = orgDataPair.getValue().clone();
-        double[] newDataValueU = orgDataPair.getValue().clone();
+        double[] newDataValueL = orgDataPair.getValue(); // .clone();
+        // double[] newDataValueU = orgDataPair.getValue().clone();
         // Attack
-        getAttackLU(newDataValueL, newDataValueU);
+        // getAttackLU(newDataValueL, newDataValueU);
         dataYNameGlobal = dataYName;
         dataList.put(dataYName, new Pair<>(orgDataPair.getKey(), newDataValueL));
-        dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValueU));
-        dataList.put(dataYName + "_good", new Pair<>(orgDataPair.getKey(), orgDataPair.getValue()));
+        // dataList.put(dataYName + "_corrupted", new Pair<>(orgDataPair.getKey(), newDataValueU));
+        // dataList.put(dataYName + "_good", new Pair<>(orgDataPair.getKey(), orgDataPair.getValue()));
     }
+    */
 
     private void getAttackLU(double[] newDataValueL, double[] newDataValueU) {
         double sd = getStdDev(newDataValueL);
@@ -1973,10 +2002,13 @@ public class IntervalAnalysis {
         double lower;
         double upper;
         if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
-            if (limitsMeanSd[1] > 20 && limitsMeanSd[0] == 0) {
-                limitsMeanSd[1] = limitsMeanSd[0] + 3;
-                limitsMeanSd[0] = 0.000000001;
+            if (limitsMeanSd[0] == 0) {
+                   limitsMeanSd[0] = 0.000000001;
             }
+            // if (limitsMeanSd[1] > 20 && limitsMeanSd[0] == 0) {
+            //     limitsMeanSd[1] = limitsMeanSd[0] + 3;
+            //     limitsMeanSd[0] = 0.000000001;
+            // }
             lower = limitsMeanSd[0];
             upper =limitsMeanSd[1];
 
@@ -1993,7 +2025,7 @@ public class IntervalAnalysis {
                 }
                 else {
                     lower = 0.000000001;
-                    upper = 20;
+                    upper = 50;
                 }
             } else {
                 lower = limitsMeanSd[0];
@@ -2004,12 +2036,12 @@ public class IntervalAnalysis {
             // NormalDistribution normal = new NormalDistribution(limitsMeanSd[2], limitsMeanSd[3]);
             // getDiscretePriorsSingleUn(single, probLower, probUpper, normal, pi);
             // Equiv-interval
-            lower = limitsMeanSd[2] - 12 *limitsMeanSd[3];
-            upper = limitsMeanSd[2] + 12 *limitsMeanSd[3];
+            lower = limitsMeanSd[2] - 6 *limitsMeanSd[3];
+            upper = limitsMeanSd[2] + 6 *limitsMeanSd[3];
         } else { // all are null
             // System.out.println("Prior: Normal");
-            lower = 0;
-            upper = 10;
+            lower = -50;
+            upper = 50;
         }
         lulimits[0] = lower;
         lulimits[1] = upper;
@@ -2637,6 +2669,10 @@ public class IntervalAnalysis {
         //     getDiscretePriorsSingle(single, prob1, prob2, normal, pi);
         // } else {
         Double[] meanSd = paramMap.get(paramName).getKey();
+        if (distrName.equals("normal")) {
+            meanSd[2] = funcParams.get(0);
+            meanSd[3] = funcParams.get(1);
+        }
         double[] lulimits = new double[2];
         getUnifSplitLimits(meanSd, lulimits);
         // AbstractRealDistribution splitDistr = null;
@@ -2644,6 +2680,7 @@ public class IntervalAnalysis {
             case "normal":
                 normal = new NormalDistribution(funcParams.get(0), funcParams.get(1));
                 // splitDistr = new NormalDistribution(meanSd[2],meanSd[3]);
+                break;
             case "gauss":
                 normal = new NormalDistribution(funcParams.get(0), sqrt(funcParams.get(1)));
                 // splitDistr = new NormalDistribution(meanSd[2],meanSd[3]);

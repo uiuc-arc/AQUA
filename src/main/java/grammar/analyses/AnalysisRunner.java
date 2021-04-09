@@ -13,6 +13,23 @@ import java.util.*;
 
 public class AnalysisRunner {
     private static List<String> hierModels = Arrays.asList("anova_radon_nopred_chr", "anova_radon_nopred", "electric_chr", "hiv", "pilots", "radon.1", "radon_no_pool_chr", "radon_no_pool", "radon_vary_inter_slope_17.1", "radon_vary_si_chr", "radon_vary_si");
+    private static List<String> contModels = Arrays.asList("anova_radon_nopred" ,
+            "anova_radon_nopred_robust_reparam" ,
+            "anova_radon_nopred_robust_reweight" ,
+            "lightspeed" ,
+            "lightspeed_robust_reparam" ,
+            "lightspeed_robust_reweight" ,
+            "lightspeed_robust_student" ,
+            "unemployment" ,
+            "unemployment_robust_reparam" ,
+            "unemployment_robust_reweight" ,
+            "y_x" ,
+            "y_x_robust_reparam" ,
+            "y_x_robust_reweight" ,
+            "koyck" ,
+            "normal_mixture" ,
+            "gauss_mix_asym_prior");
+
 
     public static void analyzeProgram (String localDir, String stanPath, String splits) {
         int index0=stanPath.lastIndexOf('/');
@@ -21,7 +38,6 @@ public class AnalysisRunner {
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
         if (hierModels.contains(stanName.split("_robust")[0])) {
             standata = localDir + stanPath + "/" + "one" + ".data.R";
-            System.out.println("remove prior!!!");
         }
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
@@ -75,25 +91,54 @@ public class AnalysisRunner {
 
     private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) {
         // /*
+
+        String[] filePathSplit = filePath.split("/");
+        boolean inf_cont = contModels.contains(filePathSplit[filePathSplit.length - 1]);
         long startTime = System.nanoTime();
+        long endTime1 = startTime;
         CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, true);
         ArrayList<Section> CFG = cfgBuilder.getSections();
-        long pureTime = System.nanoTime();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);
-        intervalAnalyzer.setSummaryFile(stansummary);
+        long pureTime = System.nanoTime();
+        // intervalAnalyzer.setSummaryFile(stansummary);
         // if (hierModels.contains(stanName)) {
         //     intervalAnalyzer.no_prior = true;
         // } else {
         //     intervalAnalyzer.no_prior = false;
         // }
-        intervalAnalyzer.maxCounts = Integer.valueOf(splits);
+        // intervalAnalyzer.maxCounts = Integer.valueOf(splits);
+        if (inf_cont)
+            intervalAnalyzer.maxCounts = 11;
+        else
+            intervalAnalyzer.maxCounts = 61;
         intervalAnalyzer.forwardAnalysis(CFG);
-        //===========Find Metrics================
-        // */
-        // String outputName = "/output0202.txt";
+
+        if (inf_cont) {
+            boolean repeat = intervalAnalyzer.getNewRange();
+            while (repeat) {
+                intervalAnalyzer.repeatAna();
+                repeat = intervalAnalyzer.getNewRange();
+            }
+            endTime1 = System.nanoTime();
+            intervalAnalyzer.maxCounts = 61;
+            intervalAnalyzer.repeatAna();
+        }
+        // callPython(localDir, filePath, "adapt");
+
+
+        // Write Time Results
+        long endTime = System.nanoTime();
+        double duration1 = (endTime1 - startTime)/1000000000.0;
+        double duration = (endTime - startTime)/1000000000.0;
+        double puredur = (endTime - pureTime)/1000000000.0;
+        System.out.println("Analysis Time: " + filePath + "," + duration + "," + puredur + "," + duration1);
+    }
+
+    private static void callPython(String localDir, String filePath, String splits) {
         try {
             Process p = Runtime.getRuntime().exec(localDir.replaceAll("progs/.../","") + "integrate.py " + filePath + " " + splits);
+            p.waitFor();
             // BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
             // String s;
             // while ((s = stdError.readLine()) != null) {
@@ -103,13 +148,9 @@ public class AnalysisRunner {
             // while ((s = stdError.readLine()) != null) {
             //     System.out.println(s);
             // }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        long endTime = System.nanoTime();
-        double duration = (endTime - startTime)/1000000000.0;
-        double puredur = (endTime - pureTime)/1000000000.0;
-        System.out.println("Analysis Time: " + filePath + "," + duration + "," + puredur);
     }
 
 
