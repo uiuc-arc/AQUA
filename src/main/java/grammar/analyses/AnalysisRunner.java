@@ -28,7 +28,10 @@ public class AnalysisRunner {
             "y_x_robust_reweight" ,
             "koyck" ,
             "normal_mixture" ,
-            "gauss_mix_asym_prior");
+            "gauss_mix_asym_prior",
+            "logistic",
+            "logistic_robust_reweight"
+            );
 
 
     public static void analyzeProgram (String localDir, String stanPath, String splits) {
