@@ -122,6 +122,8 @@ public class IntervalAnalysis {
                 maxCounts = 256;
             else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
                 maxCounts = 65536;
+            else if (paramSize == 3)
+                maxCounts = 81;
         }
         System.out.println(maxCounts);
         for (String kk : paramMap.keySet()) {
