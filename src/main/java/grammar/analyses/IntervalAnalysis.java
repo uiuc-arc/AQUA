@@ -117,11 +117,11 @@ public class IntervalAnalysis {
         if (maxCounts == 61) {
             int paramSize = paramMap.size();
             if (paramSize == 1)
-                maxCounts = 65536;
+                maxCounts = 40001;
             if (paramSize == 2)
-                maxCounts = 256;
+                maxCounts = 201;
             else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
-                maxCounts = 65536;
+                maxCounts = 40001;
         }
         System.out.println(maxCounts);
         for (String kk : paramMap.keySet()) {
