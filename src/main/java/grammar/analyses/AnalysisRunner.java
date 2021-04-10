@@ -111,7 +111,7 @@ public class AnalysisRunner {
         //     intervalAnalyzer.no_prior = false;
         // }
         // intervalAnalyzer.maxCounts = Integer.valueOf(splits);
-        Integer intSplits = Integer.valueOf(splits);
+        Integer intSplits = 61;
         if (inf_cont)
             intervalAnalyzer.maxCounts = 11;
         else
