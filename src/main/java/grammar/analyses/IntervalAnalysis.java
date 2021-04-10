@@ -677,7 +677,7 @@ public class IntervalAnalysis {
                 dfT.join(dfF.probCube);
                 currBlock.dataflowFacts = dfT;
             }
-            // System.out.println("//////////// Analyze block: " + currBlock.getId());
+            System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
             endFacts = currBlock.dataflowFacts;
             // Get marginal changes
@@ -989,7 +989,7 @@ public class IntervalAnalysis {
         AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
         if (annotations != null && !annotations.isEmpty() &&
                 annotations.get(0).annotationType == AST.AnnotationType.Observe) {
-            // System.out.println("Observe (assign): " + statement.statement.toString());
+            System.out.println("Observe (assign): " + statement.statement.toString());
             INDArray yArray = getYArrayUpper(assignment.lhs, intervalState);
             ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
@@ -1070,7 +1070,7 @@ public class IntervalAnalysis {
                     }
                     else {
                         // add hierarchical param
-                        HierDistrCube(assignment, intervalState);
+                        HierInterDistrCube(assignment, intervalState);
                     }
                 }
                 changed = true;
@@ -1081,6 +1081,24 @@ public class IntervalAnalysis {
             }
         }
         return changed;
+    }
+
+    private void HierInterDistrCube(AST.AssignmentStatement assignment, GridState intervalState) {
+        AST.Expression lhs = assignment.lhs;
+        AST.FunctionCall rhs = (AST.FunctionCall) assignment.rhs;
+        if (intervalState.paramValues.containsKey(lhs.toString())){
+            INDArray[] params = getParams(intervalState, rhs);
+            INDArray lhsParam = intervalState.getParamCube(lhs.toString());
+            if(rhs.id.toString().equals("normal")) {
+                INDArray logNoSum = getProbLogUpper(lhsParam, params, "normal");
+                intervalState.addProb(logNoSum);
+
+            } else {
+                assert false;
+            }
+        } else {
+            assert false;
+        }
     }
 
     private void analyzeTarget(GridState intervalState, AST.Expression rhs) {
@@ -1528,6 +1546,30 @@ public class IntervalAnalysis {
             //     double yiiL = bernoulli_logit_LPDF(yNDArray.getDouble(ii), params[0].getDouble(ii));
             //     likeCube.putScalar(ii, yiiL);
             // }
+        } else if (distrId.equals("uniform")) {
+            INDArray ltArray = params[0].lt(yNDArray);
+            INDArray gtArray = params[1].gt(yNDArray);
+            INDArray good = Transforms.and(ltArray, gtArray);
+            good = good.castTo(DataType.DOUBLE);
+            likeCube = Transforms.log(good);
+        } else if (distrId.equals("triangle")) {
+            INDArray l = params[0].sub(params[1]);
+            INDArray r = params[0].add(params[2]);
+            INDArray m = params[0];
+            INDArray ltArray = l.lt(yNDArray);
+            INDArray gtArray = m.gt(yNDArray);
+            INDArray eqArray = m.eq(yNDArray);
+            gtArray = Transforms.or(gtArray, eqArray);
+            INDArray lefthalf = Transforms.and(ltArray, gtArray);
+            lefthalf = lefthalf.castTo(DataType.DOUBLE);
+            INDArray ltArray2 = m.lt(yNDArray);
+            INDArray gtArray2 = r.gt(yNDArray);
+            INDArray righthalf = Transforms.and(ltArray2, gtArray2);
+            righthalf = righthalf.castTo(DataType.DOUBLE);
+            INDArray leftProb = ((yNDArray.sub(l)).div(params[1]));
+            INDArray rightProb = (((yNDArray.sub(r)).neg()).div(params[2]));
+            INDArray triProb = leftProb.mul(lefthalf).add(rightProb.mul(righthalf));
+            likeCube = Transforms.log(triProb);
         }
         BooleanIndexing.replaceWhere(likeCube, 0, Conditions.isNan());
         logSum = likeCube;
