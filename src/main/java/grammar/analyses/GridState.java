@@ -188,7 +188,7 @@ public class GridState extends AbstractState{
     }
 
     public void writeResults(Set<String> strings, String path) {
-        if (probCube == null || paramValues.size() == 1)
+        if (probCube == null) //  || paramValues.size() == 1
             return;
         INDArray logLower = probCube;
         // BooleanIndexing.replaceWhere(logLower, Math.pow(10,16), Conditions.greaterThan(Math.pow(10,16)));
