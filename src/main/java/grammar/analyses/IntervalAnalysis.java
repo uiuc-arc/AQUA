@@ -115,14 +115,15 @@ public class IntervalAnalysis {
 
     public void repeatAna() {
         if (maxCounts == 61) {
-            paramMap.remove("Y");
-            paramMap.remove("Z");
             int paramSize = paramMap.size();
             if (paramSize == 1)
                 maxCounts = 65536;
             if (paramSize == 2)
                 maxCounts = 256;
+            else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
+                maxCounts = 65536;
         }
+        System.out.println(maxCounts);
         for (String kk : paramMap.keySet()) {
             paramDivs.put(kk, maxCounts);
         }
