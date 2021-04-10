@@ -31,7 +31,12 @@ public class AnalysisRunner {
             "gauss_mix_asym_prior",
             "logistic",
             "gammaTransform",
-            "prior_mix"
+            "prior_mix",
+            "zeroone",
+            "tug",
+            "altermu",
+            "altermu2",
+            "neural"
             );
 
 
