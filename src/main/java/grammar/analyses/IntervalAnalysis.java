@@ -122,9 +122,9 @@ public class IntervalAnalysis {
                 maxCounts = 65536;
             if (paramSize == 2)
                 maxCounts = 256;
-            for (String kk : paramMap.keySet()) {
-                paramDivs.put(kk, maxCounts);
-            }
+        }
+        for (String kk : paramMap.keySet()) {
+            paramDivs.put(kk, maxCounts);
         }
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (BasicBlock bb: worklistAll) {
