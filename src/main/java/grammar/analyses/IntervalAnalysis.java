@@ -114,15 +114,17 @@ public class IntervalAnalysis {
     }
 
     public void repeatAna() {
-        paramMap.remove("Y");
-        paramMap.remove("Z");
-        int paramSize = paramMap.size();
-        if (paramSize == 1)
-            maxCounts = 65536;
-        if (paramSize == 2)
-            maxCounts = 256;
-        for (String kk : paramMap.keySet()) {
-            paramDivs.put(kk, maxCounts);
+        if (maxCounts == 61) {
+            paramMap.remove("Y");
+            paramMap.remove("Z");
+            int paramSize = paramMap.size();
+            if (paramSize == 1)
+                maxCounts = 65536;
+            if (paramSize == 2)
+                maxCounts = 256;
+            for (String kk : paramMap.keySet()) {
+                paramDivs.put(kk, maxCounts);
+            }
         }
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         for (BasicBlock bb: worklistAll) {
