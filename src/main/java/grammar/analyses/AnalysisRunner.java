@@ -111,10 +111,11 @@ public class AnalysisRunner {
         //     intervalAnalyzer.no_prior = false;
         // }
         // intervalAnalyzer.maxCounts = Integer.valueOf(splits);
+        Integer intSplits = Integer.valueOf(splits);
         if (inf_cont)
             intervalAnalyzer.maxCounts = 11;
         else
-            intervalAnalyzer.maxCounts = 61;
+            intervalAnalyzer.maxCounts = intSplits;
         intervalAnalyzer.forwardAnalysis(CFG);
 
         if (inf_cont) {
@@ -124,7 +125,7 @@ public class AnalysisRunner {
                 repeat = intervalAnalyzer.getNewRange();
             }
             endTime1 = System.nanoTime();
-            intervalAnalyzer.maxCounts = 61;
+            intervalAnalyzer.maxCounts = intSplits;
             intervalAnalyzer.repeatAna();
         }
         // callPython(localDir, filePath, "adapt");

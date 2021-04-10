@@ -137,8 +137,8 @@ public class IntervalAnalysis {
         boolean single = false;
         for (String paramName: majorParam) {
             String txt1File = path + "/analysis_" + paramName + ".txt";
-            if (paramName.equals("Y"))
-                break;
+            if (paramName.equals("Y") || paramName.equals("Z"))
+                continue;
             INDArray lastOut = Nd4j.readTxt(txt1File);
             INDArray lastVal = lastOut.slice(0);
             INDArray lastProb = lastOut.slice(1);
@@ -2005,7 +2005,7 @@ public class IntervalAnalysis {
         double upper;
         if (limitsMeanSd[0] != null && limitsMeanSd[1] != null) {
             if (limitsMeanSd[0] == 0) {
-                   limitsMeanSd[0] = 0.000000001;
+                   limitsMeanSd[0] = -0.01;
             }
             // if (limitsMeanSd[1] > 20 && limitsMeanSd[0] == 0) {
             //     limitsMeanSd[1] = limitsMeanSd[0] + 3;
