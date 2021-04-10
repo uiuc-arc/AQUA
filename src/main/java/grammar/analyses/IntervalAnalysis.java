@@ -77,13 +77,6 @@ public class IntervalAnalysis {
         // GridState.deleteAnalysisOutputs(path);
         ArrayList<BasicBlock> worklist = new ArrayList<>();
         InitWorklist(cfgSections, worklist);
-        paramMap.remove("Y");
-        paramMap.remove("Z");
-        int paramSize = paramMap.size();
-        if (paramSize == 1)
-            maxCounts = 65536;
-        if (paramSize == 2)
-            maxCounts = 256;
         // getMeanFromMCMC();
         addPrior = true;
         no_tau = true;
@@ -121,6 +114,13 @@ public class IntervalAnalysis {
     }
 
     public void repeatAna() {
+        paramMap.remove("Y");
+        paramMap.remove("Z");
+        int paramSize = paramMap.size();
+        if (paramSize == 1)
+            maxCounts = 65536;
+        if (paramSize == 2)
+            maxCounts = 256;
         for (String kk : paramMap.keySet()) {
             paramDivs.put(kk, maxCounts);
         }
