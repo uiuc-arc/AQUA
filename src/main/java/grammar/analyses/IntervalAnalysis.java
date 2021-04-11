@@ -5,13 +5,12 @@ import grammar.cfg.*;
 import grammar.cfg.BasicBlock;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math.distribution.*;
-import org.apache.commons.math3.distribution.AbstractRealDistribution;
-import org.apache.commons.math3.distribution.UniformRealDistribution;
-import org.apache.commons.math3.distribution.CauchyDistribution;
-import org.apache.commons.math3.distribution.TDistribution;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.math3.distribution.*;
 import org.apache.commons.math3.distribution.BetaDistribution;
+import org.apache.commons.math3.distribution.CauchyDistribution;
+import org.apache.commons.math3.distribution.GammaDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import org.apache.commons.math3.distribution.TDistribution;
 import org.nd4j.linalg.api.buffer.DataType;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.cpu.nativecpu.NDArray;
@@ -152,7 +151,7 @@ public class IntervalAnalysis {
             INDArray lastOut = Nd4j.readTxt(txt1File);
             INDArray lastVal = lastOut.slice(0);
             INDArray lastProb = lastOut.slice(1);
-            Double lowProb = (double) lastProb.maxNumber() * 0.001;
+            Double lowProb = (double) lastProb.maxNumber() * 0.01;
             Integer firstGt = BooleanIndexing.firstIndex(lastProb, Conditions.greaterThanOrEqual(lowProb)).getInt();
             Integer lastGt = BooleanIndexing.lastIndex(lastProb, Conditions.greaterThanOrEqual(lowProb)).getInt();
             if (abs(firstGt - lastGt) < 2)
@@ -677,7 +676,7 @@ public class IntervalAnalysis {
                 dfT.join(dfF.probCube);
                 currBlock.dataflowFacts = dfT;
             }
-            System.out.println("//////////// Analyze block: " + currBlock.getId());
+            // System.out.println("//////////// Analyze block: " + currBlock.getId());
             Boolean changed = BlockAnalysisCube(currBlock);
             endFacts = currBlock.dataflowFacts;
             // Get marginal changes
@@ -1089,12 +1088,14 @@ public class IntervalAnalysis {
         if (intervalState.paramValues.containsKey(lhs.toString())){
             INDArray[] params = getParams(intervalState, rhs);
             INDArray lhsParam = intervalState.getParamCube(lhs.toString());
-            if(rhs.id.toString().equals("normal")) {
-                INDArray logNoSum = getProbLogUpper(lhsParam, params, "normal");
+            String idName = rhs.id.toString();
+            if(idName.equals("normal")) {
+                INDArray logNoSum = getProbLogUpper(lhsParam, params, idName);
                 intervalState.addProb(logNoSum);
 
-            } else {
-                assert false;
+            } else if (idName.equals("triangle")){
+                INDArray logNoSum = getProbLogUpper(lhsParam, params, idName);
+                intervalState.addProb(logNoSum);
             }
         } else {
             assert false;
@@ -2074,11 +2075,11 @@ public class IntervalAnalysis {
                 // Equiv-interval
                 // UniformRealDistribution unif = new UniformRealDistribution(0.1,  10);
                 if (limitsMeanSd[3] != null) {
-                    lower = 0.000000001;
+                    lower = 0.00000000001;
                     upper = 10*limitsMeanSd[3];
                 }
                 else {
-                    lower = 0.000000001;
+                    lower = 0.00000000001;
                     upper = 50;
                 }
             } else {
@@ -2765,7 +2766,10 @@ public class IntervalAnalysis {
                 normal = new NormalDistribution(funcParams.get(1), funcParams.get(2));
                 // splitDistr = new NormalDistribution(meanSd[2],meanSd[3]);
                 break;
-            //     }
+            case "triangle":
+                normal = new TriangularDistribution(funcParams.get(1),funcParams.get(2),funcParams.get(0));
+                break;
+            //}
         }
         getDiscretePriorsSingleSplitUnif(single, prob2, lulimits[0], lulimits[1], normal, pi);
         return new INDArray[]{Nd4j.createFromArray(single), Nd4j.createFromArray(prob2)};
@@ -2788,7 +2792,7 @@ public class IntervalAnalysis {
                             limits[1] = 10.0;
                         }
                         if(declStatement.id.id.contains("robust_weight")) {
-                            limits[0] = 0.000000001;
+                            limits[0] = 0.000000000;
                             limits[1] = 1.0;
                         }
                         if(declStatement.id.id.contains("robust_t_nu")) {
