@@ -113,15 +113,16 @@ public class IntervalAnalysis {
     }
 
     public void repeatAna() {
-        if (maxCounts == 61) {
-            int paramSize = paramMap.size();
-            if (paramSize == 1)
-                maxCounts = 40001;
-            if (paramSize == 2)
-                maxCounts = 201;
-            else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
-                maxCounts = 40001;
-        }
+        //TODO
+        // if (maxCounts == 61) {
+        //     int paramSize = paramMap.size();
+        //     if (paramSize == 1)
+        //         maxCounts = 40001;
+        //     if (paramSize == 2)
+        //         maxCounts = 201;
+        //     else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
+        //         maxCounts = 40001;
+        // }
         System.out.println(maxCounts);
         for (String kk : paramMap.keySet()) {
             paramDivs.put(kk, maxCounts);
@@ -988,7 +989,7 @@ public class IntervalAnalysis {
         AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
         if (annotations != null && !annotations.isEmpty() &&
                 annotations.get(0).annotationType == AST.AnnotationType.Observe) {
-            System.out.println("Observe (assign): " + statement.statement.toString());
+            // System.out.println("Observe (assign): " + statement.statement.toString());
             INDArray yArray = getYArrayUpper(assignment.lhs, intervalState);
             ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;

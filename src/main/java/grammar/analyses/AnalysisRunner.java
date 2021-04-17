@@ -110,14 +110,16 @@ public class AnalysisRunner {
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);
         long pureTime = System.nanoTime();
-        // intervalAnalyzer.setSummaryFile(stansummary);
+        intervalAnalyzer.setSummaryFile(stansummary);
         // if (hierModels.contains(stanName)) {
         //     intervalAnalyzer.no_prior = true;
         // } else {
         //     intervalAnalyzer.no_prior = false;
         // }
         // intervalAnalyzer.maxCounts = Integer.valueOf(splits);
-        Integer intSplits = 61;
+        // TODO
+        // Integer intSplits = 61;
+        Integer intSplits = Integer.valueOf(splits);
         if (inf_cont)
             intervalAnalyzer.maxCounts = 11;
         else
@@ -134,7 +136,7 @@ public class AnalysisRunner {
             intervalAnalyzer.maxCounts = intSplits;
             intervalAnalyzer.repeatAna();
         }
-        // callPython(localDir, filePath, "adapt");
+        //callPython(localDir, filePath, String.valueOf(intSplits));
 
 
         // Write Time Results
