@@ -27,7 +27,7 @@ public class TestIntervalAnalysis {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
         for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "lightspeed_more_data" + ttt, "61");
+            AnalysisRunner.analyzeProgram(localDir, "altermu2" + ttt, "101");
         // gauss_mix_asym_prior
 
     }
@@ -36,7 +36,7 @@ public class TestIntervalAnalysis {
     @Test
     public void Test4() throws IOException {
         String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
-        AnalysisRunner.analyzeTemplate(localDir, "radar_query2.template", "61");
+        AnalysisRunner.analyzeTemplate(localDir, "GPA.template", "61");
 
     }
 
