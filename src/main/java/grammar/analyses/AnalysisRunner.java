@@ -45,9 +45,9 @@ public class AnalysisRunner {
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
-        if (hierModels.contains(stanName.split("_robust")[0])) {
-            standata = localDir + stanPath + "/" + "one" + ".data.R";
-        }
+        // if (hierModels.contains(stanName.split("_robust")[0])) {
+        //     standata = localDir + stanPath + "/" + "one" + ".data.R";
+        // }
         // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
@@ -318,14 +318,16 @@ public class AnalysisRunner {
 
 
     public static void main (String[] args) {
-        String localDir = "/home/zixin/Documents/are/analysis_progs/progs/all/";
-        String localDirPSI = "/home/zixin/Documents/are/analysis_progs/progs/psi/";
+        // String localDir = "/home/zixin/Documents/are/analysis_progs/progs/all/";
+        // String localDirPSI = "/home/zixin/Documents/are/analysis_progs/progs/psi/";
         // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
         if (args[0].endsWith("template")) {
+            String localDirPSI = "";
             System.out.println(localDirPSI + args[0]);
             AnalysisRunner.analyzeTemplate(localDirPSI, args[0],args[1]);
         }
         else {
+            String localDir = "";
             System.out.println(localDir + args[0]);
             AnalysisRunner.analyzeProgram(localDir, args[0],args[1]);
         }

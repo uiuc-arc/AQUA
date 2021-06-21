@@ -49,9 +49,9 @@ public class IntervalAnalysis {
     public Boolean no_prior = false;
     private Set<String> innerIntParams = new HashSet<>();
     private Stack<String> integrateStack = new Stack<>();
-    HashSet<String> majorParam = new HashSet<>();
+    private HashSet<String> majorParam = new HashSet<>();
     private String dataYNameGlobal;
-    HashSet<String> discreteDist = new HashSet<>(Arrays.asList("bernoulli","flip","categorical","binomial","poisson","atom","uniformClose"));
+    private HashSet<String> discreteDist = new HashSet<>(Arrays.asList("bernoulli","flip","categorical","binomial","poisson","atom","uniformClose"));
 
     @Deprecated
     private double maxProb = 1.0 / (maxCounts - 1);
