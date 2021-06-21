@@ -324,12 +324,12 @@ public class AnalysisRunner {
         if (args[0].endsWith("template")) {
             String localDirPSI = "";
             System.out.println(localDirPSI + args[0]);
-            AnalysisRunner.analyzeTemplate(localDirPSI, args[0],args[1]);
+            AnalysisRunner.analyzeTemplate(localDirPSI, args[0], "61");
         }
         else {
             String localDir = "";
             System.out.println(localDir + args[0]);
-            AnalysisRunner.analyzeProgram(localDir, args[0],args[1]);
+            AnalysisRunner.analyzeProgram(localDir, args[0], "61"); // args[1]
         }
     }
 }
