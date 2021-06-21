@@ -145,7 +145,7 @@ public class AnalysisRunner {
         double duration = (endTime - startTime)/1000000000.0;
         double puredur = (endTime - pureTime)/1000000000.0;
         //TODO
-        System.out.println("Analysis Time: " + filePath + "," + duration + "," + puredur + "," + duration1 + "," + splits);
+        System.out.println("Analysis Time: " + filePath + "," + duration + "," + String.valueOf(intervalAnalyzer.maxCounts - 1));
     }
 
     private static void callPython(String localDir, String filePath, String splits) {

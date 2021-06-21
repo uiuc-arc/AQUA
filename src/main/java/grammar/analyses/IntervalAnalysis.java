@@ -123,7 +123,7 @@ public class IntervalAnalysis {
             else if (paramSize == 3 && paramMap.containsKey("Y") && paramMap.containsKey("Z"))
                 maxCounts = 40401;
         }
-        System.out.println(maxCounts);
+        System.out.println("Current Splits: " + String.valueOf(maxCounts - 1));
         for (String kk : paramMap.keySet()) {
             paramDivs.put(kk, maxCounts);
         }
