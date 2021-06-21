@@ -95,7 +95,7 @@ public class AnalysisRunner {
     }
     public static void analyzeTemplate (String localDir, String tempfilePath, String splits) {
         String filePath = localDir + tempfilePath.substring(0, tempfilePath.length() - 9);
-        anaTempFile(localDir, null, filePath, filePath + "/" + tempfilePath, splits);
+        anaTempFile(localDir, null, filePath, tempfilePath, splits);
     }
 
     private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) {
