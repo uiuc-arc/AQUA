@@ -65,6 +65,8 @@ where the first row (`[0, 1]`) stores the Interval Cube (for values of the rando
 
 The above discrete program is to exemplify AQUA usage. Generally, AQUA may not run on discrete programs. There will be no guarantee of the analysis error and the adaptive algorithm may not terminate. 
 
+To disable the adaptive algorithm, add the `<prog_name>` in `benchmark_list.json` under `"finite_models"`.
+
 ## Citation
 
 To cite AQUA, please use
