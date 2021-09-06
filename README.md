@@ -26,7 +26,7 @@ It should print `BUILD SUCCESS`.
 AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`<prog_name>.template`), see [examples](); or
 (b) a directory `<prog_name>/` containing Stan file (`<prog_name>.stan`) and data (`<prog_name>.data.R`). 
 
-#### (a) Run AQUA on a template file: 
+#### (a) Run AQUA on a Storm IR file: 
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_template_file>"
     
@@ -35,7 +35,7 @@ E.g. 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template"
     
 
-#### (b) Run AQUA on a stan file. 
+#### (b) Run AQUA on a Stan file. 
 The `path_to_input_dir` must contain a stan file (`<prog_name>.stan`) and a data file (`<prog_name>.data.R`) with the same name as the directory.
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
@@ -48,7 +48,7 @@ E.g., the directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova
 
 ## Outputs
 
-For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `*.template` or `*.stan` file.
+For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `<prog_name>.template` or `<prog_name>.stan` file.
 
 E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/storm_bench/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
 
