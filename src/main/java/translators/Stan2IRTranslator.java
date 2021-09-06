@@ -5,25 +5,13 @@ import grammar.StanBaseListener;
 import grammar.StanParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.renjin.eval.Session;
-import org.renjin.script.RenjinScriptEngine;
-import org.renjin.script.RenjinScriptEngineFactory;
 import org.renjin.sexp.*;
 import translators.visitors.Stan2IRVisitor;
 import utils.DataReader;
 import utils.Utils;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Stan2IRTranslator extends StanBaseListener {
@@ -58,6 +46,7 @@ public class Stan2IRTranslator extends StanBaseListener {
         walker.walk(dataReader, parser.datafile());
     }
 
+    /*
     private void readData(){
         try {
             String data = new String(Files.readAllBytes(Paths.get(this.datafile)));
@@ -94,6 +83,7 @@ public class Stan2IRTranslator extends StanBaseListener {
             e.printStackTrace();
         }
     }
+    */
 
     private String getFormattedData(StanParser.DeclContext ctx){
         if(ctx.type().PRIMITIVE() != null){
