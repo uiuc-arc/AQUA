@@ -58,10 +58,10 @@ E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./ben
       "shape":    [2, 2],
       "data":
              [[                      0, 1.000000000000000000E0 ], 
-             [ 2.500000000000000000E-1, 7.500000000000000000E-1]]
+              [2.500000000000000000E-1, 7.500000000000000000E-1]]
     }
 
-where the first row stores the Interval Cube (for values of the random variable A), and the second row stores the Density Cube (for the correponding probability).
+where the first row (`[0, 1]`) stores the Interval Cube (for values of the random variable A), and the second row (`[2.5E-1, 7.5E-1]`) stores the Density Cube (for the correponding probability).
 
 
 ## Citation
