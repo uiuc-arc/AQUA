@@ -1,5 +1,0 @@
-def main() {
-a := 0;
-a = gauss(0,1);
-return a;
-}

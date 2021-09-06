@@ -1,4 +1,0 @@
-float probs[2]: [0.33, 0.67]
-float c
-c = categorical(probs)
-posterior(c)

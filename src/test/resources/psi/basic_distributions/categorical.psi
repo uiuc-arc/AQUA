@@ -1,6 +1,0 @@
-probs := [0.33,0.67];
-def main() {
-c := 0;
-c = categorical(probs);
-return c;
-}

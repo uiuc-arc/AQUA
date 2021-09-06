@@ -1,9 +1,0 @@
-def main() {
-a := 0;
-b := 0;
-c := 0;
-a = gauss(0,1);
-b = gauss(1,2);
-c = a+b;
-return c;
-}

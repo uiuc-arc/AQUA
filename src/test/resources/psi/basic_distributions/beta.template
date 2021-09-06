@@ -1,3 +1,0 @@
-float x
-x=beta(1, 2)
-posterior(x)

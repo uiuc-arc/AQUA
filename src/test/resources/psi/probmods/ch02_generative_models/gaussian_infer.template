@@ -1,7 +1,0 @@
-float a
-a = gauss(0, 1)
-float b 
-b = gauss(0, 1)
-float r 
-r = a * b
-posterior(r)

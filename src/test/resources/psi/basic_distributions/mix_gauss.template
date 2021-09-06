@@ -1,7 +1,0 @@
-float x
-float y
-float z
-x=gauss(0,1)
-y=gauss(x,1)
-z=gauss(y,1)
-posterior(z)

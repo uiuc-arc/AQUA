@@ -105,7 +105,7 @@ public class AnalysisRunner {
         boolean inf_cont = contModels.contains(filePathSplit[filePathSplit.length - 1]);
         long startTime = System.nanoTime();
         long endTime1 = startTime;
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, true);
+        CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, false);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);

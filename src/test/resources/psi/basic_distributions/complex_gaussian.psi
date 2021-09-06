@@ -1,9 +1,0 @@
-def main() {
-a := 0;
-a = gauss(0,1);
-if(a>0)
-{
-observe(a = a);
-}
-return a;
-}
