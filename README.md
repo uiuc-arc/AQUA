@@ -23,7 +23,7 @@ It should print `BUILD SUCCESS`.
 
 ## Usage
 
-AQUA can take as input either (a) a program in Storm IR ([syntax](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf)), or (b) a directory containing Stan file and data. 
+AQUA can take as input either (a) a program in Storm IR (*.template, [examples](), [syntax](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf)), or (b) a directory containing Stan file and data. 
 
 #### (a) Run AQUA on a template file: 
     
