@@ -63,6 +63,7 @@ E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./ben
 
 where the first row (`[0, 1]`) stores the Interval Cube (for values of the random variable A), and the second row (`[2.5E-1, 7.5E-1]`) stores the Density Cube (for the correponding probability).
 
+The above discrete program is to exemplify AQUA usage. Generally, AQUA may not run on discrete programs. There will be no guarantee of the analysis error and the adaptive algorithm may not terminate. 
 
 ## Citation
 
