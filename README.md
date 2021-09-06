@@ -23,7 +23,7 @@ It should print `BUILD SUCCESS`.
 
 ## Usage
 
-AQUA can take as input either (a) a template file, or (b) a directory containing stan file and data. 
+AQUA can take as input either (a) a program in Storm IR ([syntax](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf)), or (b) a directory containing Stan file and data. 
 
 #### (a) Run AQUA on a template file: 
     
@@ -31,7 +31,7 @@ AQUA can take as input either (a) a template file, or (b) a directory containing
     
 E.g. 
 
-    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/psi/three_coin_flip/three_coin_flip.template"
+    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/psi_bench/three_coin_flip/three_coin_flip.template"
     
 
 #### (b) Run AQUA on a stan file. 
@@ -39,9 +39,9 @@ The `path_to_input_dir` must contain a stan file (dir_name.stan) and a data file
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
     
-E.g., the directory `./benchmarks/all/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
+E.g., the directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
 
-    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/all/anova_radon_nopred"
+    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/stan_bench/anova_radon_nopred"
 
 
 
@@ -49,7 +49,7 @@ E.g., the directory `./benchmarks/all/anova_radon_nopred` contains `anova_radon_
 
 For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `*.template` or `*.stan` file.
 
-E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/psi/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
+E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/psi_bench/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
 
      {
       "filefrom": "dl4j",
