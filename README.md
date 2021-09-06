@@ -52,4 +52,13 @@ E.g., the directory `./benchmarks/all/anova_radon_nopred` contains `anova_radon_
 
 For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `*.template` or `*.stan` file.
 
-E.g. after analyzing `three_coin_flip.template`, there will be a file /scratch/aqua_inference/benchmarks/psi/three_coin_flip/three_coin_flip/analysis_A.txt
+E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/psi/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
+
+     {
+    "filefrom": "dl4j",
+    "ordering": "c",
+    "shape":    [2, 2],
+    "data":
+    [[            0,  1.000000000000000000E0], 
+     [ 2.500000000000000000E-1, 7.500000000000000000E-1]]
+    }
