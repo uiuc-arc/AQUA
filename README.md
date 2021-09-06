@@ -8,6 +8,6 @@ AQUA approximates programs via an efficient quantization of the contin- uous dis
 
 Install dependencies:
 
-  sudo ./install.sh
+    sudo ./install.sh
 
 It should print `Install successful`.
