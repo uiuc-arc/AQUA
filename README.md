@@ -31,7 +31,7 @@ AQUA can take as input either (a) a program in Storm IR ([syntax](https://misail
     
 E.g. 
 
-    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/psi_bench/three_coin_flip/three_coin_flip.template"
+    mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template"
     
 
 #### (b) Run AQUA on a stan file. 
@@ -49,7 +49,7 @@ E.g., the directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova
 
 For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `*.template` or `*.stan` file.
 
-E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/psi_bench/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
+E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./benchmarks/storm_bench/three_coin_flip/three_coin_flip/analysis_A.txt`, with the content:
 
      {
       "filefrom": "dl4j",
