@@ -5,13 +5,6 @@ AQUA is a tool for probabilistic inference that operates on probabilistic progra
 The paper describing the methodology behind AQUA: 
 
 * [AQUA: Automated Quantized Inference for Probabilistic Programs](https://misailo.cs.illinois.edu/papers/aqua-atva21.pdf), Zixin Huang, Saikat Dutta, Sasa Misailovic, 19th International Symposium on Automated Technology for Verification and Analysis (ATVA 2021), Gold Coast, Australia, October 2021
-    
-Cite us with:
-
-    @article{huangaqua,
-      title={AQUA: Automated Quantized Inference for Probabilistic Programs},
-      author={Huang, Zixin and Dutta, Saikat and Misailovic, Sasa}
-    }
 
 
 ## Installation
@@ -68,3 +61,13 @@ E.g. after analyzing `three_coin_flip.template`, AQUA will output a file `./ben
     }
 
 where the first row stores the Interval Cube (for values of the random variable A), and the second row stores the Density Cube (for the correponding probability).
+
+
+## Citation
+
+To cite AQUA, please use
+
+    @article{huangaqua,
+      title={AQUA: Automated Quantized Inference for Probabilistic Programs},
+      author={Huang, Zixin and Dutta, Saikat and Misailovic, Sasa}
+    }
