@@ -1,6 +1,6 @@
 # AQUA
 
-AQUA is a tool for probabilistic inference that operates on probabilistic programs with continuous posterior distributions. It approximates programs via an efficient quantization of the continuous distributions. AQUA represents the distributions of random variables using quantized value intervals (Interval Cube) and corresponding probability densities (Density Cube). It uses an adaptive algorithm for selecting the size and the granularity of the Interval and Density Cubes.
+AQUA is a tool for probabilistic inference that operates on probabilistic programs with continuous posterior distributions. It approximates programs via an efficient quantization of the continuous distributions. AQUA represents the distributions of random variables using quantized value intervals (Interval Cube) and corresponding probability densities (Density Cube). It can use an adaptive algorithm for selecting the size and the granularity of the Interval and Density Cubes.
 
 The paper describing the methodology behind AQUA: 
 
