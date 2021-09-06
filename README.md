@@ -34,7 +34,7 @@ E.g. 
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
     
-E.g.
+E.g., the directory `./benchmarks/all/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/all/anova_radon_nopred"
 
