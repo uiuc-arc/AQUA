@@ -1,7 +1,16 @@
 # AQUA
 
 AQUA is a tool for probabilistic inference that operates on probabilistic programs with continuous posterior distributions. 
-AQUA approximates programs via an efficient quantization of the contin- uous distributions.
+AQUA approximates programs via an efficient quantization of the continuous distributions. 
+
+The paper describing the methodology behind AQUA: 
+
+    (AQUA: Automated Quantized Inference for Probabilistic Programs)[https://misailo.cs.illinois.edu/papers/aqua-atva21.pdf]
+    Zixin Huang, Saikat Dutta, Sasa Misailovic
+    19th International Symposium on Automated Technology for Verification and Analysis
+    (ATVA 2021), Gold Coast, Australia, October 2021
+    
+    
 
 
 ## Installation
@@ -40,3 +49,10 @@ E.g., the directory `./benchmarks/all/anova_radon_nopred` contains `anova_radon_
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/all/anova_radon_nopred"
 
+
+
+## Outputs
+
+For each parameter, there will be an output `analysis_<param>.txt` file storing the quantized posterior. It is under the same directory as the input `*.template` or `*.stan` file.
+
+E.g. after analyzing `three_coin_flip.template`, there will be a file /scratch/aqua_inference/benchmarks/psi/three_coin_flip/three_coin_flip/analysis_A.txt
