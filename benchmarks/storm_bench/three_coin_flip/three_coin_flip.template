@@ -1,0 +1,10 @@
+float A
+A = flip(0.5)
+float B
+B = flip(0.5)
+float C
+C = flip(0.5)
+float D
+D = A + B + C
+@observe
+hardObserve(D >= 2.0)

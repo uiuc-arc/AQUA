@@ -1,0 +1,29 @@
+
+float b[2]
+@limits <lower=-5,upper=15>
+float o[1] 
+@limits <lower=0,upper=10>
+float x1
+@limits <lower=-15,upper=15>
+float x2
+float r1
+b[1] = flip(0.2)
+b[2] = flip(0.5)
+if (b[1]) { 
+    b[2] = atom(1) 
+} 
+else { 
+    b[2] = flip(0.2) 
+}
+o[1] = uniform(-5,15)
+x1 = uniform(0,10)
+x2 = uniform(-5,15)
+x2 = normal(x1,sqrt(2.0))
+if (b[1]){ 
+        o[1] = triangle(x1,5.0,1.0)
+}
+else{
+        o[1] = triangle(x1,5.0,5.0)
+}
+hardObserve(b[1]==1)
+return(x2)

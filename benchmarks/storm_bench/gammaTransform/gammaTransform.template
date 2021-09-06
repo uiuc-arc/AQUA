@@ -1,0 +1,12 @@
+@limits <lower=0>
+float X
+X = gamma(3, 1)
+float Y
+if (X < 1) {
+    Y = -1/exp(X*X)
+} else {
+    Y = 1/log(X)
+}
+float Z
+Z = -Y*Y*Y+Y*Y+6*Y
+hardObserve(1)
