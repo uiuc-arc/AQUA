@@ -6,6 +6,11 @@ AQUA approximates programs via an efficient quantization of the contin- uous dis
 
 ## Installation
 
+Prerequisites:
+
+* Java
+* Maven (e.g. `sudo apt -y update; sudo apt install maven`)
+
 Install dependencies and build package:
 
     mvn package -DskipTests=true
