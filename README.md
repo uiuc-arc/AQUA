@@ -6,8 +6,8 @@ AQUA approximates programs via an efficient quantization of the contin- uous dis
 
 ## Installation
 
-Install dependencies:
+Install dependencies and build package:
 
-    sudo ./install.sh
+    mvn package -DskipTests=true
 
-It should print `Install successful`.
+It should print `BUILD SUCCESS`.
