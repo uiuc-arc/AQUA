@@ -23,8 +23,8 @@ It should print `BUILD SUCCESS`.
 
 ## Usage
 
-AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (*.template), see [examples](); or
-(b) a directory containing Stan file and data. 
+AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`*.template`), see [examples](); or
+(b) a directory containing Stan file (`*.stan`) and data (`*.data.R`). 
 
 #### (a) Run AQUA on a template file: 
     
@@ -36,7 +36,7 @@ E.g. 
     
 
 #### (b) Run AQUA on a stan file. 
-The `path_to_input_dir` must contain a stan file (dir_name.stan) and a data file (dir_name.data.R) with the same name as the directory.
+The `path_to_input_dir` must contain a stan file (`dir_name.stan`) and a data file (`dir_name.data.R`) with the same name as the directory.
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
     
