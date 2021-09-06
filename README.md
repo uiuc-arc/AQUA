@@ -5,7 +5,7 @@ AQUA approximates programs via an efficient quantization of the continuous distr
 
 The paper describing the methodology behind AQUA: 
 
-[AQUA: Automated Quantized Inference for Probabilistic Programs](https://misailo.cs.illinois.edu/papers/aqua-atva21.pdf)
+&emsp [AQUA: Automated Quantized Inference for Probabilistic Programs](https://misailo.cs.illinois.edu/papers/aqua-atva21.pdf)
 
 Zixin Huang, Saikat Dutta, Sasa Misailovic
 
