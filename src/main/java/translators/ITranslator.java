@@ -11,5 +11,5 @@ public interface ITranslator {
     public void translate(ArrayList<Section> sections) throws Exception;
 
 
-    public Pair run();
+    // public Pair run();
 }

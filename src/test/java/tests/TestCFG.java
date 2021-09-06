@@ -2,11 +2,6 @@ package tests;
 
 import grammar.cfg.CFGBuilder;
 import org.junit.Test;
-import translators.StanTranslator;
-import translators.listeners.CFGWalker;
-import utils.ObserveRemover;
-import utils.ObserveToLoop;
-import utils.Utils;
 
 public class TestCFG {
 
@@ -31,36 +26,4 @@ public class TestCFG {
         CFGBuilder builder = new CFGBuilder("src/test/resources/leukfr02.template", null, true);
     }
 
-    @Test
-    public void TestRewriteOp(){
-        CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", null, false);
-        ObserveRemover observeRemover = new ObserveRemover(builder.getSections());
-        CFGWalker walker = new CFGWalker(builder.getSections(), observeRemover);
-        walker.walk();
-        StanTranslator translator = new StanTranslator();
-        try {
-            translator.translate(observeRemover.rewriter.rewrite());
-            System.out.println(translator.getCode());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void TestRewriteOp2(){
-        CFGBuilder builder = new CFGBuilder("src/test/resources/linearregression.template", null, false);
-        ObserveToLoop observeRemover = new ObserveToLoop(builder.getSections());
-        CFGWalker walker = new CFGWalker(builder.getSections(), observeRemover);
-        walker.walk();
-        StanTranslator translator = new StanTranslator();
-        try {
-
-            translator.translate(observeRemover.rewriter.rewrite());
-            System.out.println(translator.getCode());
-            observeRemover.rewriter.showGraph("src/test/resources/testg.png");
-//            System.out.println(translator.getCode());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

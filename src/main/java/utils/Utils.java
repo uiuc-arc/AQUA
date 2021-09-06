@@ -38,29 +38,7 @@ import java.util.Properties;
 
 public class Utils {
 
-    private static String CONFIGURATIONFILE ="src/main/resources/config.properties";
-    private static String DISTRIBUTIONSFILE;
-    public static String STANRUNNER;
-    public static String PSIRUNNER;
-    public static String EDWARD2RUNNER;
-
-    static {
-    Properties properties = new Properties();
-    try{
-        String[] configFileNameSplit = CONFIGURATIONFILE.split("/");
-        String configFileName = configFileNameSplit[configFileNameSplit.length - 1];
-        Path temp = Files.createTempFile(configFileName.split("\\.")[0],"." + configFileName.split("\\.")[1]);
-        Files.copy(Utils.class.getClassLoader().getResourceAsStream(configFileName), temp, StandardCopyOption.REPLACE_EXISTING);
-        FileInputStream fileInputStream = new FileInputStream(temp.toFile());
-        properties.load(fileInputStream);
-        STANRUNNER = properties.getProperty("stan.script");
-        PSIRUNNER = properties.getProperty("psi.script");
-        EDWARD2RUNNER = properties.getProperty("edward2.script");
-        DISTRIBUTIONSFILE = properties.getProperty("distributionsFile");
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-    }
+    private static String DISTRIBUTIONSFILE="src/main/resources/models.json";
 
     public static INDArray parseVector(AST.Vector vector, boolean isInteger){
         return getIndArray(vector.arrays, vector.vectors, vector.expressions, isInteger);
@@ -166,6 +144,7 @@ public class Utils {
 
         return null;
     }
+    /*
     public static Pair<String, String> runPsi(String filename){
         Process p = null;
         try {
@@ -189,6 +168,7 @@ public class Utils {
 
         return null;
     }
+    */
 
     public static String printArray(INDArray array){
         String res = "";
