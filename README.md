@@ -73,18 +73,19 @@ To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` un
 ## Project Structure
 
     .  
-        ├── benchmarks/                                         # Contains all benchmarks
+        ├── benchmarks/                                         # All benchmarks
         │     ├── stan_bench/                                   # Benchmarks in Stan
         │     └── storm_bench/                                  # Benchmarks in Storm IR
+        │
         ├── src/                                                # AQUA source code in Java
         │     ├── main/                  
         │     │     ├── java/                       
         │     │     │     ├──  grammar 
         │     │     │     │     ├── analyses                    # AQUA Analysis code
-        │     │     │     │     │     ├── AnalysisRunner.java   # Program entry point, translate file, construct CFG, and call analysis
+        │     │     │     │     │     ├── AnalysisRunner.java   # Program entry point. Translates file, constructs CFG, and calls analysis
         │     │     │     │     │     ├── GridState.java        # Class for AQUA abstract state
         │     │     │     │     │     ├── IntervalAnalysis.java # Analysis algorithm by applying analysis rules
-        │     │     │     │     │     └── Pair.java             # Just a handy pair data structure
+        │     │     │     │     │     └── Pair.java             # A handy pair data structure
         │     │     │     │     ├── cfg                         # CFG constructor for Storm IR
         │     │     │     │     └── AST.java                    # AST constructor for Storm IR
         │     │     │     ├──  translators                      # Translator from Stan to Storm IR
