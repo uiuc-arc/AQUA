@@ -30,7 +30,7 @@ public class TestIntervalAnalysis {
 
     @Test
     public void Test4() throws IOException {
-        AnalysisRunner.analyzeTemplate("", "benchmarks/storm_bench/radar_query1/radar_query1.template", "61");
+        AnalysisRunner.analyzeTemplate("", "benchmarks/storm_bench/three_coin_flip/three_coin_flip.template", "61");
 
     }
 
