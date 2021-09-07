@@ -26,25 +26,28 @@ It should print `BUILD SUCCESS`.
 AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`<prog_name>.template`), see [examples](); or
 (b) a directory `<prog_name>/` containing Stan file (`<prog_name>.stan`) and data (`<prog_name>.data.R`). 
 
-#### (a) Run AQUA on a Storm IR file: 
+#### (a) Run AQUA on a Storm IR file
+**Usage:**
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_template_file>"
     
-E.g. 
+**E.g.:**
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template"
     
 
-#### (b) Run AQUA on a Stan file. 
+#### (b) Run AQUA on a Stan file
 The `path_to_input_dir` must contain a stan file (`<prog_name>.stan`) and a data file (`<prog_name>.data.R`) with the same name as the directory.
+
+**Usage:**
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
     
-E.g., the directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
+**E.g.:**
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/stan_bench/anova_radon_nopred"
 
-
+ The directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
 
 ## Outputs
 
