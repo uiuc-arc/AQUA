@@ -70,6 +70,35 @@ The above discrete program is to exemplify AQUA usage. Generally, AQUA may not r
 
 To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` under `"finite_models"`.
 
+## Source Code
+
+    .  
+        ├── benchmarks/                                         # Contains all benchmarks
+        │     ├── stan_bench/                                   # Benchmarks in Stan
+        │     └── storm_bench/                                  # Benchmarks in Storm IR
+        ├── src/                                                # AQUA source code in Java
+        │     ├── main/                  
+        │     │     ├── java/                       
+        │     │     │     ├──  grammar 
+        │     │     │     │     ├── analyses                    # AQUA Analysis code
+        │     │     │     │     │     ├── AnalysisRunner.java   # Program entry point, translate file, construct CFG, and call analysis
+        │     │     │     │     │     ├── GridState.java        # Class for AQUA abstract state
+        │     │     │     │     │     ├── IntervalAnalysis.java # Analysis algorithm by applying analysis rules
+        │     │     │     │     │     └── Pair.java             # Just a handy pair data structure
+        │     │     │     │     ├── cfg                         # CFG constructor for Storm IR
+        │     │     │     │     └── AST.java                    # AST constructor for Storm IR
+        │     │     │     ├──  translators                      # Translator from Stan to Storm IR
+        │     │     │     └──  utils                            # Utility functions used in translation and CFG construction
+        │     │     └── resources/models.json                   # Json for properties of distributions
+        │     └── test/java/tests                               # Unit tests in the development
+        │ 
+        ├── stan/                                               # Stan and data grammars in ANTLR 4  						
+        ├── template/                                           # Storm IR grammar in ANTLR 4 
+        ├── README.md                                           # README for basic info  
+        ├── antlr-4.7.1-complete.jar                            # ANTLR jar used for parsing Stan / Storm IR files
+        ├── benchmark_list.json                                 # List of all the benchmarks, split into `finite_models` and `infinite_models`
+        └── pom.xml                                             # POM file in maven for project configuration and dependency
+
 ## Citation
 
 To cite AQUA, please use
