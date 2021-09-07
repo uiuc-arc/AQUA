@@ -26,25 +26,28 @@ It should print `BUILD SUCCESS`.
 AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`<prog_name>.template`), see [examples](); or
 (b) a directory `<prog_name>/` containing Stan file (`<prog_name>.stan`) and data (`<prog_name>.data.R`). 
 
-#### (a) Run AQUA on a Storm IR file: 
+#### (a) Run AQUA on a Storm IR file
+**Usage:**
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_template_file>"
     
-E.g. 
+**E.g.:**
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template"
     
 
-#### (b) Run AQUA on a Stan file. 
+#### (b) Run AQUA on a Stan file
 The `path_to_input_dir` must contain a stan file (`<prog_name>.stan`) and a data file (`<prog_name>.data.R`) with the same name as the directory.
+
+**Usage:**
     
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="<path_to_input_dir>"
     
-E.g., the directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
+**E.g.:**
 
     mvn exec:java -Dexec.mainClass="grammar.analyses.AnalysisRunner" -Dexec.args="./benchmarks/stan_bench/anova_radon_nopred"
 
-
+ The directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
 
 ## Outputs
 
@@ -66,6 +69,35 @@ where the first row (`[0, 1]`) stores the Interval Cube (for values of the rando
 The above discrete program is to exemplify AQUA usage. Generally, AQUA may not run on discrete programs. There will be no guarantee of the analysis error and the adaptive algorithm may not terminate. 
 
 To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` under `"finite_models"`.
+
+## Project Structure
+
+    .  
+        ├── benchmarks/                                         # Contains all benchmarks
+        │     ├── stan_bench/                                   # Benchmarks in Stan
+        │     └── storm_bench/                                  # Benchmarks in Storm IR
+        ├── src/                                                # AQUA source code in Java
+        │     ├── main/                  
+        │     │     ├── java/                       
+        │     │     │     ├──  grammar 
+        │     │     │     │     ├── analyses                    # AQUA Analysis code
+        │     │     │     │     │     ├── AnalysisRunner.java   # Program entry point, translate file, construct CFG, and call analysis
+        │     │     │     │     │     ├── GridState.java        # Class for AQUA abstract state
+        │     │     │     │     │     ├── IntervalAnalysis.java # Analysis algorithm by applying analysis rules
+        │     │     │     │     │     └── Pair.java             # Just a handy pair data structure
+        │     │     │     │     ├── cfg                         # CFG constructor for Storm IR
+        │     │     │     │     └── AST.java                    # AST constructor for Storm IR
+        │     │     │     ├──  translators                      # Translator from Stan to Storm IR
+        │     │     │     └──  utils                            # Utility functions used in translation and CFG construction
+        │     │     └── resources/models.json                   # Json for properties of distributions
+        │     └── test/java/tests                               # Unit tests in the development
+        │ 
+        ├── stan/                                               # Stan and data grammars in ANTLR 4  						
+        ├── template/                                           # Storm IR grammar in ANTLR 4 
+        ├── README.md                                           # README for basic info  
+        ├── antlr-4.7.1-complete.jar                            # ANTLR jar used for parsing Stan / Storm IR files
+        ├── benchmark_list.json                                 # List of all the benchmarks, split into `finite_models` and `infinite_models`
+        └── pom.xml                                             # POM file in maven for project configuration and dependency
 
 ## Citation
 
