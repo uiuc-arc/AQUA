@@ -34,7 +34,7 @@ public class Stan2IRTranslator extends StanBaseListener {
     }
 
     private void readData2(){
-        System.out.println(this.datafile);
+        // System.out.println(this.datafile);
         DataParser parser = null;
         try {
             parser = Utils.readDataFile(this.datafile);

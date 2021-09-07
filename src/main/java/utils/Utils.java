@@ -87,7 +87,7 @@ public class Utils {
 
     public static String parseData(AST.Data data, char order){
 
-        System.out.println(data.decl.id.toString());
+        // System.out.println(data.decl.id.toString());
         if(data.expression != null){
             return data.expression.toString();
         }

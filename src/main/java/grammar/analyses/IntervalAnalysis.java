@@ -2880,9 +2880,10 @@ public class IntervalAnalysis {
         double mlog1pexpx = -Math.log(1+expx);
         return ((1-y)*(mlog1pexpx) + y*(x - mlog1pexpx));
     }
-    //=================================================================================================
-    //=============  An Inefficient Implementation by Joint Probability Tables ========================
-    //=================================================================================================
+    //=====================================================================================
+    //=============  Code below is an Inefficient Implementation ==========================
+    //=============        by 2D Joint-Probability Tables        ==========================
+    //=====================================================================================
 
     // private INDArray[] Distr(AST.Expression expr) {
     //     Double[] paramLimits = {null,null};

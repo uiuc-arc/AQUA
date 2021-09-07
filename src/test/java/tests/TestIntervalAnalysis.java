@@ -18,15 +18,11 @@ import java.util.*;
 public class TestIntervalAnalysis {
 
 
-    //Tests Gen and Kill sets for a bigger program
     @Test
     //@Ignore
     public void Test5() throws IOException {
 
-        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        String[] tt = new String[]{""}; // ,"_robust_student","_robust_reparam","_robust_reweight"}; // "",
-        for (String ttt: tt)
-            AnalysisRunner.analyzeProgram(localDir, "altermu2" + ttt, "101");
+        AnalysisRunner.analyzeProgram("", "benchmarks/stan_bench/logistic_robust_reweight", "101");
         // gauss_mix_asym_prior
 
     }
@@ -34,40 +30,9 @@ public class TestIntervalAnalysis {
 
     @Test
     public void Test4() throws IOException {
-        String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/psi/";
-        AnalysisRunner.analyzeTemplate(localDir, "GPA.template", "61");
+        AnalysisRunner.analyzeTemplate("", "benchmarks/storm_bench/radar_query1/radar_query1.template", "61");
 
     }
-
-    /*
-    @Test
-    public void testPyroCond(){
-        String stanfile = "src/test/resources/stan/stan1610.stan";
-        String standata = "src/test/resources/stan/stan1610.data";
-        Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
-        String tempFileName = stanfile.replace(".stan", "");
-        String templateCode = stan2IRTranslator.getCode();
-        File tempfile = null;
-        try {
-            tempfile = File.createTempFile(tempFileName, ".template");
-            FileUtils.writeStringToFile(tempfile, templateCode);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null, false);
-        PyroTranslator pyroTranslator = new PyroTranslator();
-        try {
-            pyroTranslator.translate(cfgBuilder.getSections());
-            System.out.println(pyroTranslator.getCode());
-            //Pair results = pyroTranslator.run();
-            //Assert.assertTrue(results.getRight().toString().length() == 0);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    */
-    ///
 
     @Test
     public void Test7() throws IOException {

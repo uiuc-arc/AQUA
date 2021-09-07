@@ -8,47 +8,23 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 import translators.Stan2IRTranslator;
 
+import javax.json.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class AnalysisRunner {
-    private static List<String> hierModels = Arrays.asList("anova_radon_nopred_chr", "anova_radon_nopred", "electric_chr", "hiv", "pilots", "radon.1", "radon_no_pool_chr", "radon_no_pool", "radon_vary_inter_slope_17.1", "radon_vary_si_chr", "radon_vary_si");
-    private static List<String> contModels = Arrays.asList("anova_radon_nopred" ,
-            "anova_radon_nopred_robust_reparam" ,
-            "anova_radon_nopred_robust_reweight" ,
-            "lightspeed" ,
-            "lightspeed_robust_reparam" ,
-            "lightspeed_robust_reweight" ,
-            "lightspeed_robust_student" ,
-            "unemployment" ,
-            "unemployment_robust_reparam" ,
-            "unemployment_robust_reweight" ,
-            "y_x" ,
-            "y_x_robust_reparam" ,
-            "y_x_robust_reweight" ,
-            "koyck" ,
-            "normal_mixture" ,
-            "gauss_mix_asym_prior",
-            "logistic",
-            "gammaTransform",
-            "prior_mix",
-            "zeroone",
-            "tug",
-            "altermu",
-            "altermu2",
-            "neural"
-            );
+
+    // For the following programs with infinite support,
+    // AQUA applies an adaptive algorithm for selecting the number of splits
 
 
-    public static void analyzeProgram (String localDir, String stanPath, String splits) {
+    public static void analyzeProgram (String localDir, String stanPath, String splits) throws IOException {
         int index0=stanPath.lastIndexOf('/');
         String stanName = stanPath.substring(index0+1,stanPath.length());
         String stanfile = localDir + stanPath + "/" + stanName + ".stan";
         String standata = localDir + stanPath + "/" + stanName + ".data.R";
-        // if (hierModels.contains(stanName.split("_robust")[0])) {
-        //     standata = localDir + stanPath + "/" + "one" + ".data.R";
-        // }
-        // String stansummary = localDir + stanPath + "/" + StringUtils.substringBefore(stanName, "_robust") + "_rw_summary_1000.txt";
         String stansummary = localDir + stanPath + "/" +  "rw_summary_100";
         // String stansummary = localDir + stanPath + "/" + stanName + "_rw_summary_100.txt";
         // Map<String, String> TruthSummary = getMeanFromTruth(localDir + stanPath + "/" + "truth_file_w");
@@ -58,6 +34,7 @@ public class AnalysisRunner {
         Stan2IRTranslator stan2IRTranslator = new Stan2IRTranslator(stanfile, standata);
         String tempFileName = stanfile.replace(".stan", "");
         String templateCode = stan2IRTranslator.getCode();
+
         // System.out.println("========Stan Code to Template=======");
         // System.out.println(templateCode);
 
@@ -72,54 +49,39 @@ public class AnalysisRunner {
 
         anaTempFile(localDir, stansummary, filePath, tempfile.getAbsolutePath(), splits);
 
-
-
-
-
-        /*
-        double[] avgMetrics = FindMetrics(filePath, TruthSummary, outputName);
-        System.out.println("MSE Change:" + avgMetrics[3]);
-        System.out.println("True Change:" + avgMetrics[4]);
-        System.out.println("MSE Change:" + avgMetrics[8]);
-        System.out.println("True Change:" + avgMetrics[9]);
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(new FileWriter(filePath + outputName,true),true);
-            writer.println( "avg," +Arrays.toString(Arrays.copyOfRange(avgMetrics,0,5)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration)); //  + "," +
-            writer.println( "avgs," +Arrays.toString(Arrays.copyOfRange(avgMetrics, 5, 10)).replace("[","").replace("]","").replace(" ","") + "," + String.valueOf(duration));
-            writer.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        */
     }
-    public static void analyzeTemplate (String localDir, String tempfilePath, String splits) {
-        String filePath = localDir + tempfilePath.substring(0, tempfilePath.length() - 9);
+    public static void analyzeTemplate (String localDir, String tempfilePath, String splits) throws IOException {
+        int index=tempfilePath.lastIndexOf('/');
+        String filePath = tempfilePath.substring(0,index);
         anaTempFile(localDir, null, filePath, tempfilePath, splits);
     }
 
-    private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) {
+    private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) throws IOException {
+        // Path temp = Files.createTempFile("benchmark_list", ".json");
+        FileInputStream fis = new FileInputStream("benchmark_list.json");
+        // JsonObject jsonObject = jsonReader.readObject();
+        JsonReader rdr = Json.createReaderFactory(null).createReader(fis, java.nio.charset.StandardCharsets.UTF_8);
+        JsonObject obj = rdr.readObject();
+        List<String> finiteModels = new ArrayList<>();
+        JsonArray fModels = obj.getJsonArray("finite_models");
+        for (JsonValue fModel : fModels) {
+            String fm = fModel.toString();
+            finiteModels.add(fm.substring(1, fm.length() - 1));
+        }
         // /*
 
         String[] filePathSplit = filePath.split("/");
-        boolean inf_cont = contModels.contains(filePathSplit[filePathSplit.length - 1]);
+        boolean inf_cont = !finiteModels.contains(filePathSplit[filePathSplit.length - 1]);
         long startTime = System.nanoTime();
         long endTime1 = startTime;
         CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, false);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);
-        long pureTime = System.nanoTime();
         intervalAnalyzer.setSummaryFile(stansummary);
-        // if (hierModels.contains(stanName)) {
-        //     intervalAnalyzer.no_prior = true;
-        // } else {
-        //     intervalAnalyzer.no_prior = false;
-        // }
-        // intervalAnalyzer.maxCounts = Integer.valueOf(splits);
-        // TODO
+
         Integer intSplits = 61;
-        // Integer intSplits = Integer.valueOf(splits);
+
         if (inf_cont)
             intervalAnalyzer.maxCounts = 11;
         else
@@ -132,20 +94,20 @@ public class AnalysisRunner {
                 intervalAnalyzer.repeatAna();
                 repeat = intervalAnalyzer.getNewRange();
             }
-            endTime1 = System.nanoTime();
             intervalAnalyzer.maxCounts = intSplits;
             intervalAnalyzer.repeatAna();
         }
+
+        // One can also use python to compute marginalized posterior
+        // from the unnormalized joint density
         //callPython(localDir, filePath, String.valueOf(intSplits));
 
 
         // Write Time Results
         long endTime = System.nanoTime();
-        double duration1 = (endTime1 - startTime)/1000000000.0;
         double duration = (endTime - startTime)/1000000000.0;
-        double puredur = (endTime - pureTime)/1000000000.0;
-        //TODO
-        System.out.println("Analysis Time: " + filePath + "," + duration + "," + String.valueOf(intervalAnalyzer.maxCounts - 1));
+
+        System.out.println("Analysis Time (s): " + filePath + "," + duration ); // + "," + String.valueOf(intervalAnalyzer.maxCounts - 1)
     }
 
     private static void callPython(String localDir, String filePath, String splits) {
@@ -167,7 +129,21 @@ public class AnalysisRunner {
     }
 
 
-    // if the original is best, remove the first & last block to try again
+    public static void main (String[] args) throws IOException {
+
+        if (args[0].endsWith("template")) {
+            String localDirPSI = "";
+            System.out.println(localDirPSI + args[0]);
+            AnalysisRunner.analyzeTemplate(localDirPSI, args[0], "61");
+        }
+        else {
+            String localDir = "";
+            System.out.println(localDir + args[0]);
+            AnalysisRunner.analyzeProgram(localDir, args[0], "61"); // args[1]
+        }
+    }
+
+    /*
     public static double[] FindMetrics(String filePath, Map<String, String> TruthSummary, String outputName) {
         double avgTVD = 0;
         double avgKS = 0;
@@ -315,21 +291,7 @@ public class AnalysisRunner {
         }
         return new double[]{TVDret / 2.0, KSret};
     }
+    */
 
 
-    public static void main (String[] args) {
-        // String localDir = "/home/zixin/Documents/are/analysis_progs/progs/all/";
-        // String localDirPSI = "/home/zixin/Documents/are/analysis_progs/progs/psi/";
-        // String localDir = "/Users/zixin/Documents/uiuc/fall20/analysis/analysis_progs/progs/all/";
-        if (args[0].endsWith("template")) {
-            String localDirPSI = "";
-            System.out.println(localDirPSI + args[0]);
-            AnalysisRunner.analyzeTemplate(localDirPSI, args[0], "61");
-        }
-        else {
-            String localDir = "";
-            System.out.println(localDir + args[0]);
-            AnalysisRunner.analyzeProgram(localDir, args[0], "61"); // args[1]
-        }
-    }
 }
