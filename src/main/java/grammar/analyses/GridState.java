@@ -15,7 +15,7 @@ package grammar.analyses;
         import static org.nd4j.linalg.ops.transforms.Transforms.log;
 
 
-public class GridState extends AbstractState{
+public class GridState{
     // deprecated
     @Deprecated
     public Map<String, Integer> paramMap = new HashMap<>();// idx for lower, upper idx is lower + 1
@@ -461,6 +461,7 @@ public class GridState extends AbstractState{
         return (paramMap.get(paramName) - 1)/2;
     }
 
+    /*
     @Override
     public void printAbsState() {
         // for (Pair intervalProbPair: IntervalProbPairs) {
@@ -474,6 +475,7 @@ public class GridState extends AbstractState{
         // System.out.println(intervalProbPairs.toString());
         // System.out.println(String.format("%d,%d",intervalProbPairs.shape()[0], intervalProbPairs.shape()[1]));
     }
+    */
 
     public void join(INDArray dfFCube) {
         // System.out.println("=================True");

@@ -56,10 +56,11 @@ public class AnalysisRunner {
         anaTempFile(localDir, null, filePath, tempfilePath, splits);
     }
 
+    // Method for running analysis
     private static void anaTempFile(String localDir, String stansummary, String filePath, String tempfilePath, String splits) throws IOException {
-        // Path temp = Files.createTempFile("benchmark_list", ".json");
+
+        // Check if the program has infinite support in order to use the adaptive algorithm
         FileInputStream fis = new FileInputStream("benchmark_list.json");
-        // JsonObject jsonObject = jsonReader.readObject();
         JsonReader rdr = Json.createReaderFactory(null).createReader(fis, java.nio.charset.StandardCharsets.UTF_8);
         JsonObject obj = rdr.readObject();
         List<String> finiteModels = new ArrayList<>();
@@ -68,10 +69,10 @@ public class AnalysisRunner {
             String fm = fModel.toString();
             finiteModels.add(fm.substring(1, fm.length() - 1));
         }
-        // /*
-
         String[] filePathSplit = filePath.split("/");
         boolean inf_cont = !finiteModels.contains(filePathSplit[filePathSplit.length - 1]);
+
+        // Construct CFG
         long startTime = System.nanoTime();
         long endTime1 = startTime;
         CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, false);
@@ -80,6 +81,7 @@ public class AnalysisRunner {
         intervalAnalyzer.setPath(filePath);
         intervalAnalyzer.setSummaryFile(stansummary);
 
+        // Start analysis
         Integer intSplits = 61;
 
         if (inf_cont)
@@ -88,6 +90,8 @@ public class AnalysisRunner {
             intervalAnalyzer.maxCounts = intSplits;
         intervalAnalyzer.forwardAnalysis(CFG);
 
+        // Adapt the intervals and repeat the analysis
+        // if using the adaptive algorithm
         if (inf_cont) {
             boolean repeat = intervalAnalyzer.getNewRange();
             while (repeat) {
@@ -103,7 +107,7 @@ public class AnalysisRunner {
         //callPython(localDir, filePath, String.valueOf(intSplits));
 
 
-        // Write Time Results
+        // Write Timing Results
         long endTime = System.nanoTime();
         double duration = (endTime - startTime)/1000000000.0;
 
