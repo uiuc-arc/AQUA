@@ -1,0 +1,31 @@
+{
+    "infinite_models" : [
+        "anova_radon_nopred" ,
+        "anova_radon_nopred_robust_reparam" ,
+        "anova_radon_nopred_robust_reweight" ,
+        "lightspeed" ,
+        "lightspeed_robust_reparam" ,
+        "lightspeed_robust_reweight" ,
+        "unemployment" ,
+        "unemployment_robust_reparam" ,
+        "unemployment_robust_reweight" ,
+        "timeseries" ,
+        "normal_mixture" ,
+        "gauss_mix_asym_prior",
+        "logistic",
+        "logistic_robust_reweight",
+        "gammaTransform",
+        "prior_mix",
+        "zeroone",
+        "tug",
+        "altermu",
+        "altermu2",
+        "neural"
+    ],
+    "finite_models" : [
+        "GPA",
+        "radar_query1",
+        "radar_query2"
+    ]
+
+}

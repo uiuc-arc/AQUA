@@ -109,6 +109,7 @@ public class CFGBuilder{
         for(AST.Query query:program.queries){
             queriesBasicBlock.queries.add(query);
         }
+        /*
         for(Section s:this.sections){
             System.out.print("Section  " + s.sectionName + ": ");
             for(BasicBlock b:s.basicBlocks){
@@ -116,6 +117,7 @@ public class CFGBuilder{
             }
             System.out.println();
         }
+        */
 
         if(this.showCFG) {
             Utils.showGraph(this.graph, this.outputfile);
