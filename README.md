@@ -70,7 +70,7 @@ The above discrete program is to exemplify AQUA usage. Generally, AQUA may not r
 
 To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` under `"finite_models"`.
 
-## Source Code
+## Project Structure
 
     .  
         ├── benchmarks/                                         # Contains all benchmarks
