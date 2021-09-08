@@ -11,8 +11,10 @@ The paper describing the methodology behind AQUA:
 
 Prerequisites:
 
-* Java
-* Maven (e.g. `sudo apt -y update; sudo apt install maven`)
+* Java: check installation: `java -version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install openjdk-8-jdk`
+
+
+* Maven: check installation: `mvn --version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install maven`
 
 Install dependencies and build package:
 
