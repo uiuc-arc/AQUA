@@ -23,6 +23,8 @@ The paper describing the methodology behind AQUA:
 
 **Install dependencies and build AQUA:**
 
+In the root directory of this repo, run
+
     mvn package -DskipTests=true
 
 It may take a while and in the end print `BUILD SUCCESS`.
