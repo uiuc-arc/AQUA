@@ -27,7 +27,7 @@ In the root directory of this repo, run
 
     mvn package -DskipTests=true
 
-It may take a while and in the end print `BUILD SUCCESS`.
+In the end it should print `BUILD SUCCESS`.
 
 
 ## Usage
