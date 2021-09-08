@@ -9,18 +9,23 @@ The paper describing the methodology behind AQUA:
 
 ## Installation
 
-Prerequisites:
+**Prerequisites:**
 
-* Java: check installation: `java -version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install openjdk-8-jdk`
+* Java 
+
+  Check installation with `java -version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install openjdk-8-jdk`
 
 
-* Maven: check installation: `mvn --version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install maven`
+* Maven
 
-Install dependencies and build package:
+  Check installation with `mvn --version`. If not installed, on Ubuntu you may try `sudo apt -y update; sudo apt install maven`
+
+
+**Install dependencies and build AQUA:**
 
     mvn package -DskipTests=true
 
-It should print `BUILD SUCCESS`.
+It may take a while and in the end print `BUILD SUCCESS`.
 
 
 ## Usage
