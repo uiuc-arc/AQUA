@@ -32,7 +32,7 @@ In the end it should print `BUILD SUCCESS`.
 
 ## Usage
 
-AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`<prog_name>.template`), see [example](https://github.com/uiuc-arc/AQUA/blob/master/benchmarks/storm_bench/three_coin_flip/three_coin_flip.template); or
+AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.illinois.edu/papers/storm-fse19.pdf) (`<prog_name>.template`), see [examples](https://github.com/uiuc-arc/AQUA/blob/master/benchmarks/storm_bench); or
 (b) a directory `<prog_name>/` containing Stan file (`<prog_name>.stan`) and data (`<prog_name>.data.R`). 
 
 #### (a) Run AQUA on a Storm IR file
