@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>grammar</groupId>
-    <artifactId>grammar</artifactId>
+    <groupId>aqua</groupId>
+    <artifactId>aqua</artifactId>
 
     <packaging>jar</packaging>
     <version>1.0</version>
@@ -49,6 +49,13 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>LATEST</version>
+        </dependency>
+        <dependency>
+            <groupId>grammar</groupId>
+            <artifactId>grammar</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/grammar-1.0.jar</systemPath>
         </dependency>
 	<dependency>
 		<groupId>commons-io</groupId>
@@ -247,7 +254,7 @@
 				<index>true</index>
 				<manifest>
 					<addClasspath>true</addClasspath>
-					<mainClass>grammar.transformations.TransformerRunner</mainClass>
+					<mainClass>aqua.AnalysisRunner</mainClass>
 				</manifest>
 			</archive>
 		</configuration>
