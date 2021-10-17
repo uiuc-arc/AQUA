@@ -1,34 +1,35 @@
-package grammar.cfg;
-import grammar.AST;
-import grammar.analyses.GridState;
+package aqua.cfg;
+import aqua.AST;
+import aqua.analyses.GridState;
+import grammar.cfg.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BasicBlock {
+public class BasicBlock extends grammar.cfg.BasicBlock {
     public GridState dataflowFacts = null;
-    public ArrayList<Statement> getStatements() {
+    public ArrayList<aqua.cfg.Statement> getStatementsAQ() {
         return statements;
     }
 
-    public ArrayList<AST.Data> getData() {
+    public ArrayList<AST.Data> getDataAQ() {
         return data;
     }
 
-    public ArrayList<AST.Query> getQueries() {
+    public ArrayList<AST.Query> getQueriesAQ() {
         return queries;
     }
 
-    public Section getParent() {
-        return parent;
+    public aqua.cfg.Section getParentAQ() {
+       return parent;
     }
 
-    public void setParent(Section section){
-        this.parent = section;
+    public void setParentAQ(aqua.cfg.Section section){
+       this.parent = section;
     }
 
-    public SymbolTable getSymbolTable() {
+    public SymbolTable getSymbolTableAQ() {
         return symbolTable;
     }
 
@@ -36,33 +37,33 @@ public class BasicBlock {
     ArrayList<AST.Data> data;
     ArrayList<AST.Query> queries;
 
-    public Map<String, BasicBlock> getIncomingEdges() {
+    public Map<String, aqua.cfg.BasicBlock> getIncomingEdgesAQ() {
         return incomingEdges;
     }
 
-    public Map<String, BasicBlock> getOutgoingEdges() {
+    public Map<String, aqua.cfg.BasicBlock> getOutgoingEdgesAQ() {
         return outgoingEdges;
 
     }
 
-    public void addIncomingEdge(BasicBlock basicBlock, String label){
-        this.incomingEdges.put(label, basicBlock);
-    }
+    // public void addIncomingEdge(BasicBlock basicBlock, String label){
+    //     this.incomingEdges.put(label, basicBlock);
+    // }
 
-    public void addOutgoingEdge(BasicBlock basicBlock, String label){
-        this.outgoingEdges.put(label, basicBlock);
-    }
+    // public void addOutgoingEdge(BasicBlock basicBlock, String label){
+    //     this.outgoingEdges.put(label, basicBlock);
+    // }
 
-    Map<String, BasicBlock> incomingEdges;
-    Map<String, BasicBlock> outgoingEdges;
+    Map<String, aqua.cfg.BasicBlock> incomingEdges;
+    Map<String, aqua.cfg.BasicBlock> outgoingEdges;
 
-    public ArrayList<Edge> getEdges() {
-        return edges;
-    }
+    // public ArrayList<aqua.cfg.Edge> getEdges() {
+    //     return edges;
+    // }
 
-    ArrayList<Edge> edges;
-    Section parent;
-    SymbolTable symbolTable;
+    ArrayList<aqua.cfg.Edge> edges;
+    aqua.cfg.Section parent;
+    grammar.cfg.SymbolTable symbolTable;
 
 
     private int id;
@@ -72,12 +73,12 @@ public class BasicBlock {
         data = new ArrayList<>();
         queries = new ArrayList<>();
         edges = new ArrayList<>();
-        symbolTable = new SymbolTable(this);
+        symbolTable = new grammar.cfg.SymbolTable(this);
         incomingEdges = new HashMap<>();
         outgoingEdges = new HashMap<>();
     }
 
-    public BasicBlock(int id, Section section){
+    public BasicBlock(int id, aqua.cfg.Section section){
         this();
         this.id = id;
         this.parent = section;
@@ -98,7 +99,6 @@ public class BasicBlock {
         for(AST.Query query:queries){
             stringBuilder.append(query.toString() +"\n");
         }
-
         return stringBuilder.toString();
     }
 
@@ -115,7 +115,7 @@ public class BasicBlock {
         this.queries.add(query);
     }
 
-    public void addEdge(Edge edge){
+    public void addEdge(aqua.cfg.Edge edge){
         this.edges.add(edge);
     }
 
@@ -126,7 +126,7 @@ public class BasicBlock {
     public int getNumStmts() {return this.statements.size();}
 
     //for this basic block, get the last statement in the array list of statements
-    public Statement getLastStatement(){
+    public aqua.cfg.Statement getLastStatementAQ(){
         if (!this.statements.isEmpty()){
             return this.statements.get(this.getNumStmts()-1);
         }
@@ -135,7 +135,7 @@ public class BasicBlock {
 
     //for a this basic block, get ALL the immediate predecessor blocks that actually contain statements
     //the purpose is to skip over the blank basic blocks added during the compilation process
-    public ArrayList<BasicBlock> getStatementContainingPredBlocks(){
+    public ArrayList<aqua.cfg.BasicBlock> getStatementContainingPredBlocksAQ(){
         ArrayList<BasicBlock> preds = new ArrayList<>();
         //if the Basic block has no predecesors (it is the first in the CFG)
         if (this.getIncomingEdges().isEmpty()){
@@ -144,7 +144,7 @@ public class BasicBlock {
         }
         else {
             for (String key : this.getIncomingEdges().keySet()){
-                BasicBlock pred = this.getIncomingEdges().get(key);
+                aqua.cfg.BasicBlock pred = this.getIncomingEdgesAQ().get(key);
 
                 //if the pred DOES have statements
                 if (!pred.statements.isEmpty()){
@@ -152,7 +152,7 @@ public class BasicBlock {
                 }
                 //recurse!
                 else {
-                    preds.addAll(pred.getStatementContainingPredBlocks());
+                    preds.addAll(pred.getStatementContainingPredBlocksAQ());
                 }
             }
         }

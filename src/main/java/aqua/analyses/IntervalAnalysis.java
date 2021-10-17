@@ -1,8 +1,7 @@
-package grammar.analyses;
+package aqua.analyses;
 
-import grammar.AST;
-import grammar.cfg.*;
-import grammar.cfg.BasicBlock;
+import aqua.AST;
+import grammar.analyses.Pair;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.math.distribution.*;
 import org.apache.commons.math3.distribution.*;
@@ -18,12 +17,13 @@ import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.ops.transforms.Transforms;
-import utils.Utils;
+import utils.CommonUtils;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.*;
 import java.util.stream.IntStream;
+import grammar.cfg.*;
 
 import static java.lang.Math.*;
 import static org.nd4j.linalg.ops.transforms.Transforms.exp;
@@ -37,7 +37,7 @@ public class IntervalAnalysis {
     private Map<String, Pair<AST.Data, double[]>> dataList = new HashMap<>();
     private Set<String> obsDataList = new HashSet<>();
     private Map<String, Integer> scalarParam = new HashMap<>();
-    private Queue<BasicBlock> worklistAll = new LinkedList<>();
+    private Queue<aqua.cfg.BasicBlock> worklistAll = new LinkedList<>();
     public int maxCounts;
     private int minCounts = 0;
     private int PACounts = 1;
@@ -70,11 +70,11 @@ public class IntervalAnalysis {
     }
 
 
-    public void forwardAnalysis(ArrayList<Section> cfgSections) {
+    public void forwardAnalysis(ArrayList<aqua.cfg.Section> cfgSections) {
         Nd4j.setDataType(DataType.DOUBLE);
         GridState endFacts;
         // GridState.deleteAnalysisOutputs(path);
-        ArrayList<BasicBlock> worklist = new ArrayList<>();
+        ArrayList<aqua.cfg.BasicBlock> worklist = new ArrayList<>();
         InitWorklist(cfgSections, worklist);
         // getMeanFromMCMC();
         addPrior = true;
@@ -127,8 +127,8 @@ public class IntervalAnalysis {
         for (String kk : paramMap.keySet()) {
             paramDivs.put(kk, maxCounts);
         }
-        ArrayList<BasicBlock> worklist = new ArrayList<>();
-        for (BasicBlock bb: worklistAll) {
+        ArrayList<aqua.cfg.BasicBlock> worklist = new ArrayList<>();
+        for (aqua.cfg.BasicBlock bb: worklistAll) {
             bb.dataflowFacts = null;
         }
         scalarParam.clear();
@@ -641,16 +641,16 @@ public class IntervalAnalysis {
     }
     */
 
-    private GridState WorklistIter(ArrayList<BasicBlock> worklist) {
+    private GridState WorklistIter(ArrayList<aqua.cfg.BasicBlock> worklist) {
         GridState endFacts = null;
-        BasicBlock currBlock;
+        aqua.cfg.BasicBlock currBlock;
         Set<Integer> visited = new HashSet<>();
         while (!worklist.isEmpty()) {
             currBlock = worklist.remove(0);
-            Map<String, BasicBlock> nameIncoming = currBlock.getIncomingEdges();
+            Map<String, aqua.cfg.BasicBlock> nameIncoming = currBlock.getIncomingEdgesAQ();
             if (nameIncoming.size() > 1 && ! nameIncoming.keySet().contains("back")) {
                 boolean unvisitPred = false;
-                for (BasicBlock bb : nameIncoming.values()) {
+                for (aqua.cfg.BasicBlock bb : nameIncoming.values()) {
                     if (!visited.contains(bb.getId()))
                         unvisitPred = true;
                 }
@@ -662,7 +662,7 @@ public class IntervalAnalysis {
             visited.add(currBlock.getId());
             // Join and prepare to analyze block
             if (currBlock.getIncomingEdges().keySet().contains("meetT")) {
-                Map<String, BasicBlock> incoming = currBlock.getIncomingEdges();
+                Map<String, aqua.cfg.BasicBlock> incoming = currBlock.getIncomingEdgesAQ();
                 GridState dfT = null, dfF = null;
                 for (String cond : incoming.keySet()) {
                     // get true
@@ -689,34 +689,34 @@ public class IntervalAnalysis {
             // tmpint[tmpint.length -1] = 2;
             // System.out.println(Nd4j.createFromArray(tmpint));
             // System.out.println(tmp.sum(tmpint));
-            Map<String, BasicBlock> succs = currBlock.getOutgoingEdges();
+            Map<String, aqua.cfg.BasicBlock> succs = currBlock.getOutgoingEdgesAQ();
             if (succs.containsKey("true") && succs.containsKey("false") && (!currBlock.getIncomingEdges().containsKey("back"))) {
                     // if else union from previous results
-                AST.IfStmt ifCond = (AST.IfStmt) currBlock.getLastStatement().statement;
+                aqua.AST.IfStmt ifCond = (aqua.AST.IfStmt) currBlock.getLastStatementAQ().statement;
                 INDArray condCube = DistrCube(ifCond.condition, endFacts);
                 if (condCube.length() > 1) {
-                    BasicBlock succFalse = succs.get("false");
+                    aqua.cfg.BasicBlock succFalse = succs.get("false");
                     succFalse.dataflowFacts = endFacts.clone();
                     succFalse.dataflowFacts.meet(condCube, false); // meetF
                     worklist.add(0, succFalse);
 
-                    BasicBlock succTrue = succs.get("true");
+                    aqua.cfg.BasicBlock succTrue = succs.get("true");
                     succTrue.dataflowFacts = endFacts;
                     succTrue.dataflowFacts.meet(condCube, true); // meetT
                     worklist.add(0, succTrue);
                 } else { // deterministic
                     if (condCube.getDouble(0) == 0) {
-                        BasicBlock succFalse = succs.get("false");
+                        aqua.cfg.BasicBlock succFalse = succs.get("false");
                         worklist.add(0, succFalse);
                     }
                     else {
-                        BasicBlock succTrue = succs.get("true");
+                        aqua.cfg.BasicBlock succTrue = succs.get("true");
                         worklist.add(0, succTrue);
                     }
                 }
 
             } else if (succs.containsKey("meetT")) {
-                BasicBlock meetT = succs.get("meetT");
+                aqua.cfg.BasicBlock meetT = succs.get("meetT");
                 worklist.add(meetT);
                 // Collection<BasicBlock> tfBlocks = meetT.getIncomingEdges().values();
                 // System.out.println("meetT ID " + meetT.getId());
@@ -732,7 +732,7 @@ public class IntervalAnalysis {
                 // System.out.println(max);
             } else {
                 for (String cond : succs.keySet()) {
-                    BasicBlock succ = succs.get(cond);
+                    aqua.cfg.BasicBlock succ = succs.get(cond);
                     succ.dataflowFacts = endFacts;
                     if (changed) {
                         if (cond == null)
@@ -771,14 +771,14 @@ public class IntervalAnalysis {
     //     return endFacts;
     // }
 
-    private void InitWorklist(ArrayList<Section> cfgSections, ArrayList<BasicBlock> worklist) {
-        for (Section section : cfgSections) {
+    private void InitWorklist(ArrayList<aqua.cfg.Section> cfgSections, ArrayList<aqua.cfg.BasicBlock> worklist) {
+        for (aqua.cfg.Section section : cfgSections) {
             // System.out.println(section.sectionType);
             if (section.sectionType == SectionType.DATA) {
-                ArrayList<AST.Data> dataSets = section.basicBlocks.get(0).getData();
+                ArrayList<aqua.AST.Data> dataSets = section.basicBlocks.get(0).getDataAQ();
                 int dataDivConst = 1;
-                for (AST.Data dd: dataSets) {
-                    String dataString = Utils.parseData(dd, 'f');
+                for (aqua.AST.Data dd: dataSets) {
+                    String dataString = CommonUtils.parseData(dd, 'f');
                     dataString = dataString.replaceAll("\\s", "").replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\\.0,",",").replaceAll("\\.0$","");
                     double[] dataArray = Arrays.stream(dataString.split(",")).mapToDouble(Double::parseDouble).toArray();
                     if (dataArray.length == 1) {
@@ -795,11 +795,11 @@ public class IntervalAnalysis {
                 // System.out.println(section.sectionName);
                 if (section.sectionName.equals("main")) {
                     worklist.add(section.basicBlocks.get(0));
-                    for (BasicBlock basicBlock: section.basicBlocks) {
+                    for (aqua.cfg.BasicBlock basicBlock: section.basicBlocks) {
                         worklistAll.add(basicBlock);
                         // If no attack!!!
-                        for (Statement statement : basicBlock.getStatements()) {
-                            if (statement.statement instanceof AST.Decl) {
+                        for (aqua.cfg.Statement statement : basicBlock.getStatementsAQ()) {
+                            if (statement.statement instanceof aqua.AST.Decl) {
                                 addParams(statement);
                             }
                             /*
@@ -939,35 +939,35 @@ public class IntervalAnalysis {
         return sqrt(sd);
     }
 
-    private Boolean BlockAnalysisCube(BasicBlock basicBlock) {
+    private Boolean BlockAnalysisCube(aqua.cfg.BasicBlock basicBlock) {
         Boolean changed = false;
         GridState intervalState;
         if (basicBlock.dataflowFacts == null)
             intervalState = new GridState();
         else
             intervalState = basicBlock.dataflowFacts;
-        for (Statement statement : basicBlock.getStatements()) {
-            if (statement.statement instanceof AST.Decl) {
+        for (aqua.cfg.Statement statement : basicBlock.getStatementsAQ()) {
+            if (statement.statement instanceof aqua.AST.Decl) {
                 // System.out.println("Decl: " + statement.statement.toString());
                 // addParams(statement);
                 // System.out.println(statement.statement.toString());
                 changed = true;
 
-            } else if (statement.statement instanceof AST.AssignmentStatement) {
+            } else if (statement.statement instanceof aqua.AST.AssignmentStatement) {
                 // changed always true
                 changed = analyzeAssignment(intervalState, statement);
-            } else if (statement.statement instanceof AST.FunctionCallStatement) {
+            } else if (statement.statement instanceof aqua.AST.FunctionCallStatement) {
                 if (statement.statement.toString().startsWith("hardObserve")) {
                     analyzeObserve(intervalState, statement);
                     changed = true;
                 }
 
-            } else if (statement.statement instanceof AST.IfStmt) {
-                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+            } else if (statement.statement instanceof aqua.AST.IfStmt) {
+                aqua.AST.IfStmt ifStmt = (aqua.AST.IfStmt) statement.statement;
                 // BlockAnalysis(ifStmt.BBtrueBlock);
                 // BlockAnalysis(ifStmt.BBelseBlock);
-            } else if (statement.statement instanceof AST.ForLoop) {
-                AST.ForLoop forLoop = (AST.ForLoop) statement.statement;
+            } else if (statement.statement instanceof aqua.AST.ForLoop) {
+                aqua.AST.ForLoop forLoop = (aqua.AST.ForLoop) statement.statement;
                 // System.out.println("ForLoop: "+ statement.statement);
                 changed = incLoop(forLoop);
             }
@@ -976,22 +976,22 @@ public class IntervalAnalysis {
         return changed;
     }
 
-    private void analyzeObserve(GridState intervalState, Statement statement) {
-        AST.FunctionCall funcStat = ((AST.FunctionCallStatement) statement.statement).functionCall;
+    private void analyzeObserve(GridState intervalState, aqua.cfg.Statement statement) {
+        aqua.AST.FunctionCall funcStat = ((aqua.AST.FunctionCallStatement) statement.statement).functionCall;
         INDArray hardCond = DistrCube(funcStat.parameters.get(0), intervalState);
         INDArray loghardCond  = Transforms.log(hardCond);
         intervalState.addProb(loghardCond);
     }
 
-    private Boolean analyzeAssignment(GridState intervalState, Statement statement) {
+    private Boolean analyzeAssignment(GridState intervalState, aqua.cfg.Statement statement) {
         Boolean changed = true;
-        ArrayList<AST.Annotation> annotations = statement.statement.annotations;
-        AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+        ArrayList<aqua.AST.Annotation> annotations = statement.statement.annotations;
+        aqua.AST.AssignmentStatement assignment = (aqua.AST.AssignmentStatement) statement.statement;
         if (annotations != null && !annotations.isEmpty() &&
-                annotations.get(0).annotationType == AST.AnnotationType.Observe) {
+                annotations.get(0).annotationType == aqua.AST.AnnotationType.Observe) {
             // System.out.println("Observe (assign): " + statement.statement.toString());
             INDArray yArray = getYArrayUpper(assignment.lhs, intervalState);
-            ObsDistrCube(yArray, (AST.FunctionCall) assignment.rhs, intervalState);
+            ObsDistrCube(yArray, (aqua.AST.FunctionCall) assignment.rhs, intervalState);
             changed = true;
         } else {
             // System.out.println("Assignment: " + statement.statement.toString());
@@ -1015,14 +1015,14 @@ public class IntervalAnalysis {
                 }
                 Double[] paramLimits = paramInfo.getKey();
                 ArrayList<Integer> paramDims = paramInfo.getValue();
-                if (assignment.rhs instanceof AST.FunctionCall
+                if (assignment.rhs instanceof aqua.AST.FunctionCall
                         && isFuncConst(assignment.rhs)) { // completely independent new param
                     // System.out.println("Const param");
                     // TODO: fix dim if rhs contains data
                     // TODO: fix usage of single Id without dim, e.g beta~... but beta has dim 2
                     if (assignment.lhs.toString().contains("[")) {
                         ArrayList<Integer> dims = new ArrayList<>();
-                        getConstN(dims, ((AST.ArrayAccess) assignment.lhs).dims.dims.get(0));
+                        getConstN(dims, ((aqua.AST.ArrayAccess) assignment.lhs).dims.dims.get(0));
                         if (paramDivs.containsKey(newParamID)) {
                             initIndParamAllDims(intervalState, assignment, assignment.lhs.toString(), paramLimits, new ArrayList<>());
                         } else {
@@ -1041,9 +1041,9 @@ public class IntervalAnalysis {
                     // intervalState.printAbsState();
                 }
                 else { // transformed parameters, completely dependent on other params
-                    if (!(assignment.rhs instanceof AST.FunctionCall)) { // TODO: cond: not a distr
+                    if (!(assignment.rhs instanceof aqua.AST.FunctionCall)) { // TODO: cond: not a distr
                         INDArray rhs = DistrCube(assignment.rhs, intervalState);
-                        if (!(assignment.lhs instanceof AST.ArrayAccess)) {
+                        if (!(assignment.lhs instanceof aqua.AST.ArrayAccess)) {
                             long[] rhsShape = rhs.shape();
                             // Pair<Double[], ArrayList<Integer>> lhsLength = paramMap.get(assignment.lhs.toString());
                             if (rhsShape.length == 0 || rhsShape[0] == 1)
@@ -1061,7 +1061,7 @@ public class IntervalAnalysis {
                             }
                         }
                         else { // is arrayaccess like y_hat[i]
-                            AST.ArrayAccess lhsArrayAccess = (AST.ArrayAccess) assignment.lhs;
+                            aqua.AST.ArrayAccess lhsArrayAccess = (aqua.AST.ArrayAccess) assignment.lhs;
                             String transParamId = lhsArrayAccess.id.id;
                             ArrayList<Integer> dimArray = new ArrayList<>();
                             getConstN(dimArray, lhsArrayAccess.dims.dims.get(0));
@@ -1083,9 +1083,9 @@ public class IntervalAnalysis {
         return changed;
     }
 
-    private void HierInterDistrCube(AST.AssignmentStatement assignment, GridState intervalState) {
-        AST.Expression lhs = assignment.lhs;
-        AST.FunctionCall rhs = (AST.FunctionCall) assignment.rhs;
+    private void HierInterDistrCube(aqua.AST.AssignmentStatement assignment, GridState intervalState) {
+        aqua.AST.Expression lhs = assignment.lhs;
+        aqua.AST.FunctionCall rhs = (aqua.AST.FunctionCall) assignment.rhs;
         if (intervalState.paramValues.containsKey(lhs.toString())){
             INDArray[] params = getParams(intervalState, rhs);
             INDArray lhsParam = intervalState.getParamCube(lhs.toString());
@@ -1103,10 +1103,10 @@ public class IntervalAnalysis {
         }
     }
 
-    private void analyzeTarget(GridState intervalState, AST.Expression rhs) {
-        AST.AddOp plusRhs = (AST.AddOp) rhs;
-        if (plusRhs.op2 instanceof AST.FunctionCall
-                || plusRhs.op2 instanceof AST.MulOp || plusRhs.op2 instanceof AST.Braces) {
+    private void analyzeTarget(GridState intervalState, aqua.AST.Expression rhs) {
+        aqua.AST.AddOp plusRhs = (aqua.AST.AddOp) rhs;
+        if (plusRhs.op2 instanceof aqua.AST.FunctionCall
+                || plusRhs.op2 instanceof aqua.AST.MulOp || plusRhs.op2 instanceof aqua.AST.Braces) {
             INDArray probLUcat = DistrCube(plusRhs.op2, intervalState);
             if(probLUcat == null || probLUcat.length() == 0)
                 return;
@@ -1123,7 +1123,7 @@ public class IntervalAnalysis {
         }
     }
 
-    private INDArray getYArrayUpper(AST.Expression lhs, GridState intervalState) {
+    private INDArray getYArrayUpper(aqua.AST.Expression lhs, GridState intervalState) {
         String dataYID = lhs.toString();
         INDArray ret1;
         if (!dataYID.contains("[") && dataList.containsKey(dataYID.split("\\[")[0])) {
@@ -1166,7 +1166,7 @@ public class IntervalAnalysis {
     */
 
 
-    private Boolean incLoop(AST.ForLoop forLoop) {
+    private Boolean incLoop(aqua.AST.ForLoop forLoop) {
         Boolean changed;
         String loopVar = forLoop.loopVar.id;
         if (scalarParam.containsKey(loopVar)) {
@@ -1190,7 +1190,7 @@ public class IntervalAnalysis {
         return changed;
     }
 
-    private void initIndParamAllDims(GridState intervalState, AST.AssignmentStatement assignment, String paramID, Double[] paramLimits, ArrayList<Integer> paramDims) {
+    private void initIndParamAllDims(GridState intervalState, aqua.AST.AssignmentStatement assignment, String paramID, Double[] paramLimits, ArrayList<Integer> paramDims) {
         if (paramDims.size() == 1) {
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 String currParamName = String.format("%s[%s]", paramID, jj);
@@ -1222,7 +1222,7 @@ public class IntervalAnalysis {
         }
     }
 
-    private void initParamHelper(GridState intervalState, AST.AssignmentStatement assignment, Double[] paramLimits, INDArray[] rhsMin, String currParamName) {
+    private void initParamHelper(GridState intervalState, aqua.AST.AssignmentStatement assignment, Double[] paramLimits, INDArray[] rhsMin, String currParamName) {
         if (paramDivs.get(currParamName) == minCounts) {
             if (minCounts != 0)
                 intervalState.addParamCube(currParamName, rhsMin[0], rhsMin[1]);
@@ -1235,7 +1235,7 @@ public class IntervalAnalysis {
         }
     }
 
-    private void initIndParamAllDimsPA(GridState intervalState, AST.AssignmentStatement assignment, String paramID, Double[] paramLimits, ArrayList<Integer> paramDims) {
+    private void initIndParamAllDimsPA(GridState intervalState, aqua.AST.AssignmentStatement assignment, String paramID, Double[] paramLimits, ArrayList<Integer> paramDims) {
         if (paramDims.size() == 1) {
             for (Integer jj = 1; jj <= paramDims.get(0); jj++) {
                 String currParamName = String.format("%s[%s]", paramID, jj);
@@ -1256,8 +1256,8 @@ public class IntervalAnalysis {
         }
     }
 
-    private void HierDistrCube(AST.AssignmentStatement assignment, GridState intervalState) {
-        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+    private void HierDistrCube(aqua.AST.AssignmentStatement assignment, GridState intervalState) {
+        aqua.AST.FunctionCall distrExpr = (aqua.AST.FunctionCall) assignment.rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
         if (params == null) return;
         if (params.length == 1) {
@@ -1388,8 +1388,8 @@ public class IntervalAnalysis {
         }
     }
 
-    private void ObsDistrCube(INDArray yArray, AST.FunctionCall rhs, GridState intervalState) {
-        AST.FunctionCall distrExpr = rhs;
+    private void ObsDistrCube(INDArray yArray, aqua.AST.FunctionCall rhs, GridState intervalState) {
+        aqua.AST.FunctionCall distrExpr = rhs;
         INDArray[] params = getParams(intervalState, distrExpr);
         if (params == null || params[0].shape().length == 0  ) return;
         if (params.length > 1 && params[1].shape().length == 0) return;
@@ -1584,16 +1584,16 @@ public class IntervalAnalysis {
         return logSum;
     }
 
-    private INDArray[] getParams(GridState intervalState, AST.FunctionCall distrExpr) {
+    private INDArray[] getParams(GridState intervalState, aqua.AST.FunctionCall distrExpr) {
         INDArray[] params = new NDArray[distrExpr.parameters.size()];
         int parami = 0;
-        for (AST.Expression pp: distrExpr.parameters) {
-            if (pp instanceof AST.Integer) {
-                params[parami] = Nd4j.createFromArray(((AST.Integer) pp).value);
+        for (aqua.AST.Expression pp: distrExpr.parameters) {
+            if (pp instanceof aqua.AST.Integer) {
+                params[parami] = Nd4j.createFromArray(((aqua.AST.Integer) pp).value);
 
             }
-            else if (pp instanceof AST.Double) {
-                params[parami] = Nd4j.createFromArray(((AST.Double) pp).value);
+            else if (pp instanceof aqua.AST.Double) {
+                params[parami] = Nd4j.createFromArray(((aqua.AST.Double) pp).value);
             }
             else {
                 params[parami] = DistrCube(pp, intervalState);
@@ -1605,68 +1605,68 @@ public class IntervalAnalysis {
         return params;
     }
 
-    private INDArray DistrCube(AST.Expression pp, GridState intervalState) {
-        if (pp instanceof AST.FunctionCall) {
-            return DistrCube((AST.FunctionCall) pp, intervalState);
+    private INDArray DistrCube(aqua.AST.Expression pp, GridState intervalState) {
+        if (pp instanceof aqua.AST.FunctionCall) {
+            return DistrCube((aqua.AST.FunctionCall) pp, intervalState);
         }
-        if (pp instanceof AST.Id) {
-            return DistrCube((AST.Id) pp, intervalState);
+        if (pp instanceof aqua.AST.Id) {
+            return DistrCube((aqua.AST.Id) pp, intervalState);
         }
-        else if (pp instanceof AST.AddOp) {
-            return DistrCube((AST.AddOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.AddOp) {
+            return DistrCube((aqua.AST.AddOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.MinusOp) {
-            return DistrCube((AST.MinusOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.MinusOp) {
+            return DistrCube((aqua.AST.MinusOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.MulOp) {
-            return DistrCube((AST.MulOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.MulOp) {
+            return DistrCube((aqua.AST.MulOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.DivOp) {
-            return DistrCube((AST.DivOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.DivOp) {
+            return DistrCube((aqua.AST.DivOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.Braces) {
-            return DistrCube((AST.Braces) pp, intervalState);
+        else if (pp instanceof aqua.AST.Braces) {
+            return DistrCube((aqua.AST.Braces) pp, intervalState);
 
         }
-        else if (pp instanceof AST.ArrayAccess) {
-            return DistrCube((AST.ArrayAccess) pp, intervalState);
+        else if (pp instanceof aqua.AST.ArrayAccess) {
+            return DistrCube((aqua.AST.ArrayAccess) pp, intervalState);
         }
-        else if (pp instanceof AST.Integer) {
-            return DistrCube((AST.Integer) pp, intervalState);
+        else if (pp instanceof aqua.AST.Integer) {
+            return DistrCube((aqua.AST.Integer) pp, intervalState);
         }
-        else if (pp instanceof AST.Double) {
-            return DistrCube((AST.Double) pp, intervalState);
+        else if (pp instanceof aqua.AST.Double) {
+            return DistrCube((aqua.AST.Double) pp, intervalState);
         }
-        else if (pp instanceof AST.UnaryExpression) {
-            return DistrCube((AST.UnaryExpression) pp, intervalState);
+        else if (pp instanceof aqua.AST.UnaryExpression) {
+            return DistrCube((aqua.AST.UnaryExpression) pp, intervalState);
         }
-        else if (pp instanceof AST.TernaryIf) {
-            return DistrCube((AST.TernaryIf) pp, intervalState);
+        else if (pp instanceof aqua.AST.TernaryIf) {
+            return DistrCube((aqua.AST.TernaryIf) pp, intervalState);
         }
-        else if (pp instanceof AST.LtOp) {
-            return DistrCube((AST.LtOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.LtOp) {
+            return DistrCube((aqua.AST.LtOp) pp, intervalState);
         }
-        else if (pp instanceof AST.GtOp) {
-            return DistrCube((AST.GtOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.GtOp) {
+            return DistrCube((aqua.AST.GtOp) pp, intervalState);
         }
-        else if (pp instanceof AST.GeqOp) {
-            return DistrCube((AST.GeqOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.GeqOp) {
+            return DistrCube((aqua.AST.GeqOp) pp, intervalState);
         }
-        else if (pp instanceof AST.LeqOp) {
-            return DistrCube((AST.LeqOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.LeqOp) {
+            return DistrCube((aqua.AST.LeqOp) pp, intervalState);
         }
-        else if (pp instanceof AST.EqOp) {
-            return DistrCube((AST.EqOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.EqOp) {
+            return DistrCube((aqua.AST.EqOp) pp, intervalState);
         }
-        else if (pp instanceof AST.AndOp) {
-            return DistrCube((AST.AndOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.AndOp) {
+            return DistrCube((aqua.AST.AndOp) pp, intervalState);
         }
-        else if (pp instanceof AST.OrOp) {
-            return DistrCube((AST.OrOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.OrOp) {
+            return DistrCube((aqua.AST.OrOp) pp, intervalState);
         }
         else {
             System.out.println("Expression " + pp.toString() + " not supported!");
@@ -1676,15 +1676,15 @@ public class IntervalAnalysis {
     }
 
 
-    private INDArray DistrCube(AST.UnaryExpression pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.UnaryExpression pp, GridState intervalState) {
         INDArray four = DistrCube(pp.expression,intervalState);
         return four.neg();
     }
 
 
-    private INDArray DistrCube(AST.TernaryIf pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.TernaryIf pp, GridState intervalState) {
         // System.out.println(pp.condition.toString());
-        AST.Expression condExp;
+        aqua.AST.Expression condExp;
         INDArray condArray = DistrCube(pp.condition, intervalState);
         Double trueValue = Double.valueOf(pp.trueExpression.toString()) + 1234;
         Double falseValue = Double.valueOf(pp.falseExpression.toString()) + 1234;
@@ -1743,7 +1743,7 @@ public class IntervalAnalysis {
 
 
 
-    private INDArray DistrCube(AST.FunctionCall pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.FunctionCall pp, GridState intervalState) {
         // System.out.println("Distr Func=================");
         INDArray ret = null;
         if (pp.id.id.equals("log_mix")) {
@@ -1893,15 +1893,15 @@ public class IntervalAnalysis {
     */
 
 
-    private INDArray DistrCube(AST.Integer pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.Integer pp, GridState intervalState) {
         return Nd4j.createFromArray((double) pp.value);
     }
 
-    private INDArray DistrCube(AST.Double pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.Double pp, GridState intervalState) {
         return Nd4j.createFromArray(pp.value);
     }
 
-    private INDArray DistrCube(AST.Id pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.Id pp, GridState intervalState) {
         // System.out.println("Distr ID=================" + pp.id);
 
         if (dataList.containsKey(pp.id)) {
@@ -1971,14 +1971,14 @@ public class IntervalAnalysis {
     }
 
 
-    private INDArray DistrCube(AST.ArrayAccess pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.ArrayAccess pp, GridState intervalState) {
         // System.out.println("Distr ArrayAccess==================" + pp.toString());
         // if (dataList.containsKey(pp.id)) {
 
         // }
         // else {
         ArrayList<Integer> dims = new ArrayList<>();
-        for (AST.Expression dd : pp.dims.dims)
+        for (aqua.AST.Expression dd : pp.dims.dims)
             getConstN(dims, dd);
         if (intervalState.paramValues.containsKey(pp.toString()))
             return intervalState.getParamCube(pp.toString());
@@ -2104,19 +2104,19 @@ public class IntervalAnalysis {
     }
 
 
-    private INDArray DistrCube(AST.Braces pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.Braces pp, GridState intervalState) {
         // System.out.println("Distr Brace==================");
         return DistrCube(pp.expression, intervalState);
     }
 
-    private INDArray DistrCube(AST.AddOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.AddOp pp, GridState intervalState) {
         // System.out.println("Distr Add==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getAddNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.MinusOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.MinusOp pp, GridState intervalState) {
         // System.out.println("Distr Add==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
@@ -2153,14 +2153,14 @@ public class IntervalAnalysis {
         }
     }
 
-    private INDArray DistrCube(AST.MulOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.MulOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getMulNDArray(op1Array, op2Array);
     }
 
 
-    private INDArray DistrCube(AST.DivOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.DivOp pp, GridState intervalState) {
         // System.out.println("Distr Div==================" + pp.toString());
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
@@ -2202,44 +2202,44 @@ public class IntervalAnalysis {
     }
 
 
-    private INDArray DistrCube(AST.LtOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.LtOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getLtNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.GtOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.GtOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getGtNDArray(op1Array, op2Array);
     }
 
 
-    private INDArray DistrCube(AST.EqOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.EqOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getEqNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.GeqOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.GeqOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getGeqNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.LeqOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.LeqOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getLeqNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.AndOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.AndOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getAndNDArray(op1Array, op2Array);
     }
 
-    private INDArray DistrCube(AST.OrOp pp, GridState intervalState) {
+    private INDArray DistrCube(aqua.AST.OrOp pp, GridState intervalState) {
         INDArray op1Array = DistrCube(pp.op1, intervalState);
         INDArray op2Array = DistrCube(pp.op2, intervalState);
         return getOrNDArray(op1Array, op2Array);
@@ -2419,14 +2419,14 @@ public class IntervalAnalysis {
 
 
 
-    private boolean isFuncConst(AST.Expression rhs) {
-        if (rhs instanceof AST.FunctionCall) {
-            AST.FunctionCall distrExpr = (AST.FunctionCall) rhs;
-            for (AST.Expression pp: distrExpr.parameters){
-                if(!(pp instanceof AST.Integer || pp instanceof AST.Double)){
-                    if (pp instanceof AST.UnaryExpression) {
-                        AST.Expression negpp = ((AST.UnaryExpression) pp).expression;
-                        if(!(negpp instanceof AST.Integer || negpp instanceof AST.Double))
+    private boolean isFuncConst(aqua.AST.Expression rhs) {
+        if (rhs instanceof aqua.AST.FunctionCall) {
+            aqua.AST.FunctionCall distrExpr = (aqua.AST.FunctionCall) rhs;
+            for (aqua.AST.Expression pp: distrExpr.parameters){
+                if(!(pp instanceof aqua.AST.Integer || pp instanceof aqua.AST.Double)){
+                    if (pp instanceof aqua.AST.UnaryExpression) {
+                        aqua.AST.Expression negpp = ((aqua.AST.UnaryExpression) pp).expression;
+                        if(!(negpp instanceof aqua.AST.Integer || negpp instanceof aqua.AST.Double))
                             return false;
                     }
                     else
@@ -2576,7 +2576,7 @@ public class IntervalAnalysis {
     }
 
 
-    private INDArray[] IndDistrSingle(AST.Expression expr, Double[] paramLimits, int piCounts, String paramName, GridState intervalState) {
+    private INDArray[] IndDistrSingle(aqua.AST.Expression expr, Double[] paramLimits, int piCounts, String paramName, GridState intervalState) {
         // if (rhs instanceof AST.F)
         if (piCounts >= 1) {
             double pi;
@@ -2584,14 +2584,14 @@ public class IntervalAnalysis {
                 pi = 1.0 / (piCounts - 1);
             else
                 pi = -1;
-            if (expr instanceof AST.FunctionCall) {
-                AST.FunctionCall distrExpr = (AST.FunctionCall) expr;
+            if (expr instanceof aqua.AST.FunctionCall) {
+                aqua.AST.FunctionCall distrExpr = (aqua.AST.FunctionCall) expr;
                 ArrayList<Double> funcParams = new ArrayList<>();
-                for (AST.Expression pp : distrExpr.parameters) {
-                    if (pp instanceof AST.Integer)
-                        funcParams.add((double) ((AST.Integer) pp).value);
-                    else if (pp instanceof AST.Double)
-                        funcParams.add(((AST.Double) pp).value);
+                for (aqua.AST.Expression pp : distrExpr.parameters) {
+                    if (pp instanceof aqua.AST.Integer)
+                        funcParams.add((double) ((aqua.AST.Integer) pp).value);
+                    else if (pp instanceof aqua.AST.Double)
+                        funcParams.add(((aqua.AST.Double) pp).value);
                     else {
                         funcParams.add(Double.valueOf(pp.toString()));
                     }
@@ -2777,14 +2777,14 @@ public class IntervalAnalysis {
     }
 
     // Used in Pre-Analysis to find all params definition
-    private void addParams(Statement statement) {
-        if (statement.statement instanceof AST.Decl) {
-            AST.Decl declStatement = (AST.Decl) statement.statement;
+    private void addParams(aqua.cfg.Statement statement) {
+        if (statement.statement instanceof aqua.AST.Decl) {
+            aqua.AST.Decl declStatement = (aqua.AST.Decl) statement.statement;
             Double[] limits = {null, null, null, null};
-            for(AST.Annotation aa : declStatement.annotations) {
-                if (aa.annotationType == AST.AnnotationType.Limits){
-                    if (aa.annotationValue instanceof AST.Limits) {
-                        AST.Limits aaLimits = (AST.Limits) aa.annotationValue;
+            for(aqua.AST.Annotation aa : declStatement.annotations) {
+                if (aa.annotationType == aqua.AST.AnnotationType.Limits){
+                    if (aa.annotationValue instanceof aqua.AST.Limits) {
+                        aqua.AST.Limits aaLimits = (aqua.AST.Limits) aa.annotationValue;
                         if(aaLimits.lower != null)
                             limits[0] = Double.valueOf(aaLimits.lower.toString());
                         if(aaLimits.upper != null)
@@ -2805,12 +2805,12 @@ public class IntervalAnalysis {
             }
             ArrayList<Integer> dimArray = new ArrayList<>();
             if (declStatement.dtype.dims != null) {
-                for (AST.Expression dd: declStatement.dtype.dims.dims) {
+                for (aqua.AST.Expression dd: declStatement.dtype.dims.dims) {
                     getConstN(dimArray, dd);
                 }
             }
             if (declStatement.dims != null) {
-                for (AST.Expression dd : declStatement.dims.dims) {
+                for (aqua.AST.Expression dd : declStatement.dims.dims) {
                     getConstN(dimArray, dd);
                 }
             }
@@ -2834,13 +2834,13 @@ public class IntervalAnalysis {
         }
     }
 
-    private void getConstN(ArrayList<Integer> dimArray, AST.Expression dd) {
+    private void getConstN(ArrayList<Integer> dimArray, aqua.AST.Expression dd) {
         if (dd.toString().matches("\\d+"))
             dimArray.add(Integer.valueOf(dd.toString()));
         else if (dataList.containsKey(dd.toString())){
             Pair<AST.Data, double[]> dataPair = dataList.get(dd.toString());
-            AST.Data data = dataPair.getKey();
-            assert (data.decl.dtype.primitive == AST.Primitive.INTEGER);
+            aqua.AST.Data data = dataPair.getKey();
+            assert (data.decl.dtype.primitive == aqua.AST.Primitive.INTEGER);
             dimArray.add(Integer.valueOf(data.expression.toString()));
         }
         else if (scalarParam.containsKey(dd.toString())){
@@ -2849,7 +2849,7 @@ public class IntervalAnalysis {
         else if (dataList.containsKey(dd.toString().split("\\[")[0])){ // data array access
             Pair<AST.Data, double[]> dataPair = dataList.get(dd.toString().split("\\[")[0]);
             ArrayList<Integer> nested = new ArrayList<>();
-            getConstN(nested, ((AST.ArrayAccess) dd).dims.dims.get(0));
+            getConstN(nested, ((aqua.AST.ArrayAccess) dd).dims.dims.get(0));
             double[] dataValue = dataPair.getValue();
             dimArray.add((int) dataValue[nested.get(0) - 1]);
         } else if (scalarParam.containsKey(dd.toString().split("-")[0])) {
@@ -2896,12 +2896,12 @@ public class IntervalAnalysis {
     // }
 
     @Deprecated
-    private void BlockAnalysis(BasicBlock basicBlock) {
+    private void BlockAnalysis(aqua.cfg.BasicBlock basicBlock) {
         GridState intervalState = new GridState();
-        for (Statement statement : basicBlock.getStatements()) {
-            if (statement.statement instanceof AST.Decl) {
+        for (aqua.cfg.Statement statement : basicBlock.getStatementsAQ()) {
+            if (statement.statement instanceof aqua.AST.Decl) {
                 // System.out.println("Decl: " + statement.statement.toString());
-                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
+                ArrayList<aqua.AST.Annotation> annotations = statement.statement.annotations;
                 addParams(statement);
                 // System.out.println(statement.statement.toString());
                 // if (annotations != null && !annotations.isEmpty() &&
@@ -2915,11 +2915,11 @@ public class IntervalAnalysis {
                 // else {
                 //
                 // }
-            } else if (statement.statement instanceof AST.AssignmentStatement) {
-                ArrayList<AST.Annotation> annotations = statement.statement.annotations;
-                AST.AssignmentStatement assignment = (AST.AssignmentStatement) statement.statement;
+            } else if (statement.statement instanceof aqua.AST.AssignmentStatement) {
+                ArrayList<aqua.AST.Annotation> annotations = statement.statement.annotations;
+                aqua.AST.AssignmentStatement assignment = (aqua.AST.AssignmentStatement) statement.statement;
                 if (annotations != null && !annotations.isEmpty() &&
-                        annotations.get(0).annotationType == AST.AnnotationType.Observe) {
+                        annotations.get(0).annotationType == aqua.AST.AnnotationType.Observe) {
                     // System.out.println("Observe (assign): " + statement.statement.toString());
                     String dataYID = assignment.lhs.toString();
                     if (!dataYID.contains("[")) {
@@ -2957,15 +2957,15 @@ public class IntervalAnalysis {
                     }
                     // TODO: dependent
                 }
-            } else if (statement.statement instanceof AST.FunctionCallStatement) {
+            } else if (statement.statement instanceof aqua.AST.FunctionCallStatement) {
                 // System.out.println("FunctionCall: " + statement.statement.toString());
 
-            } else if (statement.statement instanceof AST.IfStmt) {
-                AST.IfStmt ifStmt = (AST.IfStmt) statement.statement;
+            } else if (statement.statement instanceof aqua.AST.IfStmt) {
+                aqua.AST.IfStmt ifStmt = (aqua.AST.IfStmt) statement.statement;
                 // BlockAnalysis(ifStmt.BBtrueBlock);
                 // BlockAnalysis(ifStmt.BBelseBlock);
-            } else if (statement.statement instanceof AST.ForLoop) {
-                AST.ForLoop forLoop = (AST.ForLoop) statement.statement;
+            } else if (statement.statement instanceof aqua.AST.ForLoop) {
+                aqua.AST.ForLoop forLoop = (aqua.AST.ForLoop) statement.statement;
                 // System.out.println("ForLoop: "+ statement.statement);
                 // BlockAnalysis(forLoop.BBloopBody);
             }
@@ -2974,19 +2974,19 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private void ObsDistr(double[] yArray, AST.AssignmentStatement assignment, GridState intervalState) {
+    private void ObsDistr(double[] yArray, aqua.AST.AssignmentStatement assignment, GridState intervalState) {
         int yLength = yArray.length;
         long traceLength = intervalState.intervalProbPairs.shape()[0];
-        AST.FunctionCall distrExpr = (AST.FunctionCall) assignment.rhs;
+        aqua.AST.FunctionCall distrExpr = (aqua.AST.FunctionCall) assignment.rhs;
         INDArray[] params = new NDArray[distrExpr.parameters.size()];
         int parami = 0;
-        for (AST.Expression pp: distrExpr.parameters) {
-            if (pp instanceof AST.Integer) {
-                params[parami] = Nd4j.createFromArray(((AST.Integer) pp).value);
+        for (aqua.AST.Expression pp: distrExpr.parameters) {
+            if (pp instanceof aqua.AST.Integer) {
+                params[parami] = Nd4j.createFromArray(((aqua.AST.Integer) pp).value);
 
             }
-            else if (pp instanceof AST.Double) {
-                params[parami] = Nd4j.createFromArray(((AST.Double) pp).value);
+            else if (pp instanceof aqua.AST.Double) {
+                params[parami] = Nd4j.createFromArray(((aqua.AST.Double) pp).value);
             }
             else {
                 params[parami] = Distr(pp, intervalState);
@@ -3057,31 +3057,31 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private INDArray Distr(AST.Expression pp, GridState intervalState) {
-        if (pp instanceof AST.Id) {
-            return Distr((AST.Id) pp, intervalState);
+    private INDArray Distr(aqua.AST.Expression pp, GridState intervalState) {
+        if (pp instanceof aqua.AST.Id) {
+            return Distr((aqua.AST.Id) pp, intervalState);
         }
-        else if (pp instanceof AST.AddOp) {
-            return Distr((AST.AddOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.AddOp) {
+            return Distr((aqua.AST.AddOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.MulOp) {
-            return Distr((AST.MulOp) pp, intervalState);
+        else if (pp instanceof aqua.AST.MulOp) {
+            return Distr((aqua.AST.MulOp) pp, intervalState);
 
         }
-        else if (pp instanceof AST.Braces) {
-            return Distr((AST.Braces) pp, intervalState);
+        else if (pp instanceof aqua.AST.Braces) {
+            return Distr((aqua.AST.Braces) pp, intervalState);
 
         }
-        else if (pp instanceof AST.ArrayAccess) {
-            return Distr((AST.ArrayAccess) pp, intervalState);
+        else if (pp instanceof aqua.AST.ArrayAccess) {
+            return Distr((aqua.AST.ArrayAccess) pp, intervalState);
         }
         return null;
     }
 
 
     @Deprecated
-    private INDArray Distr(AST.Id pp, GridState intervalState) {
+    private INDArray Distr(aqua.AST.Id pp, GridState intervalState) {
         System.out.println("Distr ID=================");
 
         if (dataList.containsKey(pp.id)) {
@@ -3101,7 +3101,7 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private INDArray Distr(AST.ArrayAccess pp, GridState intervalState) {
+    private INDArray Distr(aqua.AST.ArrayAccess pp, GridState intervalState) {
         // System.out.println("Distr ArrayAccess==================");
         // if (dataList.containsKey(pp.id)) {
 
@@ -3113,13 +3113,13 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private INDArray Distr(AST.Braces pp, GridState intervalState) {
+    private INDArray Distr(aqua.AST.Braces pp, GridState intervalState) {
         // System.out.println("Distr Brace==================");
         return Distr(pp.expression, intervalState);
     }
 
     @Deprecated
-    private INDArray Distr(AST.AddOp pp, GridState intervalState) {
+    private INDArray Distr(aqua.AST.AddOp pp, GridState intervalState) {
         System.out.println("Distr Add==================");
         INDArray op1Array = Distr(pp.op1, intervalState);
         INDArray op2Array = Distr(pp.op2, intervalState);
@@ -3139,7 +3139,7 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private INDArray Distr(AST.MulOp pp, GridState intervalState) {
+    private INDArray Distr(aqua.AST.MulOp pp, GridState intervalState) {
         System.out.println("Distr Mul==================");
         INDArray op1Array = Distr(pp.op1, intervalState);
         INDArray op2Array = Distr(pp.op2, intervalState);
@@ -3169,18 +3169,18 @@ public class IntervalAnalysis {
     }
 
     @Deprecated
-    private INDArray[] IndDistr(AST.Expression expr, Double[] paramLimits) {
+    private INDArray[] IndDistr(aqua.AST.Expression expr, Double[] paramLimits) {
         // if (rhs instanceof AST.F)
         double[] lower = new double[maxCounts];
         double[] upper = new double[maxCounts];
-        if (expr instanceof AST.FunctionCall) {
-            AST.FunctionCall distrExpr = (AST.FunctionCall) expr;
+        if (expr instanceof aqua.AST.FunctionCall) {
+            aqua.AST.FunctionCall distrExpr = (aqua.AST.FunctionCall) expr;
             ArrayList<Double> funcParams = new ArrayList<>();
-            for (AST.Expression pp: distrExpr.parameters){
-                if (pp instanceof AST.Integer)
-                    funcParams.add((double) ((AST.Integer) pp).value);
+            for (aqua.AST.Expression pp: distrExpr.parameters){
+                if (pp instanceof aqua.AST.Integer)
+                    funcParams.add((double) ((aqua.AST.Integer) pp).value);
                 else
-                    funcParams.add(((AST.Double) pp).value);
+                    funcParams.add(((aqua.AST.Double) pp).value);
             }
             String distrName = distrExpr.id.id;
             if (distrName.equals("normal")) {

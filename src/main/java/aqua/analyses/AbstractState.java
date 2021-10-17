@@ -1,5 +1,5 @@
 //package grammar.cfg;
-package grammar.analyses;
+package aqua.analyses;
 
 public abstract class AbstractState {
 

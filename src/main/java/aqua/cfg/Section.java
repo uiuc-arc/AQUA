@@ -1,10 +1,11 @@
-package grammar.cfg;
+package aqua.cfg;
 
 import java.util.ArrayList;
+import grammar.cfg.SectionType;
 
 public class Section {
     public SectionType sectionType;
-    public ArrayList<BasicBlock> basicBlocks;
+    public ArrayList<aqua.cfg.BasicBlock> basicBlocks;
     public String sectionName;
 
     public Section(){

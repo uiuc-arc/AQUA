@@ -1,14 +1,14 @@
-package grammar;
+package aqua;
 
-import grammar.cfg.BasicBlock;
-import utils.Utils;
+//import utils.Utils;
 
 import javax.json.JsonObject;
 import java.util.ArrayList;
 import java.util.List;
+import utils.CommonUtils;
 
-public class AST {
-    public static class ASTNode {
+public class AST extends grammar.AST {
+    public static class ASTNode extends grammar.AST.ASTNode {
         public ASTNode parent;
     }
 
@@ -58,7 +58,7 @@ public class AST {
         }
     }
 
-    public static class Statement extends ASTNode {
+    public static class Statement extends grammar.AST.Statement { // ASTNode {
         public ArrayList<Annotation> annotations;
     }
 
@@ -81,8 +81,8 @@ public class AST {
         public Id loopVar;
         public Range range;
         public Block block;
-        public BasicBlock BBloopBody;
-        public BasicBlock BBloopCond;
+        public aqua.cfg.BasicBlock BBloopBody;
+        public aqua.cfg.BasicBlock BBloopCond;
 
         public ForLoop(Id loopVar, Range range, Block block) {
             this.loopVar = loopVar;
@@ -115,8 +115,8 @@ public class AST {
         public Expression condition;
         public Block trueBlock;
         public Block elseBlock;
-        public BasicBlock BBtrueBlock;
-        public BasicBlock BBelseBlock;
+        public aqua.cfg.BasicBlock BBtrueBlock;
+        public aqua.cfg.BasicBlock BBelseBlock;
 
         public IfStmt() {
 
@@ -386,7 +386,7 @@ public class AST {
         }
     }
 
-    public static class Decl extends Statement {
+    public static class Decl extends grammar.AST.Decl{ // Statement {
         public Dtype dtype;
         public Dims dims;
         public Id id;
@@ -402,7 +402,7 @@ public class AST {
         }
     }
 
-    public static class FunctionCallStatement extends Statement {
+    public static class FunctionCallStatement extends grammar.AST.FunctionCallStatement { // Statement {
         public final FunctionCall functionCall;
 
         public FunctionCallStatement(FunctionCall functionCall) {
@@ -415,7 +415,7 @@ public class AST {
         }
     }
 
-    public static class FunctionCall extends Expression {
+    public static class FunctionCall extends grammar.AST.FunctionCall { // Expression {
         public boolean isDistHole;
         public boolean isDistX;
         public boolean isDistribution;
@@ -433,7 +433,7 @@ public class AST {
                 isDistribution = true;
             else {
                 String distName = id.toString();
-                List<JsonObject> distributions = Utils.getDistributions(null);
+                List<JsonObject> distributions = CommonUtils.getDistributions(null);
                 for (JsonObject distribution : distributions) {
 
                     try {
@@ -465,7 +465,7 @@ public class AST {
 
     public enum Primitive {INTEGER, FLOAT, MATRIX, VECTOR}
 
-    public static class Expression extends ASTNode {
+    public static class Expression extends aqua.AST.ASTNode {
 
     }
 
@@ -576,7 +576,7 @@ public class AST {
         }
     }
 
-    public static class Id extends Expression {
+    public static class Id extends aqua.AST.Expression {
         public String id;
 
         public Id(String id) {
@@ -615,9 +615,7 @@ public class AST {
         }
     }
 
-    public enum Marker {Start, End}
-
-    ;
+    public enum Marker {Start, End} ;
 
     public static class MarkerWrapper extends ASTNode {
         public Marker marker;

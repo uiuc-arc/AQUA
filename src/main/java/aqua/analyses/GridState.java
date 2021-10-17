@@ -1,4 +1,4 @@
-package grammar.analyses;
+package aqua.analyses;
 
         import com.google.common.primitives.Ints;
         import org.nd4j.linalg.api.buffer.DataType;
@@ -13,6 +13,7 @@ package grammar.analyses;
 
         import static org.nd4j.linalg.ops.transforms.Transforms.exp;
         import static org.nd4j.linalg.ops.transforms.Transforms.log;
+        import grammar.analyses.Pair;
 
 
 public class GridState{

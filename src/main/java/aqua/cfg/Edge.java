@@ -1,4 +1,4 @@
-package grammar.cfg;
+package aqua.cfg;
 
 import org.jgrapht.graph.DefaultEdge;
 

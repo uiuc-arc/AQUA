@@ -164,7 +164,7 @@
                             <listener>true</listener>
                             <includes>Template3.g4</includes>
                             <sourceDirectory>template/</sourceDirectory>
-                           <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                           <outputDirectory>target/generated-sources/antlr/java/aqua/</outputDirectory>
                         </configuration>
                         <goals>
                             <goal>antlr4</goal>
@@ -182,7 +182,7 @@
                             <listener>true</listener>
                             <includes>Template2.g4</includes>
                             <sourceDirectory>template/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/aqua/</outputDirectory>
                         </configuration>
                         <goals>
                             <goal>antlr4</goal>
@@ -200,7 +200,7 @@
                             <visitor>true</visitor>
                             <listener>true</listener>
                             <sourceDirectory>stan/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/aqua/</outputDirectory>
                         </configuration>
                         <goals>
                             <goal>antlr4</goal>
@@ -219,7 +219,7 @@
                             <visitor>true</visitor>
                             <listener>true</listener>
                             <sourceDirectory>stan/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/aqua/</outputDirectory>
                         </configuration>
                         <goals>
                             <goal>antlr4</goal>
@@ -237,7 +237,7 @@
                             <visitor>true</visitor>
                             <listener>true</listener>
                             <sourceDirectory>python3/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
+                            <outputDirectory>target/generated-sources/antlr/java/aqua/</outputDirectory>
                         </configuration>
                         <goals>
                             <goal>antlr4</goal>

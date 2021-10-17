@@ -1,15 +1,15 @@
-package grammar.cfg;
+package aqua.cfg;
 
-import grammar.AST;
+import aqua.AST;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import grammar.analyses.AbstractState;
+import aqua.analyses.AbstractState;
 
 public class Statement {
     public AST.Statement statement;
-    public BasicBlock parent;
+    public aqua.cfg.BasicBlock parent;
 
     //maps a string such as "IN"/"OUT" or "GEN"/"KILL" to the dataflow fact
     public Map<String,AbstractState> dataflowFacts;
@@ -36,10 +36,10 @@ public class Statement {
         }
         //if it's the first statement in the basic block then we have to look at Predecessor Basic Blocks...
         else {
-            ArrayList<BasicBlock> statementContainingPreds = parent.getStatementContainingPredBlocks();
+            ArrayList<aqua.cfg.BasicBlock> statementContainingPreds = parent.getStatementContainingPredBlocksAQ();
             if (!statementContainingPreds.isEmpty()) {
                 for (BasicBlock bb : statementContainingPreds) {
-                    preds.add(bb.getLastStatement());
+                    preds.add(bb.getLastStatementAQ());
                 }
                 return preds;
             }
@@ -62,7 +62,7 @@ public class Statement {
             BasicBlock succBlock;
             Statement firstStmt;
 
-            for (Edge e : this.parent.edges){
+            for (aqua.cfg.Edge e : this.parent.edges){
                 succBlock = e.getTarget();
                 if (!succBlock.statements.isEmpty()){
                     firstStmt = succBlock.statements.get(0);
