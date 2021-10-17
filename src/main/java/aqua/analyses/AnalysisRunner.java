@@ -1,7 +1,7 @@
 package aqua.analyses;
 
 import aqua.cfg.CFGBuilder;
-import aqua.cfg.Section;
+import grammar.cfg.Section;
 import org.apache.commons.io.FileUtils;
 import translators.Stan2IRTranslator;
 

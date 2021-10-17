@@ -2,6 +2,8 @@ package tests;
 
 import aqua.analyses.AnalysisRunner;
 import aqua.cfg.CFGBuilder;
+import grammar.cfg.BasicBlock;
+import grammar.cfg.Statement;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.nd4j.linalg.api.buffer.DataType;
@@ -73,9 +75,9 @@ public class TestIntervalAnalysis {
         File tempfile = File.createTempFile(tempFileName, ".template");
         FileUtils.writeStringToFile(tempfile, templateCode);
         aqua.cfg.CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        Set<aqua.cfg.BasicBlock> CFGVertexSet = cfgBuilder.getGraph().vertexSet();
-        for (aqua.cfg.BasicBlock bb: CFGVertexSet)
-            for (aqua.cfg.Statement ss : bb.getStatements())
+        Set<BasicBlock> CFGVertexSet = cfgBuilder.getGraph().vertexSet();
+        for (BasicBlock bb: CFGVertexSet)
+            for (Statement ss : bb.getStatements())
                 System.out.println(ss.statement.toString());
         // IntervalAnalysis.forwardAnalysis(CFG);
     }
