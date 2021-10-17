@@ -1,17 +1,12 @@
-package grammar.analyses;
+package aqua.analyses;
 
-import grammar.cfg.CFGBuilder;
-import grammar.cfg.Section;
+import aqua.cfg.CFGBuilder;
+import aqua.cfg.Section;
 import org.apache.commons.io.FileUtils;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.NDArrayIndex;
 import translators.Stan2IRTranslator;
 
 import javax.json.*;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 public class AnalysisRunner {
@@ -75,7 +70,7 @@ public class AnalysisRunner {
         // Construct CFG
         long startTime = System.nanoTime();
         long endTime1 = startTime;
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, false);
+        aqua.cfg.CFGBuilder cfgBuilder = new CFGBuilder(tempfilePath, null, false);
         ArrayList<Section> CFG = cfgBuilder.getSections();
         IntervalAnalysis intervalAnalyzer = new IntervalAnalysis();
         intervalAnalyzer.setPath(filePath);

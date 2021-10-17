@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>grammar</groupId>
-    <artifactId>grammar</artifactId>
+    <groupId>aqua</groupId>
+    <artifactId>aqua</artifactId>
 
     <packaging>jar</packaging>
     <version>1.0</version>
@@ -91,6 +91,13 @@
             <artifactId>javax.json</artifactId>
             <version>1.1.2</version>
         </dependency>
+        <dependency>
+            <groupId>grammar</groupId>
+            <artifactId>grammar</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/lib/grammar-1.0.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
@@ -140,114 +147,16 @@
                 </executions>
             </plugin>
 -->
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <version>4.7.1</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>antlr-template3</id>
-                        <configuration>
-                            <arguments>
-                                <argument>-package</argument>
-                                <argument>grammar</argument>
-                            </arguments>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <includes>Template3.g4</includes>
-                            <sourceDirectory>template/</sourceDirectory>
-                           <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>antlr-template2</id>
-                        <configuration>
-                            <arguments>
-                                <argument>-package</argument>
-                                <argument>grammar</argument>
-                            </arguments>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <includes>Template2.g4</includes>
-                            <sourceDirectory>template/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>antlr-stan-data</id>
-                        <configuration>
-                            <arguments>
-                                <argument>-package</argument>
-                                <argument>grammar</argument>
-                            </arguments>
-                            <includes>Data.g4</includes>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <sourceDirectory>stan/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
 
-                    </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>antlr-stan</id>
-                        <configuration>
-                            <arguments>
-                                <argument>-package</argument>
-                                <argument>grammar</argument>
-                            </arguments>
-                            <includes>Stan.g4</includes>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <sourceDirectory>stan/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <id>antlr-python</id>
-                        <configuration>
-                            <arguments>
-                                <argument>-package</argument>
-                                <argument>grammar</argument>
-                            </arguments>
-                            <includes>Python3.g4</includes>
-                            <visitor>true</visitor>
-                            <listener>true</listener>
-                            <sourceDirectory>python3/</sourceDirectory>
-                            <outputDirectory>target/generated-sources/antlr/java/grammar/</outputDirectory>
-                        </configuration>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                </executions>
-	</plugin>
 	<plugin>
 		<groupId>org.apache.maven.plugins</groupId>
 		<artifactId>maven-jar-plugin</artifactId>
 		<configuration>
-
 			<archive>
 				<index>true</index>
 				<manifest>
 					<addClasspath>true</addClasspath>
-					<mainClass>grammar.transformations.TransformerRunner</mainClass>
+					<mainClass>aqua.AnalysisRunner</mainClass>
 				</manifest>
 			</archive>
 		</configuration>
