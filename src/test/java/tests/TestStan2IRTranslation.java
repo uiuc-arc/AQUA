@@ -2,7 +2,7 @@ package tests;
 
 import grammar.DataParser;
 import grammar.StanParser;
-import grammar.cfg.CFGBuilder;
+import aqua.cfg.CFGBuilder;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
@@ -14,8 +14,6 @@ import utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 public class TestStan2IRTranslation {
 

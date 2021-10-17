@@ -1,7 +1,7 @@
 package tests;
 
-import grammar.analyses.*;
-import grammar.cfg.*;
+import aqua.analyses.AnalysisRunner;
+import aqua.cfg.CFGBuilder;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import org.nd4j.linalg.api.buffer.DataType;
@@ -72,10 +72,10 @@ public class TestIntervalAnalysis {
         // System.out.println(templateCode);
         File tempfile = File.createTempFile(tempFileName, ".template");
         FileUtils.writeStringToFile(tempfile, templateCode);
-        CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
-        Set<BasicBlock> CFGVertexSet = cfgBuilder.getGraph().vertexSet();
-        for (BasicBlock bb: CFGVertexSet)
-            for (Statement ss : bb.getStatements())
+        aqua.cfg.CFGBuilder cfgBuilder = new CFGBuilder(tempfile.getAbsolutePath(), null);
+        Set<aqua.cfg.BasicBlock> CFGVertexSet = cfgBuilder.getGraph().vertexSet();
+        for (aqua.cfg.BasicBlock bb: CFGVertexSet)
+            for (aqua.cfg.Statement ss : bb.getStatements())
                 System.out.println(ss.statement.toString());
         // IntervalAnalysis.forwardAnalysis(CFG);
     }

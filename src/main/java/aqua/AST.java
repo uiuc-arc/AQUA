@@ -1,7 +1,7 @@
-package grammar;
+package aqua;
 
-import grammar.cfg.BasicBlock;
-import utils.Utils;
+import aqua.cfg.BasicBlock;
+
 
 import javax.json.JsonObject;
 import java.util.ArrayList;
@@ -81,8 +81,8 @@ public class AST {
         public Id loopVar;
         public Range range;
         public Block block;
-        public BasicBlock BBloopBody;
-        public BasicBlock BBloopCond;
+        public aqua.cfg.BasicBlock BBloopBody;
+        public aqua.cfg.BasicBlock BBloopCond;
 
         public ForLoop(Id loopVar, Range range, Block block) {
             this.loopVar = loopVar;
@@ -115,7 +115,7 @@ public class AST {
         public Expression condition;
         public Block trueBlock;
         public Block elseBlock;
-        public BasicBlock BBtrueBlock;
+        public aqua.cfg.BasicBlock BBtrueBlock;
         public BasicBlock BBelseBlock;
 
         public IfStmt() {
