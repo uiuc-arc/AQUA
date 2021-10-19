@@ -96,7 +96,7 @@
             <artifactId>grammar</artifactId>
             <version>1.0</version>
             <scope>system</scope>
-            <systemPath>${basedir}/lib/grammar-1.0.jar</systemPath>
+            <systemPath>${pom.basedir}/lib/grammar-1.0.jar</systemPath>
         </dependency>
     </dependencies>
 
@@ -132,7 +132,6 @@
 	    </testResource>
     </testResources>
     <plugins>
-		<!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -146,7 +145,6 @@
                     </execution>
                 </executions>
             </plugin>
--->
 
 	<plugin>
 		<groupId>org.apache.maven.plugins</groupId>
@@ -156,11 +154,49 @@
 				<index>true</index>
 				<manifest>
 					<addClasspath>true</addClasspath>
-					<mainClass>aqua.AnalysisRunner</mainClass>
+					<mainClass>aqua.analyses.AnalysisRunner</mainClass>
 				</manifest>
 			</archive>
 		</configuration>
 	</plugin>
+	<!--
+	<plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>exec-maven-plugin</artifactId>
+		<version>1.2.1</version>
+		<executions>
+			<execution>
+				<goals>
+					<goal>exec</goal>
+				</goals>
+			</execution>
+		</executions>
+		<configuration>
+			<includeProjectDependencies>true</includeProjectDependencies>
+			<includePluginDependencies>true</includePluginDependencies>
+			<executableDependency>
+				<groupId>grammar</groupId>
+				<artifactId>grammar</artifactId>
+			</executableDependency>
+			<executable>java</executable>
+			<arguments>
+				<argument>-classpath</argument>
+				<argument>${basedir}/lib/grammar-1.0.jar</argument>
+			</arguments>
+			<mainClass>aqua.analyses.AnalysisRunner</mainClass>
+		</configuration>
+		<dependencies>
+			<dependency>
+				<groupId>grammar</groupId>
+				<artifactId>grammar</artifactId>
+				<version>1.0</version>
+				<scope>system</scope>
+				<type>jar</type>
+				<systemPath>${basedir}/lib/grammar-1.0.jar</systemPath>
+			</dependency>
+		</dependencies>
+	</plugin>
+-->
         </plugins>
 
 
