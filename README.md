@@ -26,6 +26,7 @@ The paper describing the methodology behind AQUA:
 In the root directory of this repo, run
 
     ./dependency.sh
+    
     mvn package -DskipTests=true
 
 In the end it should print `BUILD SUCCESS`.
