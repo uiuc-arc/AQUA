@@ -82,7 +82,7 @@ To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` un
 
 ## Project Structure
 
-    .  
+        .  
         ├── benchmarks/                                         # All benchmarks
         │     ├── stan_bench/                                   # Benchmarks in Stan
         │     └── storm_bench/                                  # Benchmarks in Storm IR
@@ -90,21 +90,16 @@ To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` un
         ├── src/                                                # AQUA source code in Java
         │     ├── main/                  
         │     │     ├── java/                       
-        │     │     │     ├──  grammar 
-        │     │     │     │     ├── analyses                    # AQUA Analysis code
-        │     │     │     │     │     ├── AnalysisRunner.java   # Program entry point. Translates file, constructs CFG, and calls analysis
-        │     │     │     │     │     ├── GridState.java        # Class for AQUA abstract state
-        │     │     │     │     │     ├── IntervalAnalysis.java # Analysis algorithm by applying analysis rules
-        │     │     │     │     │     └── Pair.java             # A handy pair data structure
-        │     │     │     │     ├── cfg                         # CFG constructor for Storm IR
-        │     │     │     │     └── AST.java                    # AST constructor for Storm IR
-        │     │     │     ├──  translators                      # Translator from Stan to Storm IR
-        │     │     │     └──  utils                            # Utility functions used in translation and CFG construction
-        │     │     └── resources/models.json                   # Json for properties of distributions
-        │     └── test/java/tests                               # Unit tests in the development
+        │     │     │   └──  aqua/ 
+        │     │     │        ├── analyses/                      # AQUA Analysis code
+        │     │     │        │    ├── AnalysisRunner.java       # Program entry point. Translates file, constructs CFG, and calls analysis
+        │     │     │        │    ├── GridState.java            # Class for AQUA abstract state
+        │     │     │        │    └── IntervalAnalysis.java     # Analysis algorithm by applying analysis rules
+        │     │     │        └── cfg/CFGBuilder.java            # CFG constructor for Storm IR
+        │     │     └── resources/                              # Json files for properties of distributions and the config of Storm IR
+        │     └── test/java/tests/                              # Unit tests in the development
         │ 
-        ├── stan/                                               # Stan and data grammars in ANTLR 4  						
-        ├── template/                                           # Storm IR grammar in ANTLR 4 
+        ├── lib/grammar-1.0.jar                                 # Storm IR jar 
         ├── README.md                                           # README for basic info  
         ├── antlr-4.7.1-complete.jar                            # ANTLR jar used for parsing Stan / Storm IR files
         ├── benchmark_list.json                                 # List of all the benchmarks, split into `finite_models` and `infinite_models`
