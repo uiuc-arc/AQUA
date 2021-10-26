@@ -24,8 +24,6 @@ The paper describing the methodology behind AQUA:
 **Install dependencies and build AQUA:**
 
 In the root directory of this repo, run
-
-    ./dependency.sh
     
     mvn package -DskipTests=true
 
