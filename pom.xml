@@ -96,7 +96,7 @@
             <artifactId>grammar</artifactId>
             <version>1.0</version>
             <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/grammar-1.0.jar</systemPath>
+            <systemPath>${pom.basedir}/lib/original-grammar-1.0.jar</systemPath>
         </dependency>
     </dependencies>
 
