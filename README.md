@@ -40,11 +40,11 @@ AQUA can take as input either  (a) a program in [Storm IR](https://misailo.cs.il
 #### (a) Run AQUA on a Storm IR file
 **Usage:**
     
-    java -cp "target/aqua-1.0.jar:lib/grammar-1.0.jar" aqua.analyses.AnalysisRunner <path_to_input_template_file>
+    java -cp "target/aqua-1.0.jar:lib/original-grammar-1.0.jar" aqua.analyses.AnalysisRunner <path_to_input_template_file>
     
 **E.g.:**
 
-    java -cp "target/aqua-1.0.jar:lib/grammar-1.0.jar" aqua.analyses.AnalysisRunner ./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template
+    java -cp "target/aqua-1.0.jar:lib/original-grammar-1.0.jar" aqua.analyses.AnalysisRunner ./benchmarks/storm_bench/three_coin_flip/three_coin_flip.template
     
 
 #### (b) Run AQUA on a Stan file
@@ -52,11 +52,11 @@ The `path_to_input_dir` must contain a stan file (`<prog_name>.stan`) and a data
 
 **Usage:**
     
-    java -cp "target/aqua-1.0.jar:lib/grammar-1.0.jar" aqua.analyses.AnalysisRunner <path_to_input_dir>
+    java -cp "target/aqua-1.0.jar:lib/original-grammar-1.0.jar" aqua.analyses.AnalysisRunner <path_to_input_dir>
     
 **E.g.:**
 
-    java -cp "target/aqua-1.0.jar:lib/grammar-1.0.jar" aqua.analyses.AnalysisRunner ./benchmarks/stan_bench/anova_radon_nopred
+    java -cp "target/aqua-1.0.jar:lib/original-grammar-1.0.jar" aqua.analyses.AnalysisRunner ./benchmarks/stan_bench/anova_radon_nopred
 
  The directory `./benchmarks/stan_bench/anova_radon_nopred` contains `anova_radon_nopred.stan` and `anova_radon_nopred.data.R`.
 
