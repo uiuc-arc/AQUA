@@ -4,7 +4,7 @@ data {
 }
 parameters {
   vector<lower=10, upper=20>[1] beta;
-  real<lower=0, upper=28> sigma;
+  real<lower=0, upper=30> sigma;
   real<lower=0, upper=1> robust_weight[N];
 } 
 model {

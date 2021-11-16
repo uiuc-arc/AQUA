@@ -165,6 +165,7 @@ public class IntervalAnalysis {
             Double[] meanSd = paramMap.get(paramName).getKey();
             meanSd[0] = lastVal.getDouble(max(firstGt-1, 0));
             meanSd[1] = lastVal.getDouble(min(lastGt+1, lastVal.length() - 1));
+            System.out.println(String.format("%s: [%s %s]",paramName, meanSd[0], meanSd[1]));
         }
         return single;
     }
