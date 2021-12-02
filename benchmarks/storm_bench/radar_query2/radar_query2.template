@@ -1,6 +1,6 @@
 
 float b[2]
-@limits <lower=-5,upper=15>
+@limits <lower=-15,upper=15>
 float o[1] 
 @limits <lower=0,upper=10>
 float x1
