@@ -92,11 +92,11 @@
             <version>1.1.2</version>
         </dependency>
         <dependency>
-            <groupId>grammar</groupId>
-            <artifactId>grammar</artifactId>
+            <groupId>storm</groupId>
+            <artifactId>storm</artifactId>
             <version>1.0</version>
             <scope>system</scope>
-            <systemPath>${pom.basedir}/lib/original-grammar-1.0.jar</systemPath>
+            <systemPath>${pom.basedir}/lib/storm-1.0.jar</systemPath>
         </dependency>
     </dependencies>
 
