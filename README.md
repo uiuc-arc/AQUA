@@ -108,7 +108,11 @@ To disable the adaptive algorithm, add `<prog_name>` in `benchmark_list.json` un
 
 To cite AQUA, please use
 
-    @article{huangaqua,
+    @inproceedings{huang2021aqua,
       title={AQUA: Automated Quantized Inference for Probabilistic Programs},
-      author={Huang, Zixin and Dutta, Saikat and Misailovic, Sasa}
+      author={Huang, Zixin and Dutta, Saikat and Misailovic, Sasa},
+      booktitle={International Symposium on Automated Technology for Verification and Analysis},
+      pages={229--246},
+      year={2021},
+      organization={Springer}
     }
